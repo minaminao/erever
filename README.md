@@ -2,9 +2,7 @@
 
 Install:
 ```
-git clone https://github.com/minaminao/erever.git
-cd erever
-pip install .
+pip install git+https://github.com/minaminao/erever.git
 ```
 
 Usage:
