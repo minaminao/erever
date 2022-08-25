@@ -87,12 +87,13 @@ def disassemble(bytecode):
     bytecode = bytes.fromhex(bytecode)
     stack = Stack()
     memory = Memory()
+    LOCATION_PAD_N = len(hex(len(bytecode))[2:]) 
 
     i = 0
     while i < len(bytecode):
         value = bytecode[i]
         name, stack_input_count, stack_output_count, description = OPCODES[value]
-        print(name, end="")
+        print(f"{pad(hex(i), LOCATION_PAD_N)}: {name}", end="")
 
         if name.startswith("PUSH"):
             d = int(name[4:])
@@ -117,6 +118,7 @@ def disassemble(bytecode):
             memory.mstore8(input[0], input[1])
         if name == "RETURN":
             print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+            break
 
         print(f"\n\tstack\t{stack}", end="")
         print(f"\n\tmemory\t{memory}", end="")
