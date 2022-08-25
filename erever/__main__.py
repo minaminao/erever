@@ -1,5 +1,6 @@
 import argparse
-from erever.opcodes import OPCODES
+from .opcodes import OPCODES
+from .colors import colors
 
 
 def main():
@@ -19,11 +20,13 @@ def bytes_to_long(x):
 def long_to_bytes(x):
     return bytes.fromhex(hex(x)[2:])
 
+
 def pad(hex_number: str, n: int):
     if hex_number[:2] == "0x":
         hex_number = hex_number[2:]
     hex_number = "0x" + "0" * (n - len(hex_number)) + hex_number
     return hex_number
+
 
 def pad_even(hex_number: str):
     if hex_number[:2] == "0x":
@@ -36,11 +39,17 @@ class Stack:
     def __init__(self):
         self.stack = []
 
+        self.updated_indices_for_colorize = []
+
     def push(self, x: int):
         self.stack.append(x)
 
+        self.updated_indices_for_colorize = [len(self.stack) - 1]
+
     def extend(self, x: list[int]):
         self.stack.extend(x)
+
+        self.updated_indices_for_colorize = [len(self.stack) - 1 - i for i in range(len(x))]
 
     def pop(self) -> int:
         return self.stack.pop()
@@ -51,7 +60,10 @@ class Stack:
         for i in range(n):
             if i != 0:
                 ret += ", "
-            ret += pad_even(hex(self.stack[n - 1 - i]))
+            x = pad_even(hex(self.stack[n - 1 - i]))
+            if n - 1 - i in self.updated_indices_for_colorize:
+                x = colors.YELLOW + x + colors.ENDC
+            ret += x
         ret = "[" + ret + "]"
         return ret
 
@@ -59,6 +71,9 @@ class Stack:
 class Memory:
     def __init__(self):
         self.memory = []
+
+        self.mstore_l_for_colorize = None
+        self.mstore_r_for_colorize = None
 
     def __extend(self, length: int):
         if len(self.memory) >= length:
@@ -75,19 +90,33 @@ class Memory:
         for i, b in enumerate(value):
             self.memory[offset + l + i] = b
 
+        self.mstore_l_for_colorize = offset + l
+        self.mstore_r_for_colorize = r
+
     def mstore8(self, offset: int, value: int):
         self.__extend(offset + 1)
         self.memory[offset] = value
 
+        self.mstore_l_for_colorize = offset
+        self.mstore_r_for_colorize = offset + 1
+
     def __str__(self):
         return bytes(self.memory).hex()
+
+    def colorize(self):
+        ret = str(self)
+        if self.mstore_l_for_colorize:
+            ret = ret[:2 * self.mstore_l_for_colorize] + colors.YELLOW + ret[2 * self.mstore_l_for_colorize:2 * self.mstore_r_for_colorize] + colors.ENDC + ret[2 * self.mstore_r_for_colorize:]
+            self.mstore_l_for_colorize = None
+            self.mstore_r_for_colorize = None
+        return ret
 
 
 def disassemble(bytecode):
     bytecode = bytes.fromhex(bytecode)
     stack = Stack()
     memory = Memory()
-    LOCATION_PAD_N = len(hex(len(bytecode))[2:]) 
+    LOCATION_PAD_N = len(hex(len(bytecode))[2:])
 
     i = 0
     while i < len(bytecode):
@@ -121,7 +150,7 @@ def disassemble(bytecode):
             break
 
         print(f"\n\tstack\t{stack}", end="")
-        print(f"\n\tmemory\t{memory}", end="")
+        print(f"\n\tmemory\t{memory.colorize()}", end="")
 
         print()
         i += 1
