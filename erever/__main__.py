@@ -3,17 +3,22 @@ from .opcodes import OPCODES
 from .colors import colors
 from .utils import *
 
+ARGS = None
 
 def main():
+    global ARGS
     parser = argparse.ArgumentParser(description="EVM Reversing Tools")
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
-    args = parser.parse_args()
+    parser.add_argument("--symbolic_trace", action="store_true", default=False)
+    # parser.add_argument("--callvalue", type=int)
+    # parser.add_argument("--calldata", type=str)
+    ARGS = parser.parse_args()
 
-    if args.bytecode:
-        disassemble(args.bytecode)
-    elif args.filename:
-        data = open(args.filename).read()
+    if ARGS.bytecode:
+        disassemble(ARGS.bytecode)
+    elif ARGS.filename:
+        data = open(ARGS.filename).read()
         disassemble(data)
 
 
@@ -47,7 +52,7 @@ class Stack:
             else:
                 x = self.stack[n - 1 - i]
             if n - 1 - i in self.updated_indices_for_colorize:
-                x = colors.YELLOW + x + colors.ENDC
+                x = colors.GREEN + x + colors.ENDC
             ret += x
         ret = "[" + ret + "]"
         return ret
@@ -91,7 +96,7 @@ class Memory:
     def colorize(self):
         ret = str(self)
         if self.mstore_l_for_colorize:
-            ret = ret[:2 * self.mstore_l_for_colorize] + colors.YELLOW + ret[2 * self.mstore_l_for_colorize:2 * self.mstore_r_for_colorize] + colors.ENDC + ret[2 * self.mstore_r_for_colorize:]
+            ret = ret[:2 * self.mstore_l_for_colorize] + colors.GREEN + ret[2 * self.mstore_l_for_colorize:2 * self.mstore_r_for_colorize] + colors.ENDC + ret[2 * self.mstore_r_for_colorize:]
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
         return ret
@@ -103,53 +108,72 @@ def disassemble(bytecode):
     memory = Memory()
     LOCATION_PAD_N = len(hex(len(bytecode))[2:])
 
+    warning_messages = ""
+
     i = 0
     while i < len(bytecode):
         value = bytecode[i]
-        name, stack_input_count, stack_output_count, description = OPCODES[value]
-        print(f"{pad(hex(i), LOCATION_PAD_N)}: {name}", end="")
+        if value in OPCODES:
+            mnemonic, stack_input_count, stack_output_count, description = OPCODES[value]
+        else:
+            mnemonic = colors.YELLOW + hex(value) + " (?)" + colors.ENDC
+            stack_input_count = None
+            stack_output_count = None
+            description = None
 
-        if name.startswith("PUSH"):
-            d = int(name[4:])
+            warning_messages += f"The mnemonic for {hex(value)} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
+        print(f"{pad(hex(i), LOCATION_PAD_N)}: {mnemonic}", end="")
+
+        if mnemonic.startswith("PUSH"):
+            d = int(mnemonic[4:])
             v = bytes_to_long(bytecode[i + 1:i + 1 + d])
             print(" " + pad_even(hex(v)), end="")
             i += d
 
             stack.push(v)
 
-        input = []
-        for _ in range(stack_input_count):
-            input.append(stack.pop())
+        if ARGS.symbolic_trace:
+            input = []
+            for _ in range(stack_input_count):
+                input.append(stack.pop())
 
-        output = []
-        if name.startswith("DUP"):
-            d = int(name[3:])
-            output = [input[d - 1]] + input[::]
-            stack.extend(output[::-1])
-        if name == "MSTORE":
-            memory.mstore(input[0], long_to_bytes(input[1]))
-        if name == "MSTORE8":
-            memory.mstore8(input[0], input[1])
-        if name == "CALLVALUE":
-            stack.push("callvalue")
-        if name == "ISZERO":
-            x = stack.pop()
-            if type(x) == int:
-                if x > 0:
-                    stack.push(0)
+            output = []
+            if mnemonic.startswith("DUP"):
+                d = int(mnemonic[3:])
+                output = [input[d - 1]] + input[::]
+                stack.extend(output[::-1])
+            if mnemonic == "MSTORE":
+                memory.mstore(input[0], long_to_bytes(input[1]))
+            if mnemonic == "MSTORE8":
+                memory.mstore8(input[0], input[1])
+            if mnemonic == "CALLVALUE":
+                stack.push("callvalue")
+            if mnemonic == "ISZERO":
+                x = stack.pop()
+                if type(x) == int:
+                    if x > 0:
+                        stack.push(0)
+                    else:
+                        stack.push(1)
                 else:
-                    stack.push(1)
-            else:
-                stack.push(f"!({x})")
-        if name == "RETURN":
-            print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}")
-            break
+                    stack.push(f"!({x})")
+            if mnemonic == "RETURN":
+                print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
 
-        print(f"\n\tstack\t{stack}", end="")
-        print(f"\n\tmemory\t{memory.colorize()}", end="")
+        # if mnemonic == "RETURN":
+        #     break
+
+        if ARGS.symbolic_trace:
+            print(f"\n\tstack\t{stack}", end="")
+            print(f"\n\tmemory\t{memory.colorize()}", end="")
 
         print()
         i += 1
+
+    print()
+    if warning_messages != "":
+        print(colors.YELLOW + "WARNING:")
+        print(warning_messages + colors.ENDC)
 
 
 if __name__ == '__main__':

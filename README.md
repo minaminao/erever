@@ -8,20 +8,22 @@ pip install git+https://github.com/minaminao/erever.git
 Usage:
 ```
 $ erever -h
-usage: erever [-h] [-b BYTECODE]
+usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--symbolic_trace]
 
 EVM Reversing Tools
 
 options:
   -h, --help            show this help message and exit
   -b BYTECODE, --bytecode BYTECODE
+  -f FILENAME, --filename FILENAME
+  --symbolic_trace
 ```
 
-## Disassemble with stack and memory tracing
+## Disassemble with (symbolic) tracing of stack and memory
 Source: [A quine for the SOURCECODE challenge in Paradigm CTF 2022](https://github.com/minaminao/ctf-blockchain/blob/main/src/ParadigmCTF2022/SourceCode/Quine35Bytes.huff).
 
 ```c
-$ erever -b "70806011526000526070600e536023600ef3806011526000526070600e536023600ef3"
+$ erever -b "70806011526000526070600e536023600ef3806011526000526070600e536023600ef3" --symbolic_trace
 0x00: PUSH17 0x806011526000526070600e536023600ef3
 	stack	[0x806011526000526070600e536023600ef3]
 	memory	
