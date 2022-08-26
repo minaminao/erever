@@ -1,38 +1,20 @@
 import argparse
 from .opcodes import OPCODES
 from .colors import colors
+from .utils import *
 
 
 def main():
     parser = argparse.ArgumentParser(description="EVM Reversing Tools")
     parser.add_argument("-b", "--bytecode")
-    # parser.add_argument("-f", "--filename")
+    parser.add_argument("-f", "--filename")
     args = parser.parse_args()
 
     if args.bytecode:
         disassemble(args.bytecode)
-
-
-def bytes_to_long(x):
-    return int.from_bytes(x, "big")
-
-
-def long_to_bytes(x):
-    return bytes.fromhex(hex(x)[2:])
-
-
-def pad(hex_number: str, n: int):
-    if hex_number[:2] == "0x":
-        hex_number = hex_number[2:]
-    hex_number = "0x" + "0" * (n - len(hex_number)) + hex_number
-    return hex_number
-
-
-def pad_even(hex_number: str):
-    if hex_number[:2] == "0x":
-        hex_number = hex_number[2:]
-    n = len(hex_number) + len(hex_number) % 2
-    return pad(hex_number, n)
+    elif args.filename:
+        data = open(args.filename).read()
+        disassemble(data)
 
 
 class Stack:
@@ -60,7 +42,10 @@ class Stack:
         for i in range(n):
             if i != 0:
                 ret += ", "
-            x = pad_even(hex(self.stack[n - 1 - i]))
+            if type(self.stack[n - 1 - i]) == int:
+                x = pad_even(hex(self.stack[n - 1 - i]))
+            else:
+                x = self.stack[n - 1 - i]
             if n - 1 - i in self.updated_indices_for_colorize:
                 x = colors.YELLOW + x + colors.ENDC
             ret += x
@@ -145,8 +130,19 @@ def disassemble(bytecode):
             memory.mstore(input[0], long_to_bytes(input[1]))
         if name == "MSTORE8":
             memory.mstore8(input[0], input[1])
+        if name == "CALLVALUE":
+            stack.push("callvalue")
+        if name == "ISZERO":
+            x = stack.pop()
+            if type(x) == int:
+                if x > 0:
+                    stack.push(0)
+                else:
+                    stack.push(1)
+            else:
+                stack.push(f"!({x})")
         if name == "RETURN":
-            print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+            print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}")
             break
 
         print(f"\n\tstack\t{stack}", end="")
