@@ -3,6 +3,7 @@
 
 OPCODES = {
     # value: (mnemonic, stack input count, stack output count, description)
+    0x00: ("STOP", 0, 0, "Halts execution."),
     0x01: ("ADD", 2, 1, "Addition operation."),
     0x02: ("MUL", 2, 1, "Multiplication operation."),
     0x03: ("SUB", 2, 1, "Subtraction operation."),
@@ -44,6 +45,7 @@ OPCODES = {
     0x3c: ("EXTCODECOPY", 4, 0, "Copy an account's code to memory."),
     0x3d: ("RETURNDATASIZE", 0, 1, "Get size of output data from the previous call from the current environment."),
     0x3e: ("RETURNDATACOPY", 3, 0, "Copy output data from the previous call to memory."),
+    0x3f: ("EXTCODEHASH", 1, 1, "Get hash of an account's code."),
     0x40: ("BLOCKHASH", 1, 1, "Get the hash of one of the 256 most recent complete blocks."),
     0x41: ("COINBASE", 0, 1, "Get the current block's beneficiary address."),
     0x42: ("TIMESTAMP", 0, 1, "Get the current block's timestamp."),
@@ -57,6 +59,9 @@ OPCODES = {
     0x52: ("MSTORE", 2, 0, "Save word to memory."),
     0x53: ("MSTORE8", 2, 0, "Save byte to memory."),
     0x54: ("SLOAD", 1, 1, "Load word from storage."),
+    0x55: ("SSTORE", 2, 0, "Save word to storage."),
+    0x56: ("JUMP", 1, 0, "Alter the program counter."),
+    0x57: ("JUMPI", 2, 0, "Conditionally alter the program counter."),
     0x58: ("PC", 0, 1, "Get the value of the program counter prior to the increment corresponding to this instruction."),
     0x59: ("MSIZE", 0, 1, "Get the size of active memory in bytes."),
     0x5a: ("GAS", 0, 1, "Get the amount of available gas, including the corresponding reduction for the cost of this instruction."),
@@ -136,5 +141,7 @@ OPCODES = {
     0xf3: ("RETURN", 2, 0, "Halt execution returning output data."),
     0xf4: ("DELEGATECALL", 6, 1, "Message-call into this account with an alternative account's code, but persisting the current values for sender and value."),
     0xfa: ("STATICCALL", 6, 1, "Static message-call into an account."),
+    0xfd: ("REVERT", 2, 0, "Halt execution reverting state changes but returning data and remaining gas."),
     0xfe: ("INVALID", 0, 0, "Designated invalid instruction."),
+    0xff: ("SELFDESTRUCT", 1, 0, "Halt execution and register account for later deletion."),
 }

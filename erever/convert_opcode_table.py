@@ -1,6 +1,11 @@
+import re
+
 with open("erever/opcode_table_in_yellowpaper.tex") as f:
     for line in f.readlines():
-        line = line.replace(R"\linkdest{RETURN}{}", "")
+
+        #oops
+        line = re.sub(r'\\linkdest\{.+\}\{\}', '', line)
+        
         if line[:2] != "0x":
             continue
         line = line.strip()
