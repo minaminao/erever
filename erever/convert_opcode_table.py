@@ -52,7 +52,7 @@ with open("erever/opcode_table_in_yellowpaper.tex") as f:
             continue
         if items[1] == "SWAP2":
             for i in range(1, 15):
-                value = hex(0x80 + i)
+                value = hex(0x90 + i)
                 if i == 1:
                     print(f'{value}: ("SWAP{i+1}", {i+2}, {i+2}, "Exchange 1st and 3rd stack items."),')
                 else:
