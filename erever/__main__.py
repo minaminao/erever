@@ -13,7 +13,8 @@ def main():
     parser = argparse.ArgumentParser(description="EVM Reversing Tools")
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
-    parser.add_argument("--symbolic-trace", action="store_true", default=False)
+    parser.add_argument("--trace", action="store_true", default=False)
+    parser.add_argument("--symbolic", action="store_true", default=False)
     # parser.add_argument("--callvalue", type=int)
     # parser.add_argument("--calldata", type=str)
     ARGS = parser.parse_args()
@@ -106,7 +107,7 @@ class Memory:
 
     def colorize(self):
         ret = str(self)
-        if self.mstore_l_for_colorize:
+        if self.mstore_l_for_colorize is not None:
             ret = ret[:2 * self.mstore_l_for_colorize] + colors.GREEN + ret[2 * self.mstore_l_for_colorize:2 * self.mstore_r_for_colorize] + colors.ENDC + ret[2 * self.mstore_r_for_colorize:]
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
@@ -142,7 +143,8 @@ def disassemble(bytecode):
             warning_messages += f"The mnemonic for {hex(value)} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
 
         if mnemonic == "JUMPDEST":
-            print()
+            if ARGS.symbolic:
+                print()
 
         print(f"{pad(hex(i), LOCATION_PAD_N)}: {mnemonic}", end="")
 
@@ -154,7 +156,7 @@ def disassemble(bytecode):
 
             stack.push(v)
 
-        if ARGS.symbolic_trace:
+        if ARGS.trace:
             input = []
             for _ in range(stack_input_count):
                 input.append(stack.pop())
@@ -215,7 +217,8 @@ def disassemble(bytecode):
                     r = f"{calldata_i}+0x20"
                 stack.push(f"calldata[{calldata_i}:{r}]")
             if mnemonic == "JUMPDEST":
-                stack.clear()
+                if ARGS.symbolic:
+                    stack.clear()
             if mnemonic == "SHR":
                 shift, value = input[0], input[1]
                 if type(shift) is int and type(value) is int:
@@ -223,10 +226,10 @@ def disassemble(bytecode):
                 else:
                     stack.push(f"{to_symbol(value)} >> {to_symbol(shift)}")
 
-        # if mnemonic == "RETURN":
-        #     break
+        if ARGS.trace and mnemonic == "RETURN":
+            break
 
-        if ARGS.symbolic_trace:
+        if ARGS.trace:
             print(f"\n\tstack\t{stack}", end="")
             print(f"\n\tmemory\t{memory.colorize()}", end="")
 
