@@ -8,7 +8,7 @@ pip install git+https://github.com/minaminao/erever.git
 Usage:
 ```
 $ erever -h
-usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--symbolic_trace]
+usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--symbolic-trace]
 
 EVM Reversing Tools
 
@@ -16,7 +16,7 @@ options:
   -h, --help            show this help message and exit
   -b BYTECODE, --bytecode BYTECODE
   -f FILENAME, --filename FILENAME
-  --symbolic_trace
+  --symbolic-trace
 ```
 
 ## Disassemble with (symbolic) tracing of stack and memory
