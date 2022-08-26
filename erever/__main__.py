@@ -1,16 +1,19 @@
 import argparse
+import random
 from .opcodes import OPCODES
 from .colors import colors
 from .utils import *
 
 ARGS = None
+var_n = 0
+
 
 def main():
     global ARGS
     parser = argparse.ArgumentParser(description="EVM Reversing Tools")
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
-    parser.add_argument("--symbolic_trace", action="store_true", default=False)
+    parser.add_argument("--symbolic-trace", action="store_true", default=False)
     # parser.add_argument("--callvalue", type=int)
     # parser.add_argument("--calldata", type=str)
     ARGS = parser.parse_args()
@@ -28,18 +31,26 @@ class Stack:
 
         self.updated_indices_for_colorize = []
 
-    def push(self, x: int):
+    def push(self, x):
         self.stack.append(x)
 
         self.updated_indices_for_colorize = [len(self.stack) - 1]
 
-    def extend(self, x: list[int]):
+    def extend(self, x: list):
         self.stack.extend(x)
 
         self.updated_indices_for_colorize = [len(self.stack) - 1 - i for i in range(len(x))]
 
-    def pop(self) -> int:
+    def pop(self):
+        global var_n
+
+        if len(self.stack) == 0:
+            var_n += 1
+            return "var_" + str(var_n)
         return self.stack.pop()
+
+    def clear(self):
+        self.stack = []
 
     def __str__(self):
         ret = ""
@@ -102,6 +113,13 @@ class Memory:
         return ret
 
 
+def to_symbol(x):
+    if type(x) is int:
+        return pad_even(hex(x))
+    else:
+        return x
+
+
 def disassemble(bytecode):
     bytecode = bytes.fromhex(bytecode)
     stack = Stack()
@@ -122,6 +140,10 @@ def disassemble(bytecode):
             description = None
 
             warning_messages += f"The mnemonic for {hex(value)} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
+
+        if mnemonic == "JUMPDEST":
+            print()
+
         print(f"{pad(hex(i), LOCATION_PAD_N)}: {mnemonic}", end="")
 
         if mnemonic.startswith("PUSH"):
@@ -148,17 +170,58 @@ def disassemble(bytecode):
                 memory.mstore8(input[0], input[1])
             if mnemonic == "CALLVALUE":
                 stack.push("callvalue")
+            if mnemonic == "CALLDATASIZE":
+                stack.push("calldatasize")
+            if mnemonic == "LT" or mnemonic == "GT":
+                a, b = input[0], input[1]
+                if type(a) is int and type(b) is int:
+                    if mnemonic == "LT":
+                        if a < b:
+                            stack.push(1)
+                        else:
+                            stack.push(0)
+                    if mnemonic == "GT":
+                        if a > b:
+                            stack.push(1)
+                        else:
+                            stack.push(0)
+                else:
+                    a = to_symbol(a)
+                    b = to_symbol(b)
+                    if " " in a:
+                        a = "(" + a + ")"
+                    if " " in b:
+                        b = "(" + b + ")"
+                    if mnemonic == "LT":
+                        stack.push(f"{a} < {b}")
+                    if mnemonic == "GT":
+                        stack.push(f"{a} > {b}")
             if mnemonic == "ISZERO":
-                x = stack.pop()
+                x = input[0]
                 if type(x) == int:
                     if x > 0:
                         stack.push(0)
                     else:
                         stack.push(1)
                 else:
-                    stack.push(f"!({x})")
+                    stack.push(f"ISZERO({x})")
             if mnemonic == "RETURN":
                 print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+            if mnemonic == "CALLDATALOAD":
+                calldata_i = input[0]
+                if type(calldata_i) is int:
+                    r = to_symbol(calldata_i + 0x20)
+                else:
+                    r = f"{calldata_i}+0x20"
+                stack.push(f"calldata[{calldata_i}:{r}]")
+            if mnemonic == "JUMPDEST":
+                stack.clear()
+            if mnemonic == "SHR":
+                shift, value = input[0], input[1]
+                if type(shift) is int and type(value) is int:
+                    stack.push(value >> shift)
+                else:
+                    stack.push(f"{to_symbol(value)} >> {to_symbol(shift)}")
 
         # if mnemonic == "RETURN":
         #     break

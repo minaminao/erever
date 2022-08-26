@@ -23,7 +23,7 @@ options:
 Source: [A quine for the SOURCECODE challenge in Paradigm CTF 2022](https://github.com/minaminao/ctf-blockchain/blob/main/src/ParadigmCTF2022/SourceCode/Quine35Bytes.huff).
 
 ```c
-$ erever -b "70806011526000526070600e536023600ef3806011526000526070600e536023600ef3" --symbolic_trace
+$ erever -b "70806011526000526070600e536023600ef3806011526000526070600e536023600ef3" --symbolic-trace
 0x00: PUSH17 0x806011526000526070600e536023600ef3
 	stack	[0x806011526000526070600e536023600ef3]
 	memory	
