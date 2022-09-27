@@ -1,5 +1,4 @@
 import argparse
-import random
 from .opcodes import OPCODES
 from .colors import colors
 from .utils import *
@@ -14,15 +13,18 @@ def main():
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
     parser.add_argument("--trace", action="store_true", default=False)
-    parser.add_argument("--symbolic", action="store_true", default=False)
+    # parser.add_argument("--tx", action="store_true", default=False)
     # parser.add_argument("--callvalue", type=int)
+    # parser.add_argument("--chain-id", type=int)
+    # parser.add_argument("--gas", type=int)
     # parser.add_argument("--calldata", type=str)
+    # parser.add_argument("--rpc-url", type=str)
     ARGS = parser.parse_args()
 
     if ARGS.bytecode:
         disassemble(ARGS.bytecode)
     elif ARGS.filename:
-        data = open(ARGS.filename).read()
+        data = open(ARGS.filename).read().replace(" ", "").replace("\n", "")
         disassemble(data)
 
 
@@ -135,23 +137,19 @@ def disassemble(bytecode):
         if value in OPCODES:
             mnemonic, stack_input_count, stack_output_count, description = OPCODES[value]
         else:
-            mnemonic = colors.YELLOW + hex(value) + " (?)" + colors.ENDC
+            mnemonic = colors.YELLOW + f"0x{value:02x} (?)" + colors.ENDC
             stack_input_count = None
             stack_output_count = None
             description = None
 
-            warning_messages += f"The mnemonic for {hex(value)} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
-
-        if mnemonic == "JUMPDEST":
-            if ARGS.symbolic:
-                print()
+            warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
 
         print(f"{pad(hex(i), LOCATION_PAD_N)}: {mnemonic}", end="")
 
         if mnemonic.startswith("PUSH"):
             d = int(mnemonic[4:])
             v = bytes_to_long(bytecode[i + 1:i + 1 + d])
-            print(" " + pad_even(hex(v)), end="")
+            print(" " + pad(hex(v), d * 2), end="")
             i += d
 
             stack.push(v)
@@ -216,9 +214,6 @@ def disassemble(bytecode):
                 else:
                     r = f"{calldata_i}+0x20"
                 stack.push(f"calldata[{calldata_i}:{r}]")
-            if mnemonic == "JUMPDEST":
-                if ARGS.symbolic:
-                    stack.clear()
             if mnemonic == "SHR":
                 shift, value = input[0], input[1]
                 if type(shift) is int and type(value) is int:

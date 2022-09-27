@@ -1,6 +1,3 @@
-# Ref: https://ethereum.github.io/yellowpaper/paper.pdf
-# Generated from `python erever/convert_opcode_table.py`
-
 OPCODES = {
     # value: (mnemonic, stack input count, stack output count, description)
     0x00: ("STOP", 0, 0, "Halts execution."),
@@ -54,6 +51,7 @@ OPCODES = {
     0x45: ("GASLIMIT", 0, 1, "Get the current block's gas limit."),
     0x46: ("CHAINID", 0, 1, "Get the chain ID."),
     0x47: ("SELFBALANCE", 0, 1, "Get balance of currently executing account."),
+    0x48: ("BASEFEE", 0, 1, "Get the base fee."),
     0x50: ("POP", 1, 0, "Remove item from stack."),
     0x51: ("MLOAD", 1, 1, "Load word from memory."),
     0x52: ("MSTORE", 2, 0, "Save word to memory."),
@@ -140,6 +138,7 @@ OPCODES = {
     0xf2: ("CALLCODE", 7, 1, "Message-call into this account with an alternative account's code."),
     0xf3: ("RETURN", 2, 0, "Halt execution returning output data."),
     0xf4: ("DELEGATECALL", 6, 1, "Message-call into this account with an alternative account's code, but persisting the current values for sender and value."),
+    0xf5: ("CREATE2", 4, 1, "Create a new account with associated code at a predictable address"),
     0xfa: ("STATICCALL", 6, 1, "Static message-call into an account."),
     0xfd: ("REVERT", 2, 0, "Halt execution reverting state changes but returning data and remaining gas."),
     0xfe: ("INVALID", 0, 0, "Designated invalid instruction."),
