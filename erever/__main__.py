@@ -138,8 +138,8 @@ def disassemble(bytecode):
             mnemonic, stack_input_count, stack_output_count, description = OPCODES[value]
         else:
             mnemonic = colors.YELLOW + f"0x{value:02x} (?)" + colors.ENDC
-            stack_input_count = None
-            stack_output_count = None
+            stack_input_count = 0
+            stack_output_count = 0
             description = None
 
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
@@ -152,79 +152,80 @@ def disassemble(bytecode):
             print(" " + pad(hex(v), d * 2), end="")
             i += d
 
-            stack.push(v)
+            if ARGS.trace:
+                stack.push(v)
 
         if ARGS.trace:
             input = []
+            output = []
+
             for _ in range(stack_input_count):
                 input.append(stack.pop())
 
-            output = []
-            if mnemonic.startswith("DUP"):
-                d = int(mnemonic[3:])
-                output = [input[d - 1]] + input[::]
-                stack.extend(output[::-1])
-            if mnemonic == "MSTORE":
-                memory.mstore(input[0], long_to_bytes(input[1]))
-            if mnemonic == "MSTORE8":
-                memory.mstore8(input[0], input[1])
-            if mnemonic == "CALLVALUE":
-                stack.push("callvalue")
-            if mnemonic == "CALLDATASIZE":
-                stack.push("calldatasize")
-            if mnemonic == "LT" or mnemonic == "GT":
-                a, b = input[0], input[1]
-                if type(a) is int and type(b) is int:
-                    if mnemonic == "LT":
-                        if a < b:
-                            stack.push(1)
-                        else:
-                            stack.push(0)
-                    if mnemonic == "GT":
-                        if a > b:
-                            stack.push(1)
-                        else:
-                            stack.push(0)
-                else:
-                    a = to_symbol(a)
-                    b = to_symbol(b)
-                    if " " in a:
-                        a = "(" + a + ")"
-                    if " " in b:
-                        b = "(" + b + ")"
-                    if mnemonic == "LT":
-                        stack.push(f"{a} < {b}")
-                    if mnemonic == "GT":
-                        stack.push(f"{a} > {b}")
-            if mnemonic == "ISZERO":
-                x = input[0]
-                if type(x) == int:
-                    if x > 0:
-                        stack.push(0)
+            match mnemonic:
+                case "DUP":
+                    d = int(mnemonic[3:])
+                    output = [input[d - 1]] + input[::]
+                    stack.extend(output[::-1])
+                case "MSTORE":
+                    memory.mstore(input[0], long_to_bytes(input[1]))
+                case "MSTORE8":
+                    memory.mstore8(input[0], input[1])
+                case "CALLVALUE":
+                    stack.push("callvalue")
+                case "CALLDATASIZE":
+                    stack.push("calldatasize")
+                case "LT" | "GT":
+                    a, b = input[0], input[1]
+                    if type(a) is int and type(b) is int:
+                        if mnemonic == "LT":
+                            if a < b:
+                                stack.push(1)
+                            else:
+                                stack.push(0)
+                        if mnemonic == "GT":
+                            if a > b:
+                                stack.push(1)
+                            else:
+                                stack.push(0)
                     else:
-                        stack.push(1)
-                else:
-                    stack.push(f"ISZERO({x})")
-            if mnemonic == "RETURN":
-                print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
-            if mnemonic == "CALLDATALOAD":
-                calldata_i = input[0]
-                if type(calldata_i) is int:
-                    r = to_symbol(calldata_i + 0x20)
-                else:
-                    r = f"{calldata_i}+0x20"
-                stack.push(f"calldata[{calldata_i}:{r}]")
-            if mnemonic == "SHR":
-                shift, value = input[0], input[1]
-                if type(shift) is int and type(value) is int:
-                    stack.push(value >> shift)
-                else:
-                    stack.push(f"{to_symbol(value)} >> {to_symbol(shift)}")
+                        a = to_symbol(a)
+                        b = to_symbol(b)
+                        if " " in a:
+                            a = "(" + a + ")"
+                        if " " in b:
+                            b = "(" + b + ")"
+                        if mnemonic == "LT":
+                            stack.push(f"{a} < {b}")
+                        if mnemonic == "GT":
+                            stack.push(f"{a} > {b}")
+                case "ISZERO":
+                    x = input[0]
+                    if type(x) == int:
+                        if x > 0:
+                            stack.push(0)
+                        else:
+                            stack.push(1)
+                    else:
+                        stack.push(f"ISZERO({x})")
+                case "RETURN":
+                    print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+                case "CALLDATALOAD":
+                    calldata_i = input[0]
+                    if type(calldata_i) is int:
+                        r = to_symbol(calldata_i + 0x20)
+                    else:
+                        r = f"{calldata_i}+0x20"
+                    stack.push(f"calldata[{calldata_i}:{r}]")
+                case "SHR":
+                    shift, value = input[0], input[1]
+                    if type(shift) is int and type(value) is int:
+                        stack.push(value >> shift)
+                    else:
+                        stack.push(f"{to_symbol(value)} >> {to_symbol(shift)}")
+                case "RETURN":
+                    break
 
-        if ARGS.trace and mnemonic == "RETURN":
-            break
-
-        if ARGS.trace:
             print(f"\n\tstack\t{stack}", end="")
             print(f"\n\tmemory\t{memory.colorize()}", end="")
 
