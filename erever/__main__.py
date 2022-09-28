@@ -12,7 +12,12 @@ def main():
     parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
+
     parser.add_argument("--trace", action="store_true", default=False)
+    parser.add_argument("--symbolic", action="store_true", default=False)
+    parser.add_argument("--entrypoint", type=str, default="0")
+    parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
+    parser.add_argument("-n", type=str, default=str(UINT256_MAX))
     # parser.add_argument("--rpc-url", type=str)
 
     parser.add_argument("--address", type=int, default=Context.DEFAULT_ADDRESS)
@@ -44,7 +49,20 @@ def main():
             bytecode = open(args.filename).read()
             context = Context.from_arg_params_with_bytecode(args, bytecode)
 
-    disassemble(context, args.trace)
+    entrypoint = parse_arg_param_to_int(args.entrypoint)
+    n = parse_arg_param_to_int(args.n)
+
+    if args.symbolic:
+        disassemble_symbolic(context, args.trace, entrypoint, args.show_symbolic_stack, n)
+    else:
+        disassemble(context, args.trace, entrypoint, n)
+
+
+def parse_arg_param_to_int(param):
+    if param.startswith("0x"):
+        return int(param, 16)
+    else:
+        return int(param)
 
 
 def to_symbol(x):

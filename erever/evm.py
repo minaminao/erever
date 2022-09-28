@@ -76,7 +76,6 @@ class Context:
 
 
 class Stack:
-
     def __init__(self):
         self.stack = []
 
@@ -95,11 +94,6 @@ class Stack:
         self.updated_indices_for_colorize = [len(self.stack) - 1 - i for i in range(len(x))]
 
     def pop(self):
-        global var_n
-
-        if len(self.stack) == 0:
-            var_n += 1
-            return "var_" + str(var_n)
         return self.stack.pop()
 
     def clear(self):
@@ -197,7 +191,7 @@ class Storage:
         self.storage[key] = value
 
 
-def disassemble(context, trace=False):
+def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
     stack = Stack()
     memory = Memory()
     storage = Storage()
@@ -206,8 +200,10 @@ def disassemble(context, trace=False):
 
     warning_messages = ""
 
-    i = 0
+    i = entrypoint
     while i < len(context.bytecode):
+        if i >= entrypoint + n:
+            break
         next_i = i + 1
         value = context.bytecode[i]
         if value in OPCODES:
@@ -453,5 +449,303 @@ def disassemble(context, trace=False):
 
     print()
     if warning_messages != "":
+        print(colors.YELLOW + "WARNING:")
+        print(warning_messages + colors.ENDC)
+
+
+
+class Node:
+    def __init__(self, type_, value):
+        self.type = type_
+        self.value = value
+    
+    def __repr__(self):
+        if self.type == "uint256":
+            return f"{pad_even(hex(self.value))}"
+        elif self.type == "var":
+            return self.value 
+        else:
+            match self.type:
+                # case "STOP":
+                #     break
+                case "ADD":
+                    return f"({self.value[0]} + {self.value[1]})"
+                case "MUL":
+                    return f"({self.value[0]} * {self.value[1]})"
+                case "SUB":
+                    return f"({self.value[0]} - {self.value[1]})"
+                case "DIV":
+                    return f"({self.value[0]} / {self.value[1]})"
+                case "SDIV":
+                    return f"(int256({self.value[0]}) / int256({self.value[1]}))"
+                case "MOD":
+                    return f"({self.value[0]} % {self.value[1]})"
+                case "SMOD":
+                    return f"(int256({self.value[0]}) % int256({self.value[1]}))"
+                case "ADDMOD":
+                    return f"(({self.value[0]} + {self.value[1]}) % {self.value[2]})"
+                case "MULMOD":
+                    return f"(({self.value[0]} * {self.value[1]}) % {self.value[2]})"
+                case "EXP":
+                    return f"({self.value[0]} ** {self.value[1]})"
+                # case "SIGNEXTEND":
+                #     assert False
+                case "LT":
+                    return f"({self.value[0]} < {self.value[1]})"
+                case "GT":
+                    return f"({self.value[0]} > {self.value[1]})"
+                case "SLT":
+                    return f"(int256({self.value[0]}) < int256({self.value[1]}))"
+                case "SGT":
+                    return f"(int256({self.value[0]}) > int256({self.value[1]}))"
+                case "EQ":
+                    return f"({self.value[0]} == {self.value[1]})"
+                # case "ISZERO":
+                #     stack.push(int(input[0] == 0))
+                case "AND":
+                    return f"({self.value[0]} & {self.value[1]})"
+                case "OR":
+                    return f"({self.value[0]} | {self.value[1]})"
+                case "XOR":
+                    return f"({self.value[0]} ^ {self.value[1]})"
+                # case "NOT":
+                #     stack.push((UINT256_MAX - 1) ^ input[0])
+                # case "BYTE":
+                #     if input[0] < 32:
+                #         stack.push(input[1].to_bytes(32, "big")[input[0]])
+                #     else:
+                #         stack.push(0)
+                case "SHL":
+                    return f"{self.value[0]} << {self.value[1]})"
+                # case "SHR":
+                #     stack.push(uint256(input[1] >> input[0]))
+                # case "SAR":
+                #     assert False
+                # case "KECCAK256":
+                #     print(f"\n\tinput\t{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
+                #     k = keccak.new(digest_bits=256)
+                #     k.update(bytes(memory.memory[input[0]:input[0]+input[1]]))
+                #     stack.push(bytes_to_long(k.digest()))
+                # case "ADDRESS":
+                #     stack.push(context.address)
+                # case "BALANCE":
+                #     stack.push(context.balance)
+                # case "ORIGIN":
+                #     stack.push(context.origin)
+                # case "CALLER":
+                #     stack.push(context.caller)
+                # case "CALLVALUE":
+                #     stack.push(context.callvalue)
+                # case "CALLDATALOAD":
+                #     if len(context.calldata) < input[0]:
+                #         stack.push(0)
+                #     else:
+                #         stack.push(bytes_to_long((context.calldata[input[0]:] + b"\x00" * 32)[:32]))
+                # case "CALLDATASIZE":
+                #     stack.push(len(context.calldata))
+                # case "CALLDATACOPY":
+                #     # TODO: bound
+                #     memory.store(input[0], context.calldata[input[1]:input[1]+input[2]])
+                # case "CODESIZE":
+                #     stack.push(len(context.bytecode))
+                # case "CODECOPY":
+                #     # TODO: bound
+                #     memory.store(input[0], context.bytecode[input[1]:input[1]+input[2]])
+                # case "GASPRICE":
+                #     stack.push(context.callvalue)
+                # case "EXTCODESIZE":
+                #     assert False
+                # case "EXTCODECOPY":
+                #     assert False
+                # case "RETURNDATASIZE":
+                #     assert False
+                # case "RETURNDATACOPY":
+                #     assert False
+                # case "EXTCODEHASH":
+                #     assert False
+                # case "BLOCKHASH":
+                #     assert False
+                # case "COINBASE":
+                #     stack.push(context.coinbase)
+                # case "TIMESTAMP":
+                #     stack.push(context.timestamp)
+                # case "NUMBER":
+                #     stack.push(context.number)
+                # case "DIFFICULTY":
+                #     stack.push(context.difficulty)
+                # case "GASLIMIT":
+                #     stack.push(context.gaslimit)
+                # case "CHAINID":
+                #     stack.push(context.chainid)
+                # case "SELFBALANCE":
+                #     stack.push(context.selfbalance)
+                # case "BASEFEE":
+                #     stack.push(context.basefee)
+                case "POP":
+                    return colors.GRAY + f"{self.type}({str(self.value)[1:-1]})" + colors.ENDC
+                # case "MLOAD":
+                #     stack.push(memory.load(input[0]))
+                # case "MSTORE":
+                #     pass
+                # case "MSTORE8":
+                #     pass
+                # case "SLOAD":
+                #     stack.push(Node())
+                # case "SSTORE":
+                #     storage.store(input[0], input[1])
+                # case "JUMP":
+                #     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                #     next_i = input[0]
+                # case "JUMPI":
+                #     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                #     if input[1] != 0:
+                #         next_i = input[0]
+                # case "PC":
+                #     stack.push(i)
+                # case "MSIZE":
+                #     stack.push(len(memory.memory))
+                # case "GAS":
+                #     stack.push(context.gas)
+                case "JUMPDEST":
+                    return colors.CYAN + "JUMPDEST" + colors.ENDC
+                # case "PUSH":
+                #     stack.push(push_v)
+                # case "DUP":
+                #     stack.extend(input[::-1] + [input[mnemonic_num - 1]])
+                # case "SWAP":
+                #     top = input[0]
+                #     input[0] = input[mnemonic_num]
+                #     input[mnemonic_num] = top
+                #     stack.extend(input[::-1])
+                # case "LOG":
+                #     assert False
+                # case "CREATE":
+                #     assert False
+                # case "CALL":
+                #     assert False
+                # case "CALLCODE":
+                #     assert False
+                # case "RETURN":
+                #     print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+                #     break
+                # case "DELEGATECALL":
+                #     assert False
+                # case "CREATE2":
+                #     assert False
+                # case "STATICCALL":
+                #     assert False
+                # case "REVERT":
+                #     break
+                # case "INVALID":
+                #     break
+                # case "SELFDESTRUCT":
+                #     break
+                case _:
+                    return f"{self.type}({str(self.value)[1:-1]})"
+
+
+class SymbolicStack:
+    def __init__(self):
+        self.var_n = 0
+        self.stack: list[Node] = []
+
+    def push(self, x: Node):
+        self.stack.append(x)
+
+    def extend(self, x: list[Node]):
+        self.stack.extend(x)
+
+    def pop(self) -> Node:
+        if len(self.stack) == 0:
+            ret = Node("var", f"var_{self.var_n}")
+            self.var_n += 1
+            return ret
+        else:
+            return self.stack.pop()
+
+    def clear(self):
+        self.stack = []
+
+    def __repr__(self):
+        return repr(self.stack[::-1])
+
+
+def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, n=UINT256_MAX):
+    stack = SymbolicStack()
+
+    LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
+
+    warning_messages = ""
+
+    i = entrypoint
+    line_i = 0
+    while i < len(context.bytecode):
+        next_i = i + 1
+        value = context.bytecode[i]
+        if value in OPCODES:
+            mnemonic, stack_input_count, stack_output_count, description, stack_input_names = OPCODES[value]
+        else:
+            mnemonic = colors.YELLOW + f"0x{value:02x} (?)" + colors.ENDC
+            stack_input_count = 0
+            stack_output_count = 0
+            description = None
+
+            warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
+
+        # if mnemonic == "JUMP" or mnemonic == "JUMPI":
+        #     print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.CYAN + colors.BOLD + mnemonic + colors.ENDC}", end="")
+        # else:
+        #     print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.BOLD + mnemonic + colors.ENDC}", end="")
+
+        if mnemonic.startswith("PUSH"):
+            mnemonic_num = int(mnemonic[4:])
+            push_v = bytes_to_long(context.bytecode[i + 1:i + 1 + mnemonic_num])
+            next_i = i + 1 + mnemonic_num
+            mnemonic = mnemonic[:4]
+        elif mnemonic.startswith("DUP"):
+            mnemonic_num = int(mnemonic[3:])
+            mnemonic = mnemonic[:3]
+        elif mnemonic.startswith("SWAP"):
+            mnemonic_num = int(mnemonic[4:])
+            mnemonic = mnemonic[:4]
+        elif mnemonic.startswith("LOG"):
+            mnemonic_num = int(mnemonic[3:])
+            mnemonic = mnemonic[:3]
+
+
+        input = []
+        for _ in range(stack_input_count):
+            input.append(stack.pop())
+
+        match mnemonic:
+            case "PUSH":
+                stack.push(Node("uint256", push_v))
+            case "DUP":
+                stack.extend(input[::-1] + [input[mnemonic_num - 1]])
+            case "SWAP":
+                top = input[0]
+                input[0] = input[mnemonic_num]
+                input[mnemonic_num] = top
+                stack.extend(input[::-1])
+            case _:
+                if trace and mnemonic == "JUMP":
+                    if input[0].type == "uint256":
+                        next_i = input[0].value
+
+                assert stack_output_count <= 1
+                if stack_output_count == 1:
+                    stack.push(Node(mnemonic, input))
+                else:
+                    print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
+                    if show_symbolic_stack:
+                        print(f"\tstack\t{stack}")
+                    line_i += 1
+                    if line_i >= n:
+                        break
+        
+        i = next_i
+
+    if warning_messages != "":
+        print()
         print(colors.YELLOW + "WARNING:")
         print(warning_messages + colors.ENDC)
