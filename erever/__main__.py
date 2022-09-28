@@ -20,24 +20,42 @@ def main():
     parser.add_argument("-n", type=str, default=str(UINT256_MAX))
     # parser.add_argument("--rpc-url", type=str)
 
-    parser.add_argument("--address", type=int, default=Context.DEFAULT_ADDRESS)
-    parser.add_argument("--balance", type=int, default=Context.DEFAULT_BALANCE)
-    parser.add_argument("--origin", type=int, default=Context.DEFAULT_ORIGIN)
-    parser.add_argument("--caller", type=int, default=Context.DEFAULT_CALLER)
-    parser.add_argument("--callvalue", type=int, default=Context.DEFAULT_CALLVALUE)
+    parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
+    parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
+    parser.add_argument("--origin", type=str, default=str(Context.DEFAULT_ORIGIN))
+    parser.add_argument("--caller", type=str, default=str(Context.DEFAULT_CALLER))
+    parser.add_argument("--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE))
     parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA_HEX)
-    parser.add_argument("--gasprice", type=int, default=Context.DEFAULT_GASPRICE)
-    parser.add_argument("--coinbase", type=int, default=Context.DEFAULT_COINBASE)
-    parser.add_argument("--timestamp", type=int, default=Context.DEFAULT_TIMESTAMP)
-    parser.add_argument("--number", type=int, default=Context.DEFAULT_NUMBER)
-    parser.add_argument("--difficulty", type=int, default=Context.DEFAULT_DIFFICULTY)
-    parser.add_argument("--gaslimit", type=int, default=Context.DEFAULT_GASLIMIT)
-    parser.add_argument("--chainid", type=int, default=Context.DEFAULT_CHAINID)
-    parser.add_argument("--selfbalance", type=int, default=Context.DEFAULT_SELFBALANCE)
-    parser.add_argument("--basefee", type=int, default=Context.DEFAULT_BASEFEE)
-    parser.add_argument("--gas", type=int, default=Context.DEFAULT_GAS)
+    parser.add_argument("--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE))
+    parser.add_argument("--coinbase", type=str, default=str(Context.DEFAULT_COINBASE))
+    parser.add_argument("--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP))
+    parser.add_argument("--number", type=str, default=str(Context.DEFAULT_NUMBER))
+    parser.add_argument("--difficulty", type=str, default=str(Context.DEFAULT_DIFFICULTY))
+    parser.add_argument("--gaslimit", type=str, default=str(Context.DEFAULT_GASLIMIT))
+    parser.add_argument("--chainid", type=str, default=str(Context.DEFAULT_CHAINID))
+    parser.add_argument("--selfbalance", type=str, default=str(Context.DEFAULT_SELFBALANCE))
+    parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
+    parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
 
     args = parser.parse_args()
+
+    args.entrypoint = parse_arg_param_to_int(args.entrypoint)
+    args.n = parse_arg_param_to_int(args.n)
+    args.address = parse_arg_param_to_int(args.address)
+    args.balance = parse_arg_param_to_int(args.balance)
+    args.origin = parse_arg_param_to_int(args.origin)
+    args.caller = parse_arg_param_to_int(args.caller)
+    args.callvalue = parse_arg_param_to_int(args.callvalue)
+    args.gasprice = parse_arg_param_to_int(args.gasprice)
+    args.coinbase = parse_arg_param_to_int(args.coinbase)
+    args.timestamp = parse_arg_param_to_int(args.timestamp)
+    args.number = parse_arg_param_to_int(args.number)
+    args.difficulty = parse_arg_param_to_int(args.difficulty)
+    args.gaslimit = parse_arg_param_to_int(args.gaslimit)
+    args.chainid = parse_arg_param_to_int(args.chainid)
+    args.selfbalance = parse_arg_param_to_int(args.selfbalance)
+    args.basefee = parse_arg_param_to_int(args.basefee)
+    args.gas = parse_arg_param_to_int(args.gas)
 
     if args.bytecode:
         context = Context.from_arg_params_with_bytecode(args, args.bytecode)
@@ -49,13 +67,10 @@ def main():
             bytecode = open(args.filename).read()
             context = Context.from_arg_params_with_bytecode(args, bytecode)
 
-    entrypoint = parse_arg_param_to_int(args.entrypoint)
-    n = parse_arg_param_to_int(args.n)
-
     if args.symbolic:
-        disassemble_symbolic(context, args.trace, entrypoint, args.show_symbolic_stack, n)
+        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.n)
     else:
-        disassemble(context, args.trace, entrypoint, n)
+        disassemble(context, args.trace, args.entrypoint, args.n)
 
 
 def parse_arg_param_to_int(param):
