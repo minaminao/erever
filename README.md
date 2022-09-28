@@ -8,7 +8,8 @@ pip install git+https://github.com/minaminao/erever.git
 Usage:
 ```
 $ erever -h
-usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--symbolic-trace]
+usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--trace] [--address ADDRESS] [--balance BALANCE] [--origin ORIGIN] [--caller CALLER] [--callvalue CALLVALUE] [--calldata CALLDATA] [--gasprice GASPRICE]
+              [--coinbase COINBASE] [--timestamp TIMESTAMP] [--number NUMBER] [--difficulty DIFFICULTY] [--gaslimit GASLIMIT] [--chainid CHAINID] [--selfbalance SELFBALANCE] [--basefee BASEFEE] [--gas GAS]
 
 EVM Reversing Tools
 
@@ -16,10 +17,26 @@ options:
   -h, --help            show this help message and exit
   -b BYTECODE, --bytecode BYTECODE
   -f FILENAME, --filename FILENAME
-  --symbolic-trace
+  --trace
+  --address ADDRESS
+  --balance BALANCE
+  --origin ORIGIN
+  --caller CALLER
+  --callvalue CALLVALUE
+  --calldata CALLDATA
+  --gasprice GASPRICE
+  --coinbase COINBASE
+  --timestamp TIMESTAMP
+  --number NUMBER
+  --difficulty DIFFICULTY
+  --gaslimit GASLIMIT
+  --chainid CHAINID
+  --selfbalance SELFBALANCE
+  --basefee BASEFEE
+  --gas GAS
 ```
 
-## Disassemble with (symbolic) tracing of stack and memory
+## Disassemble and trace stack and memory
 Source: [A quine for the SOURCECODE challenge in Paradigm CTF 2022](https://github.com/minaminao/ctf-blockchain/blob/main/src/ParadigmCTF2022/SourceCode/Quine35Bytes.huff).
 
 ```c

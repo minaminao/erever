@@ -1,10 +1,19 @@
+from Crypto.Util.number import bytes_to_long, long_to_bytes
 
-def bytes_to_long(x):
-    return int.from_bytes(x, "big")
+UINT256_MAX = (1 << 256) - 1
+SIGN_MASK = 1 << 255
 
 
-def long_to_bytes(x):
-    return bytes.fromhex(hex(x)[2:])
+def uint256(x: int):
+    return x & UINT256_MAX
+
+
+def int256(x: int):
+    x &= UINT256_MAX
+    if x & SIGN_MASK:
+        return -((1 << 256) - x)
+    else:
+        return x
 
 
 def pad(hex_number: str, n: int):
