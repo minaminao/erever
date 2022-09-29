@@ -277,11 +277,15 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                     else:
                         stack.push(input[0] // input[1])
                 case "SDIV":
+                    if input[1] == 0:
+                        stack.push(0)
+                    else:
+                        stack.push(int256(input[0]) // int256(input[1]))
                     assert False
                 case "MOD":
                     stack.push(input[0] % input[1])
                 case "SMOD":
-                    assert False
+                    stack.push(int256(input[0]) % int256(input[1]))
                 case "ADDMOD":
                     stack.push((input[0] + input[1]) % input[2])
                 case "MULMOD":
@@ -289,7 +293,12 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                 case "EXP":
                     stack.push(uint256(input[0] ** input[1]))
                 case "SIGNEXTEND":
-                    assert False
+                    bits = (input[0] + 1) * 8
+                    mask = 1 << (bits - 1)
+                    if input[1] & mask:
+                        stack.push((1 << 256) - ((1 << bits) - input[1]))
+                    else:
+                        stack.push(input[1])
                 case "LT":
                     stack.push(int(input[0] < input[1]))
                 case "GT":
@@ -318,9 +327,12 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                 case "SHL":
                     stack.push(uint256(input[1] << input[0]))
                 case "SHR":
-                    stack.push(uint256(input[1] >> input[0]))
+                    stack.push(input[1] >> input[0])
                 case "SAR":
-                    assert False
+                    if input[1] & SIGN_MASK:
+                        stack.push(((1 << 256) + (int256(input[1]) >> input[0])))
+                    else:
+                        stack.push(input[1] >> input[0])
                 case "KECCAK256":
                     print(f"\n\tinput\t{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
                     k = keccak.new(digest_bits=256)
@@ -467,7 +479,6 @@ class Node:
         else:
             match self.type:
                 # case "STOP":
-                #     break
                 case "ADD":
                     return f"({self.value[0]} + {self.value[1]})"
                 case "MUL":
@@ -489,7 +500,6 @@ class Node:
                 case "EXP":
                     return f"({self.value[0]} ** {self.value[1]})"
                 # case "SIGNEXTEND":
-                #     assert False
                 case "LT":
                     return f"({self.value[0]} < {self.value[1]})"
                 case "GT":
@@ -501,7 +511,6 @@ class Node:
                 case "EQ":
                     return f"({self.value[0]} == {self.value[1]})"
                 # case "ISZERO":
-                #     stack.push(int(input[0] == 0))
                 case "AND":
                     return f"({self.value[0]} & {self.value[1]})"
                 case "OR":
@@ -509,137 +518,65 @@ class Node:
                 case "XOR":
                     return f"({self.value[0]} ^ {self.value[1]})"
                 # case "NOT":
-                #     stack.push((UINT256_MAX - 1) ^ input[0])
                 # case "BYTE":
-                #     if input[0] < 32:
-                #         stack.push(input[1].to_bytes(32, "big")[input[0]])
-                #     else:
-                #         stack.push(0)
                 case "SHL":
                     return f"{self.value[0]} << {self.value[1]})"
                 # case "SHR":
-                #     stack.push(uint256(input[1] >> input[0]))
                 # case "SAR":
-                #     assert False
                 # case "KECCAK256":
-                #     print(f"\n\tinput\t{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
-                #     k = keccak.new(digest_bits=256)
-                #     k.update(bytes(memory.memory[input[0]:input[0]+input[1]]))
-                #     stack.push(bytes_to_long(k.digest()))
                 # case "ADDRESS":
-                #     stack.push(context.address)
                 # case "BALANCE":
-                #     stack.push(context.balance)
                 # case "ORIGIN":
-                #     stack.push(context.origin)
                 # case "CALLER":
-                #     stack.push(context.caller)
                 # case "CALLVALUE":
-                #     stack.push(context.callvalue)
                 # case "CALLDATALOAD":
-                #     if len(context.calldata) < input[0]:
-                #         stack.push(0)
-                #     else:
-                #         stack.push(bytes_to_long((context.calldata[input[0]:] + b"\x00" * 32)[:32]))
                 # case "CALLDATASIZE":
-                #     stack.push(len(context.calldata))
                 # case "CALLDATACOPY":
-                #     # TODO: bound
-                #     memory.store(input[0], context.calldata[input[1]:input[1]+input[2]])
                 # case "CODESIZE":
-                #     stack.push(len(context.bytecode))
                 # case "CODECOPY":
-                #     # TODO: bound
-                #     memory.store(input[0], context.bytecode[input[1]:input[1]+input[2]])
                 # case "GASPRICE":
-                #     stack.push(context.callvalue)
                 # case "EXTCODESIZE":
-                #     assert False
                 # case "EXTCODECOPY":
-                #     assert False
                 # case "RETURNDATASIZE":
-                #     assert False
                 # case "RETURNDATACOPY":
-                #     assert False
                 # case "EXTCODEHASH":
-                #     assert False
                 # case "BLOCKHASH":
-                #     assert False
                 # case "COINBASE":
-                #     stack.push(context.coinbase)
                 # case "TIMESTAMP":
-                #     stack.push(context.timestamp)
                 # case "NUMBER":
-                #     stack.push(context.number)
                 # case "DIFFICULTY":
-                #     stack.push(context.difficulty)
                 # case "GASLIMIT":
-                #     stack.push(context.gaslimit)
                 # case "CHAINID":
-                #     stack.push(context.chainid)
                 # case "SELFBALANCE":
-                #     stack.push(context.selfbalance)
                 # case "BASEFEE":
-                #     stack.push(context.basefee)
                 case "POP":
                     return colors.GRAY + f"{self.type}({str(self.value)[1:-1]})" + colors.ENDC
                 # case "MLOAD":
-                #     stack.push(memory.load(input[0]))
                 # case "MSTORE":
-                #     pass
                 # case "MSTORE8":
-                #     pass
                 # case "SLOAD":
-                #     stack.push(Node())
                 # case "SSTORE":
-                #     storage.store(input[0], input[1])
                 # case "JUMP":
-                #     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
-                #     next_i = input[0]
                 # case "JUMPI":
-                #     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
-                #     if input[1] != 0:
-                #         next_i = input[0]
                 # case "PC":
-                #     stack.push(i)
                 # case "MSIZE":
-                #     stack.push(len(memory.memory))
                 # case "GAS":
-                #     stack.push(context.gas)
                 case "JUMPDEST":
                     return colors.CYAN + "JUMPDEST" + colors.ENDC
                 # case "PUSH":
-                #     stack.push(push_v)
                 # case "DUP":
-                #     stack.extend(input[::-1] + [input[mnemonic_num - 1]])
                 # case "SWAP":
-                #     top = input[0]
-                #     input[0] = input[mnemonic_num]
-                #     input[mnemonic_num] = top
-                #     stack.extend(input[::-1])
                 # case "LOG":
-                #     assert False
                 # case "CREATE":
-                #     assert False
                 # case "CALL":
-                #     assert False
                 # case "CALLCODE":
-                #     assert False
                 # case "RETURN":
-                #     print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
-                #     break
                 # case "DELEGATECALL":
-                #     assert False
                 # case "CREATE2":
-                #     assert False
                 # case "STATICCALL":
-                #     assert False
                 # case "REVERT":
-                #     break
                 # case "INVALID":
-                #     break
                 # case "SELFDESTRUCT":
-                #     break
                 case _:
                     return f"{self.type}({str(self.value)[1:-1]})"
 

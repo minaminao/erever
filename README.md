@@ -1,11 +1,13 @@
 # erever - EVM Reversing Tools (WIP)
 
-Install:
+## Install
 ```
 pip install git+https://github.com/minaminao/erever.git
 ```
 
-Usage:
+Only supports Python >= 3.10.
+
+## Usage
 ```
 $ erever -h
 usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--trace] [--symbolic] [--entrypoint ENTRYPOINT] [--show-symbolic-stack] [-n N] [--address ADDRESS] [--balance BALANCE] [--origin ORIGIN]
