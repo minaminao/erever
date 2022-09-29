@@ -2,10 +2,7 @@ import argparse
 
 import toml
 
-from .colors import colors
 from .evm import *
-from .opcodes import OPCODES
-from .utils import *
 
 
 def main():
@@ -78,13 +75,6 @@ def parse_arg_param_to_int(param):
         return int(param, 16)
     else:
         return int(param)
-
-
-def to_symbol(x):
-    if type(x) is int:
-        return pad_even(hex(x))
-    else:
-        return x
 
 
 if __name__ == '__main__':
