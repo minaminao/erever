@@ -10,9 +10,9 @@ Only supports Python >= 3.10.
 ## Usage
 ```
 $ erever -h
-usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--trace] [--symbolic] [--entrypoint ENTRYPOINT] [--show-symbolic-stack] [-n N] [--address ADDRESS] [--balance BALANCE] [--origin ORIGIN]
-              [--caller CALLER] [--callvalue CALLVALUE] [--calldata CALLDATA] [--gasprice GASPRICE] [--coinbase COINBASE] [--timestamp TIMESTAMP] [--number NUMBER] [--difficulty DIFFICULTY]
-              [--gaslimit GASLIMIT] [--chainid CHAINID] [--selfbalance SELFBALANCE] [--basefee BASEFEE] [--gas GAS]
+usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--tx TX] [--trace] [--symbolic] [--entrypoint ENTRYPOINT] [--show-symbolic-stack] [-n N] [--rpc-url RPC_URL] [--address ADDRESS] [--balance BALANCE]
+              [--origin ORIGIN] [--caller CALLER] [--callvalue CALLVALUE] [--calldata CALLDATA] [--gasprice GASPRICE] [--coinbase COINBASE] [--timestamp TIMESTAMP] [--number NUMBER]
+              [--difficulty DIFFICULTY] [--gaslimit GASLIMIT] [--chainid CHAINID] [--selfbalance SELFBALANCE] [--basefee BASEFEE] [--gas GAS]
 
 EVM Reversing Tools
 
@@ -20,11 +20,13 @@ options:
   -h, --help            show this help message and exit
   -b BYTECODE, --bytecode BYTECODE
   -f FILENAME, --filename FILENAME
+  --tx TX
   --trace
   --symbolic
   --entrypoint ENTRYPOINT
   --show-symbolic-stack
   -n N
+  --rpc-url RPC_URL
   --address ADDRESS
   --balance BALANCE
   --origin ORIGIN

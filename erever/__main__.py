@@ -9,13 +9,14 @@ def main():
     parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
+    parser.add_argument("--tx")
 
     parser.add_argument("--trace", action="store_true", default=False)
     parser.add_argument("--symbolic", action="store_true", default=False)
     parser.add_argument("--entrypoint", type=str, default="0")
     parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser.add_argument("-n", type=str, default=str(UINT256_MAX))
-    # parser.add_argument("--rpc-url", type=str)
+    parser.add_argument("--rpc-url", type=str)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -63,6 +64,8 @@ def main():
         else:
             bytecode = open(args.filename).read()
             context = Context.from_arg_params_with_bytecode(args, bytecode)
+    elif args.tx:
+        context = Context.from_tx_hash(args, args.tx)
 
     if args.symbolic:
         disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.n)

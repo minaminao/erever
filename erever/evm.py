@@ -1,4 +1,5 @@
 from Crypto.Hash import keccak
+from web3 import Web3, HTTPProvider
 
 from .colors import *
 from .opcodes import *
@@ -67,6 +68,42 @@ class Context:
         self.basefee = d.get("basefee", Context.DEFAULT_BASEFEE)
         self.gas = d.get("gas", Context.DEFAULT_GAS)
         return self
+    
+    def from_tx_hash(args, tx_hash):
+        self = Context()
+        assert args.rpc_url, "RPC URL must be specified"
+
+        w3 = Web3(HTTPProvider(args.rpc_url))
+        tx = w3.eth.get_transaction(tx_hash)
+
+        code = w3.eth.get_code(tx.to)
+        if len(code) > 0:
+            self.bytecode = bytes(code)
+            self.calldata = Context.__hex_to_bytes(tx.input)
+        else:
+            self.bytecode = Context.__hex_to_bytes(tx.input)
+            self.calldata = b""
+
+        self.address = args.address
+        self.balance = args.balance
+        self.origin = args.origin
+        self.caller = args.caller
+        self.callvalue = tx.value
+        self.gasprice = tx.gasPrice
+        self.coinbase = args.coinbase
+        self.timestamp = args.timestamp
+        self.number = tx.blockNumber
+        self.difficulty = args.difficulty
+        self.gaslimit = tx.gas
+        self.chainid = int(tx.chainId, 16)
+        self.selfbalance = args.selfbalance
+        self.basefee = args.basefee
+        self.gas = tx.gas
+        # self.blockchash
+
+        return self
+
+
 
     def __hex_to_bytes(s: str):
         s = s.replace(" ", "").replace("\n", "")
@@ -214,9 +251,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
     warning_messages = ""
 
     i = entrypoint
+    line_i = 0
     while i < len(context.bytecode):
-        if i >= entrypoint + n:
-            break
         next_i = i + 1
         value = context.bytecode[i]
         if value in OPCODES:
@@ -294,7 +330,6 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                         stack.push(0)
                     else:
                         stack.push(int256(input[0]) // int256(input[1]))
-                    assert False
                 case "MOD":
                     stack.push(input[0] % input[1])
                 case "SMOD":
@@ -472,10 +507,13 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                 if i == 0:
                     print(f"\n\tmemory\t", end="")
                 else:
-                    print("\t\t", end="")
-                print(f"{line}")
+                    print("\n\t\t", end="")
+                print(f"{line}", end="")
 
         print()
+        line_i += 1
+        if line_i >= n:
+            break
         i = next_i
 
     print()
