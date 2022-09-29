@@ -168,10 +168,23 @@ class Memory:
     def __str__(self):
         return bytes(self.memory).hex()
 
-    def colorize(self):
-        ret = str(self)
+    def colorize(self, line_length=0x20) -> list[str]:
+        s = str(self)
+        ret = []
+
+        for i in range(0, len(s), 2 * line_length):
+            ret.append(s[i:i + 2 * line_length])
+
         if self.mstore_l_for_colorize is not None:
-            ret = ret[:2 * self.mstore_l_for_colorize] + colors.GREEN + ret[2 * self.mstore_l_for_colorize:2 * self.mstore_r_for_colorize] + colors.ENDC + ret[2 * self.mstore_r_for_colorize:]
+            i_l = self.mstore_l_for_colorize // line_length
+            j_l = 2 * (self.mstore_l_for_colorize % line_length)
+            i_r = self.mstore_r_for_colorize // line_length
+            j_r = 2 * (self.mstore_r_for_colorize % line_length)
+            if j_r == 0:
+                i_r -= 1
+                j_r = 2 * line_length
+            ret[i_r] = ret[i_r][:j_r] + colors.ENDC + ret[i_r][j_r:]
+            ret[i_l] = ret[i_l][:j_l] + colors.GREEN + ret[i_l][j_l:]
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
         return ret
@@ -454,7 +467,13 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                     break
 
             print(f"\n\tstack\t{stack}", end="")
-            print(f"\n\tmemory\t{memory.colorize()}", end="")
+            lines = memory.colorize()
+            for i, line in enumerate(lines):
+                if i == 0:
+                    print(f"\n\tmemory\t", end="")
+                else:
+                    print("\t\t", end="")
+                print(f"{line}")
 
         print()
         i = next_i
@@ -465,17 +484,16 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
         print(warning_messages + colors.ENDC)
 
 
-
 class Node:
     def __init__(self, type_, value):
         self.type = type_
         self.value = value
-    
+
     def __repr__(self):
         if self.type == "uint256":
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
-            return self.value 
+            return self.value
         else:
             match self.type:
                 # case "STOP":
@@ -646,7 +664,6 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
             mnemonic_num = int(mnemonic[3:])
             mnemonic = mnemonic[:3]
 
-
         input = []
         for _ in range(stack_input_count):
             input.append(stack.pop())
@@ -676,7 +693,7 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                     line_i += 1
                     if line_i >= n:
                         break
-        
+
         i = next_i
 
     if warning_messages != "":
