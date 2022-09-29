@@ -430,7 +430,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                     input[mnemonic_num] = top
                     stack.extend(input[::-1])
                 case "LOG":
-                    assert False
+                    pass
                 case "CREATE":
                     assert False
                 case "CALL":
@@ -521,8 +521,10 @@ class Node:
                 # case "BYTE":
                 case "SHL":
                     return f"{self.value[0]} << {self.value[1]})"
-                # case "SHR":
-                # case "SAR":
+                case "SHR":
+                    return f"{self.value[0]} >> {self.value[1]})"
+                case "SAR":
+                    return f"int256({self.value[0]}) >> {self.value[1]})"
                 # case "KECCAK256":
                 # case "ADDRESS":
                 # case "BALANCE":
@@ -628,11 +630,6 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
             description = None
 
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
-
-        # if mnemonic == "JUMP" or mnemonic == "JUMPI":
-        #     print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.CYAN + colors.BOLD + mnemonic + colors.ENDC}", end="")
-        # else:
-        #     print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.BOLD + mnemonic + colors.ENDC}", end="")
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
