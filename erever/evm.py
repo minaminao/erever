@@ -76,13 +76,20 @@ class Context:
         w3 = Web3(HTTPProvider(args.rpc_url))
         tx = w3.eth.get_transaction(tx_hash)
 
-        code = w3.eth.get_code(tx.to)
-        if len(code) > 0:
-            self.bytecode = bytes(code)
-            self.calldata = Context.__hex_to_bytes(tx.input)
-        else:
+        # Contract Creation
+        if tx.to is None:
             self.bytecode = Context.__hex_to_bytes(tx.input)
             self.calldata = b""
+        else:
+            code = w3.eth.get_code(tx.to)
+            # Contract
+            if len(code) > 0:
+                self.bytecode = bytes(code)
+                self.calldata = Context.__hex_to_bytes(tx.input)
+            # EOA
+            else:
+                self.bytecode = Context.__hex_to_bytes(tx.input)
+                self.calldata = b""
 
         self.address = args.address
         self.balance = args.balance
