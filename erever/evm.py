@@ -77,7 +77,7 @@ class Context:
         tx = w3.eth.get_transaction(tx_hash)
 
         # Contract Creation
-        if tx.to is None:
+        if "to" not in tx or tx.to is None:
             self.bytecode = Context.__hex_to_bytes(tx.input)
             self.calldata = b""
         else:
@@ -359,9 +359,9 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                 case "GT":
                     stack.push(int(input[0] > input[1]))
                 case "SLT":
-                    stack.push(int(int256(input[0] < int256(input[1]))))
+                    stack.push(int(int256(input[0]) < int256(input[1])))
                 case "SGT":
-                    stack.push(int(int256(input[0] > int256(input[1]))))
+                    stack.push(int(int256(input[0]) > int256(input[1])))
                 case "EQ":
                     stack.push(int(input[0] == input[1]))
                 case "ISZERO":
@@ -509,6 +509,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                     break
 
             print(f"\n\tstack\t{stack}", end="")
+            # print()
+            # print(bytes.fromhex(str(memory)).replace(b"\x00", b""), end="")
             lines = memory.colorize()
             for i, line in enumerate(lines):
                 if i == 0:
