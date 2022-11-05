@@ -1,4 +1,4 @@
-# erever - EVM Reversing Tools (WIP)
+# erever - EVM Reversing Tools
 
 ## Install
 ```
@@ -9,10 +9,16 @@ Only supports Python >= 3.10.
 
 ## Usage
 ```
-$ erever -h
-usage: erever [-h] [-b BYTECODE] [-f FILENAME] [--tx TX] [--trace] [--symbolic] [--entrypoint ENTRYPOINT] [--show-symbolic-stack] [-n N] [--rpc-url RPC_URL] [--address ADDRESS] [--balance BALANCE]
-              [--origin ORIGIN] [--caller CALLER] [--callvalue CALLVALUE] [--calldata CALLDATA] [--gasprice GASPRICE] [--coinbase COINBASE] [--timestamp TIMESTAMP] [--number NUMBER]
-              [--difficulty DIFFICULTY] [--gaslimit GASLIMIT] [--chainid CHAINID] [--selfbalance SELFBALANCE] [--basefee BASEFEE] [--gas GAS]
+usage: erever [-h] [-b BYTECODE] [-f FILENAME] [-c CONTRACT_ADDRESS] [--tx TX]
+              [--trace] [--symbolic] [--entrypoint ENTRYPOINT]
+              [--show-symbolic-stack] [-n N] [--rpc-url RPC_URL]
+              [--address ADDRESS] [--balance BALANCE] [--origin ORIGIN]
+              [--caller CALLER] [--callvalue CALLVALUE] [--calldata CALLDATA]
+              [--gasprice GASPRICE] [--coinbase COINBASE]
+              [--timestamp TIMESTAMP] [--number NUMBER]
+              [--difficulty DIFFICULTY] [--gaslimit GASLIMIT]
+              [--chainid CHAINID] [--selfbalance SELFBALANCE]
+              [--basefee BASEFEE] [--gas GAS]
 
 EVM Reversing Tools
 
@@ -20,6 +26,7 @@ options:
   -h, --help            show this help message and exit
   -b BYTECODE, --bytecode BYTECODE
   -f FILENAME, --filename FILENAME
+  -c CONTRACT_ADDRESS, --contract-address CONTRACT_ADDRESS
   --tx TX
   --trace
   --symbolic
@@ -95,3 +102,4 @@ $ erever -b "70806011526000526070600e536023600ef3806011526000526070600e536023600
 ## Writeups with elever
 - [Paradigm CTF 2022: SOURCECODE](https://github.com/minaminao/ctf-blockchain/tree/main/src/ParadigmCTF2022#sourcecode)
 - [DownUnderCTF 2022: EVM Vault Mechanism](https://github.com/minaminao/ctf-blockchain/tree/main/src/DownUnderCTF2022/EVMVaultMechanism)
+- [EKOPARTY CTF 2022: SmartRev](https://github.com/minaminao/ctf-blockchain/tree/main/src/EkoPartyCTF2022)
