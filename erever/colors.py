@@ -13,5 +13,5 @@ class colors:
     CYAN = '\033[96m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-    GRAY = '\033[30m'
+    GRAY = '\033[2m'
     ENDC = '\033[0m'

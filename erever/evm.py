@@ -244,9 +244,20 @@ class Memory:
         s = str(self)
         ret = []
 
+        def zero_to_gray(s):
+            ret = ""
+            for i in range(0, len(s), 2):
+                b = s[i:i+2]
+                if b == "00":
+                    ret += colors.GRAY + b + colors.ENDC
+                else:
+                    ret += b
+            return ret
+
         for i in range(0, len(s), 2 * line_length):
             ret.append(s[i:i + 2 * line_length])
 
+        modified = []
         if self.mstore_l_for_colorize is not None:
             i_l = self.mstore_l_for_colorize // line_length
             j_l = 2 * (self.mstore_l_for_colorize % line_length)
@@ -255,10 +266,17 @@ class Memory:
             if j_r == 0:
                 i_r -= 1
                 j_r = 2 * line_length
-            ret[i_r] = ret[i_r][:j_r] + colors.ENDC + ret[i_r][j_r:]
-            ret[i_l] = ret[i_l][:j_l] + colors.GREEN + ret[i_l][j_l:]
+            ret[i_r] = ret[i_r][:j_r] + colors.ENDC + zero_to_gray(ret[i_r][j_r:])
+            ret[i_l] = zero_to_gray(ret[i_l][:j_l]) + colors.GREEN + ret[i_l][j_l:]
+            modified.extend([i_l, i_r])
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
+
+        for i in range(0, len(ret)):
+            if i in modified:
+                continue
+            ret[i] = zero_to_gray(ret[i])
+
         return ret
 
 
