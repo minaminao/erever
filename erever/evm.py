@@ -1,5 +1,7 @@
+import string
+
 from Crypto.Hash import keccak
-from web3 import Web3, HTTPProvider
+from web3 import HTTPProvider, Web3
 
 from .colors import *
 from .opcodes import *
@@ -266,6 +268,18 @@ class Memory:
         for i in range(0, len(s), 2 * line_length):
             ret.append(s[i:i + 2 * line_length])
 
+        decoded_lines = []
+        printable = string.printable[:-5]
+        for line in ret:
+            decoded_line = ""
+            for i in range(0, len(line), 2):
+                c = chr(int(line[i:i+2], 16))
+                if c in printable:
+                    decoded_line += c
+                else:
+                    decoded_line += colors.GRAY + "." + colors.ENDC
+            decoded_lines.append(decoded_line)
+
         modified = []
         if self.mstore_l_for_colorize is not None:
             i_l = self.mstore_l_for_colorize // line_length
@@ -283,8 +297,9 @@ class Memory:
 
         for i in range(0, len(ret)):
             if i in modified:
-                continue
-            ret[i] = zero_to_gray(ret[i])
+                ret[i] = ret[i] + " | " + decoded_lines[i]
+            else:
+                ret[i] = zero_to_gray(ret[i]) + " | " + decoded_lines[i]
 
         return ret
 
