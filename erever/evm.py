@@ -69,12 +69,12 @@ class Context:
         self.gas = d.get("gas", Context.DEFAULT_GAS)
         return self
     
-    def from_tx_hash(args, tx_hash):
+    def from_tx_hash(args):
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
 
         w3 = Web3(HTTPProvider(args.rpc_url))
-        tx = w3.eth.get_transaction(tx_hash)
+        tx = w3.eth.get_transaction(args.tx)
 
         # Contract Creation
         if "to" not in tx or tx.to is None:
@@ -110,6 +110,34 @@ class Context:
 
         return self
 
+    def from_contract_address(args):
+        self = Context()
+        assert args.rpc_url, "RPC URL must be specified"
+
+        w3 = Web3(HTTPProvider(args.rpc_url))
+        code = w3.eth.get_code(args.contract_address)
+
+        self.bytecode = bytes(code)
+        
+        self.address = args.address
+        self.balance = args.balance
+        self.origin = args.origin
+        self.caller = args.caller
+        self.callvalue = args.callvalue
+        self.calldata = Context.__hex_to_bytes(args.calldata)
+        self.gasprice = args.gasprice
+        self.coinbase = args.coinbase
+        self.timestamp = args.timestamp
+        self.number = args.number
+        self.difficulty = args.difficulty
+        self.gaslimit = args.gas
+        self.chainid = args.chainid
+        self.selfbalance = args.selfbalance
+        self.basefee = args.basefee
+        self.gas = args.gas
+        # self.blockchash
+
+        return self
 
 
     def __hex_to_bytes(s: str):
