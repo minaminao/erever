@@ -116,11 +116,14 @@ class Context:
 
         w3 = Web3(HTTPProvider(args.rpc_url))
         code = w3.eth.get_code(args.contract_address)
+        balance = w3.eth.get_balance(args.contract_address)
 
         self.bytecode = bytes(code)
-        
-        self.address = args.address
-        self.balance = args.balance
+        assert args.address == Context.DEFAULT_ADDRESS # TODO: priority
+        self.address = Context.__hex_to_int(args.contract_address)
+        assert args.balance == Context.DEFAULT_BALANCE
+        self.balance = balance
+
         self.origin = args.origin
         self.caller = args.caller
         self.callvalue = args.callvalue
@@ -145,6 +148,12 @@ class Context:
         if s.startswith("0x"):
             s = s[2:]
         return bytes.fromhex(s)
+
+    def __hex_to_int(s: str):
+        if s.startswith("0x"):
+            return int(s, 16)
+        else:
+            return int(s)
 
 
 class Stack:
