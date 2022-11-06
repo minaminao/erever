@@ -10,15 +10,17 @@ def main():
     parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
+
     parser.add_argument("-c", "--contract-address")
     parser.add_argument("--tx")
+    parser.add_argument("--rpc-url", type=str, default=os.getenv("EREVER_RPC_URL"))
 
     parser.add_argument("--trace", action="store_true", default=False)
     parser.add_argument("--symbolic", action="store_true", default=False)
     parser.add_argument("--entrypoint", type=str, default="0")
     parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser.add_argument("-n", type=str, default=str(UINT256_MAX))
-    parser.add_argument("--rpc-url", type=str, default=os.getenv("EREVER_RPC_URL"))
+    parser.add_argument("--decode-stack", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -74,7 +76,7 @@ def main():
     if args.symbolic:
         disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.n)
     else:
-        disassemble(context, args.trace, args.entrypoint, args.n)
+        disassemble(context, args.trace, args.entrypoint, args.n, args.decode_stack)
 
 
 def parse_arg_param_to_int(param):

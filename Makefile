@@ -1,0 +1,2 @@
+fmt:
+	isort erever/*.py

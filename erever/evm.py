@@ -182,7 +182,7 @@ class Stack:
     def clear(self):
         self.stack = []
 
-    def __str__(self):
+    def to_string(self):
         ret = ""
         n = len(self.stack)
         for i in range(n):
@@ -190,6 +190,22 @@ class Stack:
                 ret += ", "
             if type(self.stack[n - 1 - i]) == int:
                 x = pad_even(hex(self.stack[n - 1 - i]))
+            else:
+                x = self.stack[n - 1 - i]
+            if n - 1 - i in self.updated_indices_for_colorize:
+                x = colors.GREEN + x + colors.ENDC
+            ret += x
+        ret = "[" + ret + "]"
+        return ret
+
+    def to_string_with_decode(self):
+        ret = ""
+        n = len(self.stack)
+        for i in range(n):
+            if i != 0:
+                ret += ", "
+            if type(self.stack[n - 1 - i]) == int:
+                x = decode_printable_with_color(pad_even(hex(self.stack[n - 1 - i]))[2:])
             else:
                 x = self.stack[n - 1 - i]
             if n - 1 - i in self.updated_indices_for_colorize:
@@ -248,11 +264,8 @@ class Memory:
     def load(self, offset: int):
         return bytes_to_long(bytes(self.memory[offset:offset+32]))
 
-    def __str__(self):
-        return bytes(self.memory).hex()
-
-    def colorize(self, line_length=0x20) -> list[str]:
-        s = str(self)
+    def to_string(self, line_length=0x20) -> list[str]:
+        s = bytes(self.memory).hex()
         ret = []
 
         def zero_to_gray(s):
@@ -269,15 +282,8 @@ class Memory:
             ret.append(s[i:i + 2 * line_length])
 
         decoded_lines = []
-        printable = string.printable[:-5]
         for line in ret:
-            decoded_line = ""
-            for i in range(0, len(line), 2):
-                c = chr(int(line[i:i+2], 16))
-                if c in printable:
-                    decoded_line += c
-                else:
-                    decoded_line += colors.GRAY + "." + colors.ENDC
+            decoded_line = decode_printable_with_color(line)
             decoded_lines.append(decoded_line)
 
         modified = []
@@ -318,7 +324,7 @@ class Storage:
         self.storage[key] = value
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
+def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, decode_stack=False):
     stack = Stack()
     memory = Memory()
     storage = Storage()
@@ -578,10 +584,11 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX):
                 case "SELFDESTRUCT":
                     break
 
-            print(f"\n\tstack\t{stack}", end="")
-            # print()
-            # print(bytes.fromhex(str(memory)).replace(b"\x00", b""), end="")
-            lines = memory.colorize()
+            print(f"\n\tstack\t{stack.to_string()}", end="")
+            if decode_stack:
+                print(f"\n\t\t{stack.to_string_with_decode()}", end="")
+
+            lines = memory.to_string()
             for i, line in enumerate(lines):
                 if i == 0:
                     print(f"\n\tmemory\t", end="")
@@ -742,6 +749,9 @@ class SymbolicStack:
 
     def __repr__(self):
         return repr(self.stack[::-1])
+    
+    def to_string(self):
+        return self.__repr__()
 
 
 def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, n=UINT256_MAX):
@@ -806,7 +816,7 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                 else:
                     print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
                     if show_symbolic_stack:
-                        print(f"\tstack\t{stack}")
+                        print(f"\tstack\t{stack.to_string()}")
                     line_i += 1
                     if line_i >= n:
                         break
