@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import toml
 
@@ -72,6 +73,9 @@ def main():
         context = Context.from_tx_hash(args)
     elif args.contract_address:
         context = Context.from_contract_address(args)
+    else:
+        parser.print_help(sys.stderr)
+        exit(1)
 
     if args.symbolic:
         disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.n)
