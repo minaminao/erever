@@ -8,6 +8,7 @@ UINT256_MAX = (1 << 256) - 1
 SIGN_MASK = 1 << 255
 
 PRINTABLE = string.printable[:-5]
+TAB_SIZE = 4
 
 
 def uint256(x: int):

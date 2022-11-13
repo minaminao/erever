@@ -465,7 +465,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                     else:
                         stack.push(input[1] >> input[0])
                 case "KECCAK256":
-                    print(f"\n\tinput\t{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
+                    print(f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
                     k = keccak.new(digest_bits=256)
                     k.update(bytes(memory.memory[input[0]:input[0]+input[1]]))
                     stack.push(bytes_to_long(k.digest()))
@@ -569,7 +569,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                 case "CALLCODE":
                     assert False
                 case "RETURN":
-                    print(f"\n\treturn\t{memory.get_hex(input[0], input[0] + input[1])}", end="")
+                    print(f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}", end="")
                     break
                 case "DELEGATECALL":
                     assert False
@@ -584,16 +584,16 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                 case "SELFDESTRUCT":
                     break
 
-            print(f"\n\tstack\t{stack.to_string()}", end="")
+            print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
             if decode_stack:
-                print(f"\n\t\t{stack.to_string_with_decode()}", end="")
+                print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
 
             lines = memory.to_string()
             for i, line in enumerate(lines):
                 if i == 0:
-                    print(f"\n\tmemory\t", end="")
+                    print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
                 else:
-                    print("\n\t\t", end="")
+                    print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
                 print(f"{line}", end="")
 
         print()
@@ -816,7 +816,7 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                 else:
                     print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
                     if show_symbolic_stack:
-                        print(f"\tstack\t{stack.to_string()}")
+                        print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
                     line_i += 1
                     if line_i >= n:
                         break
