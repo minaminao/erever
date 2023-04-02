@@ -1,4 +1,5 @@
 from Crypto.Hash import keccak
+from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 
 from .colors import Colors

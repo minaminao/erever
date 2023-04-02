@@ -1,7 +1,5 @@
 import string
 
-from Crypto.Util.number import bytes_to_long, long_to_bytes # TODO: remove
-
 from .colors import Colors
 
 UINT256_MAX = (1 << 256) - 1
