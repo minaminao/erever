@@ -1,8 +1,8 @@
 import string
 
-from Crypto.Util.number import bytes_to_long, long_to_bytes
+from Crypto.Util.number import bytes_to_long, long_to_bytes # TODO: remove
 
-from .colors import *
+from .colors import Colors
 
 UINT256_MAX = (1 << 256) - 1
 SIGN_MASK = 1 << 255
@@ -46,5 +46,5 @@ def decode_printable_with_color(hex_string: str) -> str:
         if c in PRINTABLE:
             decoded += c
         else:
-            decoded += colors.GRAY + "." + colors.ENDC
+            decoded += Colors.GRAY + "." + Colors.ENDC
     return decoded

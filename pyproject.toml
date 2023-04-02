@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "erever"
+version = "0.1.0"
+description = ""
+authors = ["minaminao <minaminaoy@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+toml = "^0.10.2"
+pycryptodome = "^3.15.0"
+web3 = "^6.0.0"
+
+[tool.poetry.scripts]
+erever = "erever.__main__:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

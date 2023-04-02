@@ -1,10 +1,8 @@
-import string
-
 from Crypto.Hash import keccak
 from web3 import HTTPProvider, Web3
 
-from .colors import *
-from .opcodes import *
+from .colors import Colors
+from .opcodes import OPCODES
 from .utils import *
 
 
@@ -193,7 +191,7 @@ class Stack:
             else:
                 x = self.stack[n - 1 - i]
             if n - 1 - i in self.updated_indices_for_colorize:
-                x = colors.GREEN + x + colors.ENDC
+                x = Colors.GREEN + x + Colors.ENDC
             ret += x
         ret = "[" + ret + "]"
         return ret
@@ -209,7 +207,7 @@ class Stack:
             else:
                 x = self.stack[n - 1 - i]
             if n - 1 - i in self.updated_indices_for_colorize:
-                x = colors.GREEN + x + colors.ENDC
+                x = Colors.GREEN + x + Colors.ENDC
             ret += x
         ret = "[" + ret + "]"
         return ret
@@ -229,8 +227,8 @@ class Memory:
             return
         self.memory += [0] * (size - len(self.memory))
 
-    def get_hex(self, l: int, r: int) -> str:
-        return bytes(self.memory[l:r]).hex()
+    def get_hex(self, start: int, end: int) -> str:
+        return bytes(self.memory[start:end]).hex()
 
     def store8(self, offset: int, value: int):
         assert value < 0x100
@@ -273,7 +271,7 @@ class Memory:
             for i in range(0, len(s), 2):
                 b = s[i:i+2]
                 if b == "00":
-                    ret += colors.GRAY + b + colors.ENDC
+                    ret += Colors.GRAY + b + Colors.ENDC
                 else:
                     ret += b
             return ret
@@ -295,8 +293,8 @@ class Memory:
             if j_r == 0:
                 i_r -= 1
                 j_r = 2 * line_length
-            ret[i_r] = ret[i_r][:j_r] + colors.ENDC + zero_to_gray(ret[i_r][j_r:])
-            ret[i_l] = zero_to_gray(ret[i_l][:j_l]) + colors.GREEN + ret[i_l][j_l:]
+            ret[i_r] = ret[i_r][:j_r] + Colors.ENDC + zero_to_gray(ret[i_r][j_r:])
+            ret[i_l] = zero_to_gray(ret[i_l][:j_l]) + Colors.GREEN + ret[i_l][j_l:]
             modified.extend([i_l, i_r])
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
@@ -341,7 +339,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
         if value in OPCODES:
             mnemonic, stack_input_count, stack_output_count, description, stack_input_names = OPCODES[value]
         else:
-            mnemonic = colors.YELLOW + f"0x{value:02x} (?)" + colors.ENDC
+            mnemonic = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
             stack_output_count = 0
             description = None
@@ -349,9 +347,9 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
 
         if mnemonic == "JUMP" or mnemonic == "JUMPI":
-            print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.CYAN + colors.BOLD + mnemonic + colors.ENDC}", end="")
+            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.CYAN + Colors.BOLD + mnemonic + Colors.ENDC}", end="")
         else:
-            print(f"{pad(hex(i), LOCATION_PAD_N)}: {colors.BOLD + mnemonic + colors.ENDC}", end="")
+            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.BOLD + mnemonic + Colors.ENDC}", end="")
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
@@ -604,8 +602,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
 
     print()
     if warning_messages != "":
-        print(colors.YELLOW + "WARNING:")
-        print(warning_messages + colors.ENDC)
+        print(Colors.YELLOW + "WARNING:")
+        print(warning_messages + Colors.ENDC)
 
 
 class Node:
@@ -662,11 +660,11 @@ class Node:
                 # case "NOT":
                 # case "BYTE":
                 case "SHL":
-                    return f"{self.value[0]} << {self.value[1]})"
+                    return f"{self.value[1]} << {self.value[0]})"
                 case "SHR":
-                    return f"{self.value[0]} >> {self.value[1]})"
+                    return f"{self.value[1]} >> {self.value[0]})"
                 case "SAR":
-                    return f"int256({self.value[0]}) >> {self.value[1]})"
+                    return f"int256({self.value[1]}) >> {self.value[0]})"
                 # case "KECCAK256":
                 # case "ADDRESS":
                 # case "BALANCE":
@@ -694,7 +692,7 @@ class Node:
                 # case "SELFBALANCE":
                 # case "BASEFEE":
                 case "POP":
-                    return colors.GRAY + f"{self.type}({str(self.value)[1:-1]})" + colors.ENDC
+                    return Colors.GRAY + f"{self.type}({str(self.value)[1:-1]})" + Colors.ENDC
                 # case "MLOAD":
                 # case "MSTORE":
                 # case "MSTORE8":
@@ -706,7 +704,7 @@ class Node:
                 # case "MSIZE":
                 # case "GAS":
                 case "JUMPDEST":
-                    return colors.CYAN + "JUMPDEST" + colors.ENDC
+                    return Colors.CYAN + "JUMPDEST" + Colors.ENDC
                 # case "PUSH":
                 # case "DUP":
                 # case "SWAP":
@@ -769,7 +767,7 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
         if value in OPCODES:
             mnemonic, stack_input_count, stack_output_count, description, stack_input_names = OPCODES[value]
         else:
-            mnemonic = colors.YELLOW + f"0x{value:02x} (?)" + colors.ENDC
+            mnemonic = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
             stack_output_count = 0
             description = None
@@ -825,5 +823,5 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
 
     if warning_messages != "":
         print()
-        print(colors.YELLOW + "WARNING:")
-        print(warning_messages + colors.ENDC)
+        print(Colors.YELLOW + "WARNING:")
+        print(warning_messages + Colors.ENDC)

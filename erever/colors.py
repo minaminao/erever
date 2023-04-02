@@ -1,4 +1,4 @@
-class colors:
+class Colors:
     BGRED = '\033[41m'
     BGGREEN = '\033[42m'
     BGYELLOW = '\033[43m'

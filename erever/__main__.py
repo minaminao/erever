@@ -4,10 +4,14 @@ import sys
 
 import toml
 
-from .evm import *
+from .evm import Context, disassemble, disassemble_symbolic
+from .utils import UINT256_MAX
 
 
 def main():
+    """
+    erever disassemble <bytecode or filename>
+    """
     parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
