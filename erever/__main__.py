@@ -24,7 +24,7 @@ def main():
     parser.add_argument("--symbolic", action="store_true", default=False)
     parser.add_argument("--entrypoint", type=str, default="0")
     parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
-    parser.add_argument("-n", type=str, default=str(UINT256_MAX))
+    parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
     parser.add_argument("--decode-stack", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
@@ -47,7 +47,7 @@ def main():
     args = parser.parse_args()
 
     args.entrypoint = parse_arg_param_to_int(args.entrypoint)
-    args.n = parse_arg_param_to_int(args.n)
+    args.max_steps = parse_arg_param_to_int(args.max_steps)
     args.address = parse_arg_param_to_int(args.address)
     args.balance = parse_arg_param_to_int(args.balance)
     args.origin = parse_arg_param_to_int(args.origin)
@@ -82,9 +82,9 @@ def main():
         exit(1)
 
     if args.symbolic:
-        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.n)
+        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.max_steps)
     else:
-        disassemble(context, args.trace, args.entrypoint, args.n, args.decode_stack)
+        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack)
 
 
 def parse_arg_param_to_int(param):

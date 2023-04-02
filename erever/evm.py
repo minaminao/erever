@@ -752,7 +752,7 @@ class SymbolicStack:
         return self.__repr__()
 
 
-def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, n=UINT256_MAX):
+def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX):
     stack = SymbolicStack()
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
@@ -816,7 +816,7 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                     if show_symbolic_stack:
                         print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
                     line_i += 1
-                    if line_i >= n:
+                    if line_i >= max_steps:
                         break
 
         i = next_i
