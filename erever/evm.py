@@ -348,6 +348,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
 
         if mnemonic == "JUMP" or mnemonic == "JUMPI":
             print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.CYAN + Colors.BOLD + mnemonic + Colors.ENDC}", end="")
+        elif mnemonic == "JUMPDEST":
+            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.BLUE + Colors.BOLD + mnemonic + Colors.ENDC}", end="")
         else:
             print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.BOLD + mnemonic + Colors.ENDC}", end="")
 
@@ -698,13 +700,13 @@ class Node:
                 # case "MSTORE8":
                 # case "SLOAD":
                 # case "SSTORE":
-                # case "JUMP":
-                # case "JUMPI":
+                case "JUMP" | "JUMPI":
+                    return f"{Colors.CYAN}{self.type}{Colors.ENDC}({str(self.value)[1:-1]})"
                 # case "PC":
                 # case "MSIZE":
                 # case "GAS":
                 case "JUMPDEST":
-                    return Colors.CYAN + "JUMPDEST" + Colors.ENDC
+                    return Colors.MAGENDA + "JUMPDEST" + Colors.ENDC
                 # case "PUSH":
                 # case "DUP":
                 # case "SWAP":
