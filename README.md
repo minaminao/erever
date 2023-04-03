@@ -1,8 +1,9 @@
 # erever
 
-erever is a tool for reversing EVM bytecode.
-It is especially optimized for solving CTF challenges and is intended to be used for tricky operations.
+erever is a CLI tool for reversing EVM bytecode.
+It is specially optimized for solving CTF challenges and is intended to be used for tricky operations.
 For general use, it is recommended to use other useful tools such as the debugger included in Foundry.
+Currently, it is mostly for me to solve challenges and is not intended to be used by others, but if you have trouble using this tool, please open a issue!
 
 - [Install](#install)
 - [Usage](#usage)
