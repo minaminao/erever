@@ -736,8 +736,10 @@ class Node:
                 # case "MSTORE8":
                 # case "SLOAD":
                 # case "SSTORE":
-                case "JUMP" | "JUMPI":
+                case "JUMP":
                     return f"{Colors.CYAN}{Colors.BOLD}{self.type}{Colors.ENDC}({Node.unwrap(self.value[0])})"
+                case "JUMPI":
+                    return f"{Colors.CYAN}{Colors.BOLD}{self.type}{Colors.ENDC}({Node.unwrap(self.value[0])}, {Node.unwrap(self.value[1])})"
                 # case "PC":
                 # case "MSIZE":
                 # case "GAS":
@@ -754,9 +756,9 @@ class Node:
                 case "SWAP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}("
                     if self.mnemonic_num >= 2:
-                        ret += f"{str(self.value[0])}, ..., {str(self.value[-1])}"
+                        ret += f"{str(self.value[0])}, ..., {str(self.value[-1])})"
                     else:
-                        ret += f"{str(self.value[0])}, {str(self.value[-1])}"
+                        ret += f"{str(self.value[0])}, {str(self.value[-1])})"
                     return ret
                 case "LOG":
                     return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({str(self.value)[1:-1]})"
@@ -814,7 +816,7 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
             self.pc = entrypoint
             
             self.steps = 0
-            self.conditions = []
+            self.conditions = [] # [(condition, pc, is_met: bool)]
             self.jumped_from = None
             self.jumped = None
 
@@ -843,6 +845,11 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                 print(f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
             else:
                 print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
+            for condition, pc, is_met in state.conditions:
+                if is_met:
+                    print(f"  {Colors.GREEN} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.GREEN}== true{Colors.ENDC}")
+                else:
+                    print(f"  {Colors.RED} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.RED}== false{Colors.ENDC}")
         else:
             print()
 
@@ -880,7 +887,11 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
             for _ in range(stack_input_count):
                 input.append(stack.pop())
 
+            end = False
             match mnemonic:
+                # 状態の操作はここに。操作しないものはNodeの__repr__に。
+                case "STOP":
+                    end = True
                 case "PUSH":
                     stack.push(Node("uint256", push_v))
                 case "DUP":
@@ -890,6 +901,12 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                     input[0] = input[mnemonic_num]
                     input[mnemonic_num] = top
                     stack.extend(input[::-1])
+                case "REVERT":
+                    end = True
+                case "INVALID":
+                    end = True
+                case "SELFDESTRUCT":
+                    end = True
                 case _:
                     assert stack_output_count <= 1
                     if stack_output_count == 1:
@@ -917,20 +934,25 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                 next_pc = input[0].value
             if mnemonic == "JUMPI" and input[0].type == "uint256":
                 state.steps += 1
-                state_not_jumped = state
+                state_not_jumped = deepcopy(state)
                 state_not_jumped.pc = next_pc
                 state_not_jumped.jumped_from = pc
                 state_not_jumped.jumped = False
-                state_jumped = deepcopy(state)
+                state_not_jumped.conditions.append((input[1], pc, False))
+                state_jumped = state
                 state_jumped.pc = input[0].value
                 state_jumped.jumped_from = pc
                 state_jumped.jumped = True
+                state_jumped.conditions.append((input[1], pc, True))
                 queue.append(state_jumped)
                 queue.append(state_not_jumped)
                 break
 
             state.steps += 1
             if state.steps >= max_steps:
+                break
+
+            if end:
                 break
 
             pc = next_pc
