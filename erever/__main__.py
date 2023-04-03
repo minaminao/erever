@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--decode-stack", action="store_true", default=False)
     parser.add_argument("--mermaid", action="store_true", default=False)
     parser.add_argument("--hide-pc", action="store_true", default=False)
+    parser.add_argument("--hide-opcodes-with-no-stack-output", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -80,9 +81,9 @@ def main():
         exit(1)
 
     if args.mermaid:
-        disassemble_mermaid(context, args.trace, args.entrypoint, args.max_steps)
+        disassemble_mermaid(context, args.entrypoint, args.max_steps)
     elif args.symbolic:
-        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc)
+        disassemble_symbolic(context, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc, hide_opcodes_with_no_stack_output=args.hide_opcodes_with_no_stack_output)
     else:
         disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc)
 
