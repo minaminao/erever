@@ -4,7 +4,7 @@ from web3 import HTTPProvider, Web3
 
 from .colors import Colors
 from .opcodes import OPCODES
-from .utils import *
+from .utils import UINT256_MAX, uint256, int256, pad, pad_even, decode_printable_with_color, TAB_SIZE, SIGN_MASK
 
 
 class Context:
@@ -378,11 +378,11 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
             if len(stack_input_names) > 0:
                 print("(", end="")
                 if mnemonic == "DUP":
-                    if stack_input_count >= 2:
+                    if mnemonic_num >= 2:
                         print("..., ", end="")
                     print(f"{pad_even(hex(input[-1]))}", end="")
                 elif mnemonic == "SWAP":
-                    if stack_input_count >= 2:
+                    if mnemonic_num >= 2:
                         print(f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}", end="")
                     else:
                         print(f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}", end="")
@@ -663,11 +663,11 @@ class Node:
                 # case "NOT":
                 # case "BYTE":
                 case "SHL":
-                    return f"{self.value[1]} << {self.value[0]})"
+                    return f"({self.value[1]} << {self.value[0]})"
                 case "SHR":
-                    return f"{self.value[1]} >> {self.value[0]})"
+                    return f"({self.value[1]} >> {self.value[0]})"
                 case "SAR":
-                    return f"int256({self.value[1]}) >> {self.value[0]})"
+                    return f"(int256({self.value[1]}) >> {self.value[0]})"
                 # case "KECCAK256":
                 # case "ADDRESS":
                 # case "BALANCE":
