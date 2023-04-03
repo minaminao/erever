@@ -323,16 +323,13 @@ class Storage:
         self.storage = {}
 
     def load(self, key):
-        if key in self.storage:
-            return self.storage[key]
-        else:
-            return 0
+        return self.storage.get(key, 0)
 
     def store(self, key, value):
         self.storage[key] = value
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False):
+def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False):
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
@@ -358,12 +355,14 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(pc), LOCATION_PAD_N)} is not found.\n"
 
         if not silent:
+            if not hide_pc:
+                print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
             if mnemonic == "JUMP" or mnemonic == "JUMPI":
-                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                print(f"{Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
             elif mnemonic == "JUMPDEST":
-                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                print(f"{Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
             else:
-                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                print(f"{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
@@ -400,8 +399,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                         else:
                             print(f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}", end="")
                     else:
-                        for pc, name in enumerate(stack_input_names):
-                            if pc > 0:
+                        for i, name in enumerate(stack_input_names):
+                            if i > 0:
                                 print(", ", end="")
                             if name != "":
                                 print(f"{name}:", end="")
@@ -722,19 +721,19 @@ class Node:
                 # case "SELFBALANCE":
                 # case "BASEFEE":
                 case "POP":
-                    return Colors.GRAY + f"{self.type}({str(self.value)[1:-1]})" + Colors.ENDC
+                    return f"{Colors.GRAY}{Colors.BOLD}{self.type}{Colors.ENDC}({str(self.value)[1:-1]})"
                 # case "MLOAD":
                 # case "MSTORE":
                 # case "MSTORE8":
                 # case "SLOAD":
                 # case "SSTORE":
                 case "JUMP" | "JUMPI":
-                    return f"{Colors.CYAN}{self.type}{Colors.ENDC}({str(self.value)[1:-1]})"
+                    return f"{Colors.CYAN}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.ENDC}({str(self.value)[1:-1]})"
                 # case "PC":
                 # case "MSIZE":
                 # case "GAS":
                 case "JUMPDEST":
-                    return Colors.BLUE + "JUMPDEST" + Colors.ENDC
+                    return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.ENDC}"
                 # case "PUSH":
                 # case "DUP":
                 # case "SWAP":
@@ -750,7 +749,7 @@ class Node:
                 # case "INVALID":
                 # case "SELFDESTRUCT":
                 case _:
-                    return f"{self.type}({str(self.value)[1:-1]})"
+                    return f"{Colors.BOLD}{self.type}{Colors.ENDC}({str(self.value)[1:-1]})"
 
 
 class SymbolicStack:
@@ -782,7 +781,7 @@ class SymbolicStack:
         return self.__repr__()
 
 
-def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX):
+def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX, hide_pc=False):
     stack = SymbolicStack()
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
@@ -842,7 +841,11 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                 if stack_output_count == 1:
                     stack.push(Node(mnemonic, input))
                 else:
-                    print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
+                    if hide_pc:
+                        print(Node(mnemonic, input))
+                    else:
+                        print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
+
                     if show_symbolic_stack:
                         print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
                     step_i += 1
@@ -891,9 +894,6 @@ def disassemble_mermaid(context: Context, trace=False, entrypoint=0x00, max_step
         """
         return is_valid_block, end_address, control_type, instructions
         """
-        stack = Stack()
-        memory = Memory()
-        storage = Storage()
 
         pc = start_address
         instructions = []

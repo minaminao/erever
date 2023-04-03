@@ -8,9 +8,6 @@ from .utils import UINT256_MAX
 
 
 def main():
-    """
-    erever disassemble <bytecode or filename>
-    """
     parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
@@ -26,6 +23,7 @@ def main():
     parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
     parser.add_argument("--decode-stack", action="store_true", default=False)
     parser.add_argument("--mermaid", action="store_true", default=False)
+    parser.add_argument("--hide-pc", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -84,9 +82,9 @@ def main():
     if args.mermaid:
         disassemble_mermaid(context, args.trace, args.entrypoint, args.max_steps)
     elif args.symbolic:
-        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.max_steps)
+        disassemble_symbolic(context, args.trace, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc)
     else:
-        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack)
+        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc)
 
 
 def parse_arg_param_to_int(param):
