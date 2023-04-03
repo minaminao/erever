@@ -1,8 +1,7 @@
 import argparse
 import os
 import sys
-
-import toml
+import tomllib
 
 from .evm import Context, disassemble, disassemble_symbolic
 from .utils import UINT256_MAX
@@ -68,7 +67,7 @@ def main():
         context = Context.from_arg_params_with_bytecode(args, args.bytecode)
     elif args.filename:
         if args.filename.split(".")[-1] == "toml":
-            parsed_toml = toml.load(open(args.filename))
+            parsed_toml = tomllib.load(open(args.filename, "rb"))
             context = Context.from_dict(parsed_toml)
         else:
             bytecode = open(args.filename).read()

@@ -144,17 +144,19 @@ class Context:
         return self
 
 
-    def __hex_to_bytes(s: str):
-        s = s.replace(" ", "").replace("\n", "")
-        if s.startswith("0x"):
-            s = s[2:]
-        return bytes.fromhex(s)
+    def __hex_to_bytes(h: str | int):
+        if type(h) is int:
+            h = hex(h)
+        h = h.replace(" ", "").replace("\n", "")
+        if h.startswith("0x"):
+            h = h[2:]
+        return bytes.fromhex(h)
 
-    def __hex_to_int(s: str):
-        if s.startswith("0x"):
-            return int(s, 16)
+    def __hex_to_int(h: str):
+        if h.startswith("0x"):
+            return int(h, 16)
         else:
-            return int(s)
+            return int(h)
 
 
 class Stack:
@@ -707,7 +709,7 @@ class Node:
                 # case "MSIZE":
                 # case "GAS":
                 case "JUMPDEST":
-                    return Colors.MAGENDA + "JUMPDEST" + Colors.ENDC
+                    return Colors.BLUE + "JUMPDEST" + Colors.ENDC
                 # case "PUSH":
                 # case "DUP":
                 # case "SWAP":
