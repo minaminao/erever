@@ -5,7 +5,7 @@
 pip install git+https://github.com/minaminao/erever.git
 ```
 
-Only supports Python >= 3.10.
+Only supports Python >= 3.11.
 
 ## Usage
 

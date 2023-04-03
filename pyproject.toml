@@ -16,3 +16,8 @@ erever = "erever.__main__:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+ignore = [
+    "E501", # Line too long
+]

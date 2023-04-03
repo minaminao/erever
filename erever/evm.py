@@ -1,6 +1,7 @@
 from Crypto.Hash import keccak
 from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
+from enum import Enum
 
 from .colors import Colors
 from .opcodes import OPCODES
@@ -8,7 +9,7 @@ from .utils import UINT256_MAX, uint256, int256, pad, pad_even, decode_printable
 
 
 class Context:
-    DEFAULT_ADDRESS = 0
+    DEFAULT_ADDRESS = 0xadd2e55
     DEFAULT_BALANCE = 0
     DEFAULT_ORIGIN = 0
     DEFAULT_CALLER = 0
@@ -160,8 +161,9 @@ class Context:
 
 
 class Stack:
-    def __init__(self):
+    def __init__(self, ignore_stack_underflow: bool = False):
         self.stack = []
+        self.ignore_stack_underflow = ignore_stack_underflow
 
         self.updated_indices_for_colorize = []
 
@@ -178,6 +180,11 @@ class Stack:
         self.updated_indices_for_colorize = [len(self.stack) - 1 - i for i in range(len(x))]
 
     def pop(self):
+        if len(self.stack) == 0:
+            if self.ignore_stack_underflow:
+                return 0
+            else:
+                raise Exception("Stack underflow")
         return self.stack.pop()
 
     def clear(self):
@@ -325,8 +332,8 @@ class Storage:
         self.storage[key] = value
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, decode_stack=False):
-    stack = Stack()
+def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False):
+    stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
 
@@ -334,33 +341,36 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
 
     warning_messages = ""
 
-    i = entrypoint
-    line_i = 0
-    while i < len(context.bytecode):
-        next_i = i + 1
-        value = context.bytecode[i]
+    pc = entrypoint
+    step_i = 0
+    last_jump_to_address = None
+    while pc < len(context.bytecode):
+        next_pc = pc + 1
+        value = context.bytecode[pc]
         if value in OPCODES:
-            mnemonic, stack_input_count, stack_output_count, description, stack_input_names = OPCODES[value]
+            mnemonic, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
         else:
             mnemonic = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
-            stack_output_count = 0
-            description = None
+            _stack_output_count = 0
+            _description = None
 
-            warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
+            warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(pc), LOCATION_PAD_N)} is not found.\n"
 
-        if mnemonic == "JUMP" or mnemonic == "JUMPI":
-            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.CYAN + Colors.BOLD + mnemonic + Colors.ENDC}", end="")
-        elif mnemonic == "JUMPDEST":
-            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.BLUE + Colors.BOLD + mnemonic + Colors.ENDC}", end="")
-        else:
-            print(f"{pad(hex(i), LOCATION_PAD_N)}: {Colors.BOLD + mnemonic + Colors.ENDC}", end="")
+        if not silent:
+            if mnemonic == "JUMP" or mnemonic == "JUMPI":
+                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+            elif mnemonic == "JUMPDEST":
+                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+            else:
+                print(f"{pad(hex(pc), LOCATION_PAD_N)}: {Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
-            push_v = bytes_to_long(context.bytecode[i + 1:i + 1 + mnemonic_num])
-            print(" 0x" + context.bytecode[i+1:i+1+mnemonic_num].hex(), end="")
-            next_i = i + 1 + mnemonic_num
+            push_v = bytes_to_long(context.bytecode[pc + 1:pc + 1 + mnemonic_num])
+            if not silent:
+                print(" 0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), end="")
+            next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic[:4]
         elif mnemonic.startswith("DUP"):
             mnemonic_num = int(mnemonic[3:])
@@ -377,25 +387,26 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
             for _ in range(stack_input_count):
                 input.append(stack.pop())
 
-            if len(stack_input_names) > 0:
-                print("(", end="")
-                if mnemonic == "DUP":
-                    if mnemonic_num >= 2:
-                        print("..., ", end="")
-                    print(f"{pad_even(hex(input[-1]))}", end="")
-                elif mnemonic == "SWAP":
-                    if mnemonic_num >= 2:
-                        print(f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}", end="")
+            if not silent:
+                if len(stack_input_names) > 0:
+                    print("(", end="")
+                    if mnemonic == "DUP":
+                        if mnemonic_num >= 2:
+                            print("..., ", end="")
+                        print(f"{pad_even(hex(input[-1]))}", end="")
+                    elif mnemonic == "SWAP":
+                        if mnemonic_num >= 2:
+                            print(f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}", end="")
+                        else:
+                            print(f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}", end="")
                     else:
-                        print(f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}", end="")
-                else:
-                    for i, name in enumerate(stack_input_names):
-                        if i > 0:
-                            print(", ", end="")
-                        if name != "":
-                            print(f"{name}:", end="")
-                        print(f"{pad_even(hex(input[i]))}", end="")
-                print(")", end="")
+                        for pc, name in enumerate(stack_input_names):
+                            if pc > 0:
+                                print(", ", end="")
+                            if name != "":
+                                print(f"{name}:", end="")
+                            print(f"{pad_even(hex(input[pc]))}", end="")
+                    print(")", end="")
 
             match mnemonic:
                 case "STOP":
@@ -468,7 +479,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                     else:
                         stack.push(input[1] >> input[0])
                 case "KECCAK256":
-                    print(f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
+                    if not silent:
+                        print(f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
                     k = keccak.new(digest_bits=256)
                     k.update(bytes(memory.memory[input[0]:input[0]+input[1]]))
                     stack.push(bytes_to_long(k.digest()))
@@ -500,13 +512,16 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                 case "GASPRICE":
                     stack.push(context.callvalue)
                 case "EXTCODESIZE":
-                    assert False
+                    # assert False
+                    stack.push(0)
                 case "EXTCODECOPY":
                     assert False
                 case "RETURNDATASIZE":
-                    assert False
+                    # assert False
+                    stack.push(0)
                 case "RETURNDATACOPY":
-                    assert False
+                    # assert False
+                    pass
                 case "EXTCODEHASH":
                     assert False
                 case "BLOCKHASH":
@@ -541,13 +556,15 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                     storage.store(input[0], input[1])
                 case "JUMP":
                     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
-                    next_i = input[0]
+                    next_pc = input[0]
+                    last_jump_to_address = input[0]
                 case "JUMPI":
                     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
                     if input[1] != 0:
-                        next_i = input[0]
+                        next_pc = input[0]
+                    last_jump_to_address = input[0]
                 case "PC":
-                    stack.push(i)
+                    stack.push(pc)
                 case "MSIZE":
                     stack.push(len(memory.memory))
                 case "GAS":
@@ -572,10 +589,12 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                 case "CALLCODE":
                     assert False
                 case "RETURN":
-                    print(f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}", end="")
+                    if not silent:
+                        print(f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}", end="")
                     break
                 case "DELEGATECALL":
-                    assert False
+                    # assert False
+                    pass
                 case "CREATE2":
                     assert False
                 case "STATICCALL":
@@ -587,28 +606,34 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, n=UINT256_MAX, d
                 case "SELFDESTRUCT":
                     break
 
-            print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
-            if decode_stack:
-                print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
+            if not silent:
+                print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
+                if decode_stack:
+                    print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
 
-            lines = memory.to_string()
-            for i, line in enumerate(lines):
-                if i == 0:
-                    print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
-                else:
-                    print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
-                print(f"{line}", end="")
+                lines = memory.to_string()
+                for pc, line in enumerate(lines):
+                    if pc == 0:
+                        print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
+                    else:
+                        print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
+                    print(f"{line}", end="")
 
-        print()
-        line_i += 1
-        if line_i >= n:
+        if not silent:
+            print()
+        step_i += 1
+        if step_i >= max_steps:
             break
-        i = next_i
+        pc = next_pc
 
-    print()
-    if warning_messages != "":
-        print(Colors.YELLOW + "WARNING:")
-        print(warning_messages + Colors.ENDC)
+    if not silent:
+        print()
+        if warning_messages != "":
+            print(Colors.YELLOW + "WARNING:")
+            print(warning_messages + Colors.ENDC)
+    
+    if return_last_jump_to_address:
+        return last_jump_to_address
 
 
 class Node:
@@ -765,17 +790,17 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
     warning_messages = ""
 
     i = entrypoint
-    line_i = 0
+    step_i = 0
     while i < len(context.bytecode):
         next_i = i + 1
         value = context.bytecode[i]
         if value in OPCODES:
-            mnemonic, stack_input_count, stack_output_count, description, stack_input_names = OPCODES[value]
+            mnemonic, stack_input_count, stack_output_count, _description, _stack_input_names = OPCODES[value]
         else:
             mnemonic = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
             stack_output_count = 0
-            description = None
+            _description = None
 
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(i), LOCATION_PAD_N)} is not found.\n"
 
@@ -820,8 +845,8 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
                     print(f"{pad(hex(i), LOCATION_PAD_N)}:", Node(mnemonic, input))
                     if show_symbolic_stack:
                         print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
-                    line_i += 1
-                    if line_i >= max_steps:
+                    step_i += 1
+                    if step_i >= max_steps:
                         break
 
         i = next_i
@@ -830,3 +855,140 @@ def disassemble_symbolic(context: Context, trace=False, entrypoint=0x00, show_sy
         print()
         print(Colors.YELLOW + "WARNING:")
         print(warning_messages + Colors.ENDC)
+
+
+class ControlType(Enum):
+    BEFORE_JUMPDEST = 0
+    JUMP = 1
+    JUMPI = 2
+    END = 3
+    BAD = -1
+
+
+def disassemble_mermaid(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False):
+    """
+    ブロックの開始は0x00,JUMPDEST,JUMPIの一つ後。
+    ブロックの終了はJUMP,JUMPDESTの一つ前,REVERT,INVALID,SELFDESTRUCT,STOP,RETURN。
+    """
+
+    LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
+
+    start_addresses = [0x00]
+
+    for i in range(len(context.bytecode)):
+        value = context.bytecode[i]
+        if value not in OPCODES:
+            continue
+        mnemonic = OPCODES[value][0]
+        if mnemonic == "JUMPDEST":
+            # JUMPIの一つ後で追加済みならば追加しない
+            if start_addresses[-1] != i:
+                start_addresses.append(i)
+        elif mnemonic == "JUMPI":
+            start_addresses.append(i+1)
+        
+    def disassemble_block(start_address):
+        """
+        return is_valid_block, end_address, control_type, instructions
+        """
+        stack = Stack()
+        memory = Memory()
+        storage = Storage()
+
+        pc = start_address
+        instructions = []
+        while pc < len(context.bytecode):
+            next_pc = pc + 1
+            value = context.bytecode[pc]
+
+            if value in OPCODES:
+                mnemonic, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
+            else:
+                instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: 0x (?)")
+                return False, pc, ControlType.BAD, instructions
+
+            if mnemonic.startswith("PUSH"):
+                mnemonic_num = int(mnemonic[4:])
+                next_pc = pc + 1 + mnemonic_num
+                mnemonic = mnemonic[:4]
+            elif mnemonic.startswith("DUP"):
+                mnemonic_num = int(mnemonic[3:])
+                mnemonic = mnemonic[:3]
+            elif mnemonic.startswith("SWAP"):
+                mnemonic_num = int(mnemonic[4:])
+                mnemonic = mnemonic[:4]
+            elif mnemonic.startswith("LOG"):
+                mnemonic_num = int(mnemonic[3:])
+                mnemonic = mnemonic[:3]
+
+            if mnemonic == "PUSH":
+                instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}")
+            else:
+                instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}")
+
+            if pc != start_address and mnemonic == "JUMPDEST":
+                return True, pc - 1, ControlType.BEFORE_JUMPDEST, instructions
+            elif mnemonic == "JUMP":
+                return True, pc, ControlType.JUMP, instructions
+            elif mnemonic == "JUMPI":
+                return True, pc, ControlType.JUMPI, instructions
+            elif mnemonic in ["REVERT", "INVALID", "SELFDESTRUCT", "STOP", "RETURN"]:
+                return True, pc, ControlType.END, instructions
+
+            pc = next_pc
+    
+
+    graph = ""
+    for start_address in start_addresses:
+        is_valid_block, end_address, control_type, instructions = disassemble_block(start_address)
+        if not is_valid_block:
+            continue
+        value = "\\n".join(instructions)
+        max_steps = len(instructions)
+        error = False
+        try:
+            last_jump_to_address = disassemble(context, True, start_address, max_steps, False, True, True, True)
+        except Exception as e:
+            error = True
+
+        block_id = pad(hex(start_address), LOCATION_PAD_N) if start_address != entrypoint else "START"
+        if error:
+            graph += f"{block_id}({value}) --> ERROR\n"
+            continue
+        match control_type:
+            case ControlType.BEFORE_JUMPDEST:
+                next_block_id = pad(hex(end_address), LOCATION_PAD_N)
+                graph += f"{block_id}({value}) --> {next_block_id}\n"
+            case ControlType.JUMP:
+                next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
+                graph += f"{block_id}({value}) --> {next_block_id}\n"
+            case ControlType.JUMPI:
+                next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
+                graph += f"{block_id}({value}) --> {next_block_id}\n"
+                next_block_id = pad(hex(end_address + 1), LOCATION_PAD_N)
+                graph += f"{block_id} --> {next_block_id}\n"
+            case ControlType.END:
+                next_block_id = "END"
+                graph += f"{block_id}({value}) --> {next_block_id}\n"
+
+    print("""<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+    </head>
+    <body>""" + \
+    f"""<pre class="mermaid">
+            flowchart TB 
+            {graph}
+    </pre>""" + \
+    """<script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+    <style>
+    .mermaid .node .label {
+        text-align: left !important;
+    }
+    </style>
+    </body>
+    </html>
+    """) 
