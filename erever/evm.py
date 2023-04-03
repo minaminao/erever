@@ -950,6 +950,7 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
 
             state.steps += 1
             if state.steps >= max_steps:
+                print("The maximum number of steps has been reached.")
                 break
 
             if end:
