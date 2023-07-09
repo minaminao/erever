@@ -1009,16 +1009,12 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
             if mnemonic.startswith("PUSH"):
                 mnemonic_num = int(mnemonic[4:])
                 next_pc = pc + 1 + mnemonic_num
-                mnemonic = mnemonic[:4]
             elif mnemonic.startswith("DUP"):
                 mnemonic_num = int(mnemonic[3:])
-                mnemonic = mnemonic[:3]
             elif mnemonic.startswith("SWAP"):
                 mnemonic_num = int(mnemonic[4:])
-                mnemonic = mnemonic[:4]
             elif mnemonic.startswith("LOG"):
                 mnemonic_num = int(mnemonic[3:])
-                mnemonic = mnemonic[:3]
 
             if mnemonic == "PUSH":
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}")
@@ -1060,10 +1056,10 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
                 graph += f"{block_id}({value}) --> {next_block_id}\n"
             case ControlType.JUMP:
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
-                graph += f"{block_id}({value}) --> {next_block_id}\n"
+                graph += f"{block_id}({value}) --jump--> {next_block_id}\n"
             case ControlType.JUMPI:
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
-                graph += f"{block_id}({value}) --> {next_block_id}\n"
+                graph += f"{block_id}({value}) --jump--> {next_block_id}\n"
                 next_block_id = pad(hex(end_address + 1), LOCATION_PAD_N)
                 graph += f"{block_id} --> {next_block_id}\n"
             case ControlType.END:
@@ -1076,8 +1072,9 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
     </head>
     <body>""" + \
     f"""<pre class="mermaid">
-            flowchart TB 
-            {graph}
+
+flowchart TB 
+{graph}
     </pre>""" + \
     """<script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
