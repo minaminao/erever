@@ -294,27 +294,32 @@ class Memory:
             ret.append(s[i:i + 2 * line_length])
 
         decoded_lines = []
-        for line in ret:
-            decoded_line = decode_printable_with_color(line)
+        for i, line in enumerate(ret):
+            decoded_line = decode_printable_with_color(line, i * line_length, self.mstore_l_for_colorize, self.mstore_r_for_colorize)
             decoded_lines.append(decoded_line)
 
-        modified = []
+        modified = (0, 0)
         if self.mstore_l_for_colorize is not None:
-            i_l = self.mstore_l_for_colorize // line_length
-            j_l = 2 * (self.mstore_l_for_colorize % line_length)
-            i_r = self.mstore_r_for_colorize // line_length
-            j_r = 2 * (self.mstore_r_for_colorize % line_length)
-            if j_r == 0:
-                i_r -= 1
-                j_r = 2 * line_length
-            ret[i_r] = ret[i_r][:j_r] + Colors.ENDC + zero_to_gray(ret[i_r][j_r:])
-            ret[i_l] = zero_to_gray(ret[i_l][:j_l]) + Colors.GREEN + ret[i_l][j_l:]
-            modified.extend([i_l, i_r])
+            l_i = self.mstore_l_for_colorize // line_length
+            l_j = 2 * (self.mstore_l_for_colorize % line_length)
+            r_i = self.mstore_r_for_colorize // line_length
+            r_j = 2 * (self.mstore_r_for_colorize % line_length)
+            if r_j == 0:
+                r_i -= 1
+                r_j = 2 * line_length
+            if l_i == r_i:
+                ret[l_i] = zero_to_gray(ret[l_i][:l_j]) + Colors.GREEN + ret[l_i][l_j:r_j] + Colors.ENDC + zero_to_gray(ret[l_i][r_j:])
+            else:
+                ret[l_i] = zero_to_gray(ret[l_i][:l_j]) + Colors.GREEN + ret[l_i][l_j:] + Colors.ENDC
+                for i in range(l_i + 1, r_i):
+                    ret[i] = Colors.GREEN + ret[i] + Colors.ENDC
+                ret[r_i] = Colors.GREEN + ret[r_i][:r_j] + Colors.ENDC + zero_to_gray(ret[r_i][r_j:])
+            modified = (l_i, r_i + 1)
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
 
         for i in range(0, len(ret)):
-            if i in modified:
+            if modified[0] <= i < modified[1]:
                 ret[i] = ret[i] + " | " + decoded_lines[i]
             else:
                 ret[i] = zero_to_gray(ret[i]) + " | " + decoded_lines[i]
