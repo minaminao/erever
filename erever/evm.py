@@ -916,6 +916,8 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                     input[0] = input[mnemonic_num]
                     input[mnemonic_num] = top
                     stack.extend(input[::-1])
+                case "RETURN":
+                    end = True
                 case "REVERT":
                     end = True
                 case "INVALID":
