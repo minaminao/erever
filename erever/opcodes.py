@@ -64,6 +64,7 @@ OPCODES = {
     0x59: ("MSIZE", 0, 1, "Get the size of active memory in bytes.", ()),
     0x5a: ("GAS", 0, 1, "Get the amount of available gas, including the corresponding reduction for the cost of this instruction.", ()),
     0x5b: ("JUMPDEST", 0, 0, "Mark a valid destination for jumps.", ()),
+    0x5f: ("PUSH0", 0, 0, "Place 0x00 on stack.", ()),
     0x60: ("PUSH1", 0, 1, "Place 1 byte item on stack.", ()),
     0x61: ("PUSH2", 0, 1, "Place 2 byte item on stack.", ()),
     0x62: ("PUSH3", 0, 1, "Place 3 byte item on stack.", ()),

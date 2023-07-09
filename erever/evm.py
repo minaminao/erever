@@ -366,6 +366,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
         if not silent:
             if not hide_pc:
                 print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
+            if show_opcodes:
+                print(f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ", end="")
             if mnemonic == "JUMP" or mnemonic == "JUMPI":
                 print(f"{Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
             elif mnemonic == "JUMPDEST":
@@ -376,7 +378,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
             push_v = bytes_to_long(context.bytecode[pc + 1:pc + 1 + mnemonic_num])
-            if not silent:
+            if not silent and mnemonic_num > 0:
                 print(" 0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), end="")
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic[:4]
@@ -615,12 +617,6 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                     break
                 case "SELFDESTRUCT":
                     break
-        
-        if show_opcodes and not silent:
-            if mnemonic.startswith("PUSH"):
-                print(f"\t# 0x{context.bytecode[pc:pc+1+mnemonic_num].hex()}", end="")
-            else:
-                print(f"\t# 0x{context.bytecode[pc:pc+1].hex()}", end="")
 
         if trace and not silent:
             print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
@@ -745,7 +741,7 @@ class Node:
                 # case "SELFBALANCE":
                 # case "BASEFEE":
                 case "POP":
-                    return f"{Colors.GRAY}{Colors.BOLD}{self.type}{Colors.ENDC}({Node.unwrap(self.value[0])})"
+                    return f"{Colors.GRAY}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.GRAY}(){Colors.ENDC} # {Node.unwrap(self.value[0])}"
                 # case "MLOAD":
                 # case "MSTORE":
                 # case "MSTORE8":
@@ -759,21 +755,21 @@ class Node:
                 # case "MSIZE":
                 # case "GAS":
                 case "JUMPDEST":
-                    return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}"
+                    return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.BLUE}(){Colors.ENDC}"
                 case "PUSH":
-                    return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC} {self.value}"
+                    return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value})"
                 case "DUP":
-                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}("
+                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
                     if self.mnemonic_num >= 2:
                         ret += "..., "
-                    ret += f"{str(self.value[-1])})"
+                    ret += f"{str(self.value[-1])}"
                     return ret
                 case "SWAP":
-                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}("
+                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
                     if self.mnemonic_num >= 2:
-                        ret += f"{str(self.value[0])}, ..., {str(self.value[-1])})"
+                        ret += f"{str(self.value[0])}, ..., {str(self.value[-1])}"
                     else:
-                        ret += f"{str(self.value[0])}, {str(self.value[-1])})"
+                        ret += f"{str(self.value[0])}, {str(self.value[-1])}"
                     return ret
                 case "LOG":
                     return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({str(self.value)[1:-1]})"
@@ -934,9 +930,14 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
             else:
                 if not hide_pc:
                     print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
+                if show_opcodes:
+                    print(f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ", end="")
 
                 if mnemonic == "PUSH":
-                    print(Node(mnemonic, "0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), mnemonic_num, stack_input_count), end="")
+                    if mnemonic_num == 0:
+                        print(Node(mnemonic, "", mnemonic_num, stack_input_count), end="")
+                    else:
+                        print(Node(mnemonic, "0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), mnemonic_num, stack_input_count), end="")
                 else:
                     res = str(Node(mnemonic, input, mnemonic_num, stack_input_count))
                     if res[0] == "(":
@@ -944,12 +945,6 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                     else:
                         print(res, end="")
                 
-                if show_opcodes:
-                    if mnemonic == "PUSH":
-                        print(f"\t# 0x{context.bytecode[pc:pc+mnemonic_num+1].hex()}", end="")
-                    else:
-                        print(f"\t# 0x{context.bytecode[pc:pc+1].hex()}", end="")
-
                 print()
 
                 if show_symbolic_stack:
@@ -1041,7 +1036,7 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
             elif mnemonic.startswith("LOG"):
                 mnemonic_num = int(mnemonic[3:])
 
-            if mnemonic == "PUSH":
+            if mnemonic.startswith("PUSH"):
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}")
             else:
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}")
