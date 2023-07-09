@@ -29,6 +29,8 @@ class Context:
     DEFAULT_BASEFEE = 0
     DEFAULT_GAS = 0
 
+    bytecode: bytes
+
     def from_arg_params_with_bytecode(args, bytecode):
         self = Context()
         self.bytecode = Context.__hex_to_bytes(bytecode)
@@ -331,7 +333,7 @@ class Storage:
         self.storage[key] = value
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False):
+def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False, show_opcodes=False):
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
@@ -382,6 +384,8 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
         elif mnemonic.startswith("LOG"):
             mnemonic_num = int(mnemonic[3:])
             mnemonic = mnemonic[:3]
+        else:
+            mnemonic_num = 0
 
         if trace:
             input = []
@@ -606,19 +610,25 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                     break
                 case "SELFDESTRUCT":
                     break
+        
+        if show_opcodes and not silent:
+            if mnemonic.startswith("PUSH"):
+                print(f"\t# 0x{context.bytecode[pc:pc+1+mnemonic_num].hex()}", end="")
+            else:
+                print(f"\t# 0x{context.bytecode[pc:pc+1].hex()}", end="")
 
-            if not silent:
-                print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
-                if decode_stack:
-                    print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
+        if trace and not silent:
+            print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
+            if decode_stack:
+                print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
 
-                lines = memory.to_string()
-                for pc, line in enumerate(lines):
-                    if pc == 0:
-                        print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
-                    else:
-                        print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
-                    print(f"{line}", end="")
+            lines = memory.to_string()
+            for pc, line in enumerate(lines):
+                if pc == 0:
+                    print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
+                else:
+                    print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
+                print(f"{line}", end="")
 
         if not silent:
             print()
@@ -807,7 +817,7 @@ class SymbolicStack:
     def to_string(self):
         return self.__repr__()
 
-def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX, hide_pc=False, hide_opcodes_with_no_stack_output=False):
+def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX, hide_pc=False, hide_instructions_with_no_stack_output=False, show_opcodes=False):
 
     class State:
         def __init__(self, context: Context, entrypoint=0x00):
@@ -881,7 +891,7 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                 mnemonic_num = int(mnemonic[3:])
                 mnemonic = mnemonic[:3]
             else:
-                mnemonic_num = None
+                mnemonic_num = 0
 
             input = []
             for _ in range(stack_input_count):
@@ -912,20 +922,28 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                     if stack_output_count == 1:
                         stack.push(Node(mnemonic, input))
 
-            if hide_opcodes_with_no_stack_output and stack_output_count == 0:
+            if hide_instructions_with_no_stack_output and stack_output_count == 0:
                 pass
             else:
                 if not hide_pc:
                     print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
 
                 if mnemonic == "PUSH":
-                    print(Node(mnemonic, "0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), mnemonic_num, stack_input_count))
+                    print(Node(mnemonic, "0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), mnemonic_num, stack_input_count), end="")
                 else:
                     res = str(Node(mnemonic, input, mnemonic_num, stack_input_count))
                     if res[0] == "(":
-                        print(res[1:-1])
+                        print(res[1:-1], end="")
                     else:
-                        print(res)
+                        print(res, end="")
+                
+                if show_opcodes:
+                    if mnemonic == "PUSH":
+                        print(f"\t# 0x{context.bytecode[pc:pc+mnemonic_num+1].hex()}", end="")
+                    else:
+                        print(f"\t# 0x{context.bytecode[pc:pc+1].hex()}", end="")
+
+                print()
 
                 if show_symbolic_stack:
                     print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")

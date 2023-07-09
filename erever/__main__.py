@@ -20,11 +20,12 @@ def main():
     parser.add_argument("--symbolic", action="store_true", default=False)
     parser.add_argument("--entrypoint", type=str, default="0")
     parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
+    parser.add_argument("--show-opcodes", action="store_true", default=False)
     parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
     parser.add_argument("--decode-stack", action="store_true", default=False)
     parser.add_argument("--mermaid", action="store_true", default=False)
     parser.add_argument("--hide-pc", action="store_true", default=False)
-    parser.add_argument("--hide-opcodes-with-no-stack-output", action="store_true", default=False)
+    parser.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -83,9 +84,9 @@ def main():
     if args.mermaid:
         disassemble_mermaid(context, args.entrypoint, args.max_steps)
     elif args.symbolic:
-        disassemble_symbolic(context, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc, hide_opcodes_with_no_stack_output=args.hide_opcodes_with_no_stack_output)
+        disassemble_symbolic(context, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc, hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output, show_opcodes=args.show_opcodes)
     else:
-        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc)
+        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc, show_opcodes=args.show_opcodes)
 
 
 def parse_arg_param_to_int(param):
