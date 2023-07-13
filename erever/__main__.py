@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--mermaid", action="store_true", default=False)
     parser.add_argument("--hide-pc", action="store_true", default=False)
     parser.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
+    parser.add_argument("--hide-memory", action="store_true", default=False)
 
     parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
     parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -86,7 +87,7 @@ def main():
     elif args.symbolic:
         disassemble_symbolic(context, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc, hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output, show_opcodes=args.show_opcodes)
     else:
-        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc, show_opcodes=args.show_opcodes)
+        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc, show_opcodes=args.show_opcodes, hide_memory=args.hide_memory)
 
 
 def parse_arg_param_to_int(param):

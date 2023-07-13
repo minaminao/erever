@@ -338,7 +338,7 @@ class Storage:
         self.storage[key] = value
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False, show_opcodes=False):
+def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False, show_opcodes=False, hide_memory=False):
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
@@ -514,8 +514,15 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                 case "CALLDATASIZE":
                     stack.push(len(context.calldata))
                 case "CALLDATACOPY":
-                    # TODO: bound
-                    memory.store(input[0], context.calldata[input[1]:input[1]+input[2]])
+                    # 境界条件
+                    offset = input[1]
+                    size = input[2]
+                    if offset > len(context.calldata):
+                        memory.store(input[0], b"\x00" * size)
+                    elif offset + size > len(context.calldata):
+                        memory.store(input[0], context.calldata[offset:] + b"\x00" * (offset + size - len(context.calldata)))
+                    else:
+                        memory.store(input[0], context.calldata[offset:offset+size])
                 case "CODESIZE":
                     stack.push(len(context.bytecode))
                 case "CODECOPY":
@@ -597,16 +604,18 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                 case "CREATE":
                     assert False
                 case "CALL":
-                    assert False
+                    # TODO
+                    stack.push(0xCA11)
                 case "CALLCODE":
-                    assert False
+                    # TODO
+                    stack.push(0xCA11)
                 case "RETURN":
                     if not silent:
                         print(f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}", end="")
                     break
                 case "DELEGATECALL":
-                    # assert False
-                    pass
+                    # TODO
+                    stack.push(0xCA11)
                 case "CREATE2":
                     assert False
                 case "STATICCALL":
@@ -623,13 +632,14 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
             if decode_stack:
                 print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
 
-            lines = memory.to_string()
-            for pc, line in enumerate(lines):
-                if pc == 0:
-                    print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
-                else:
-                    print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
-                print(f"{line}", end="")
+            if not hide_memory:
+                lines = memory.to_string()
+                for pc, line in enumerate(lines):
+                    if pc == 0:
+                        print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
+                    else:
+                        print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
+                    print(f"{line}", end="")
 
         if not silent:
             print()
