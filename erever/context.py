@@ -1,5 +1,6 @@
 from web3 import HTTPProvider, Web3
 
+
 class Context:
     DEFAULT_ADDRESS = 0xadd2e55
     DEFAULT_BALANCE = 0

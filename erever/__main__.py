@@ -3,7 +3,7 @@ import os
 import sys
 import tomllib
 
-from .evm import Context, disassemble, disassemble_symbolic, disassemble_mermaid
+from .evm import Context, disassemble, disassemble_mermaid, disassemble_symbolic
 from .utils import UINT256_MAX
 
 

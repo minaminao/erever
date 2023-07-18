@@ -1,5 +1,7 @@
 from Crypto.Util.number import bytes_to_long
+
 from .utils import decode_printable_with_color
+
 
 class Memory:
     def __init__(self):

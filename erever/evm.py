@@ -1,19 +1,19 @@
+from collections import deque
+from copy import deepcopy
+from enum import Enum
+
 from Crypto.Hash import keccak
 from Crypto.Util.number import bytes_to_long
 
-from enum import Enum
-from collections import deque
-from copy import deepcopy
-
 from .colors import Colors
-from .opcodes import OPCODES
 from .context import Context
-from .utils import UINT256_MAX, uint256, int256, pad, pad_even, TAB_SIZE, SIGN_MASK
-from .stack import Stack
 from .memory import Memory
+from .node import Node
+from .opcodes import OPCODES
+from .stack import Stack
 from .storage import Storage
 from .symbolic_stack import SymbolicStack
-from .node import Node
+from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint256
 
 
 def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False, show_opcodes=False, hide_memory=False):

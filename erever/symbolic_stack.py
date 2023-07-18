@@ -1,5 +1,6 @@
 from .node import Node
 
+
 class SymbolicStack:
     def __init__(self):
         self.var_n = 0
