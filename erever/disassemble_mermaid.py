@@ -14,7 +14,7 @@ class ControlType(Enum):
 
 
 def disassemble_mermaid(
-    context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX, decode_stack: bool = False
+    context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX
 ) -> None:
     """
     ブロックの開始は0x00,JUMPDEST,JUMPIの一つ後。
