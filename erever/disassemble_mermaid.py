@@ -3,6 +3,7 @@ from enum import Enum
 from .context import Context
 from .opcodes import OPCODES
 from .utils import UINT256_MAX, pad
+from .disassemble import disassemble
 
 
 class ControlType(Enum):
@@ -17,8 +18,18 @@ def disassemble_mermaid(
     context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX
 ) -> None:
     """
-    ブロックの開始は0x00,JUMPDEST,JUMPIの一つ後。
-    ブロックの終了はJUMP,JUMPDESTの一つ前,REVERT,INVALID,SELFDESTRUCT,STOP,RETURN。
+    ブロックの開始
+    - 0x00
+    - JUMPDEST
+    - JUMPIの一つ後
+    ブロックの終了
+    - JUMP
+    - JUMPDESTの一つ前
+    - REVERT
+    - INVALID
+    - SELFDESTRUCT
+    - STOP
+    - RETURN
     """
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
@@ -129,8 +140,8 @@ flowchart TB
 {graph}
     </pre>"""
         + """<script type="module">
-      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-      mermaid.initialize({ startOnLoad: true });
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
     </script>
     <style>
     .mermaid .node .label {
