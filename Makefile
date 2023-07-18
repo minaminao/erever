@@ -14,4 +14,7 @@ lint-fix:
 	ruff check . --fix
 
 type-check:
+	mypy .
+
+type-check-strict:
 	mypy . --strict

@@ -46,14 +46,14 @@ class Stack:
             if type(self.stack[n - 1 - i]) == int:
                 x = pad_even(hex(self.stack[n - 1 - i]))
             else:
-                x = self.stack[n - 1 - i]
+                x = str(self.stack[n - 1 - i])
             if n - 1 - i in self.updated_indices_for_colorize:
                 x = Colors.GREEN + x + Colors.ENDC
             ret += x
         ret = "[" + ret + "]"
         return ret
 
-    def to_string_with_decode(self):
+    def to_string_with_decode(self) -> str:
         ret = ""
         n = len(self.stack)
         for i in range(n):
@@ -62,7 +62,7 @@ class Stack:
             if type(self.stack[n - 1 - i]) == int:
                 x = decode_printable_with_color(pad_even(hex(self.stack[n - 1 - i]))[2:])
             else:
-                x = self.stack[n - 1 - i]
+                x = str(self.stack[n - 1 - i])
             if n - 1 - i in self.updated_indices_for_colorize:
                 x = Colors.GREEN + x + Colors.ENDC
             ret += x

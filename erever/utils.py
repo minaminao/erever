@@ -36,7 +36,10 @@ def pad_even(hex_number: str) -> str:
 
 
 def decode_printable_with_color(
-    hex_string: str, i_start=None, mstore_l_for_colorize=None, mstore_r_for_colorize=None
+    hex_string: str,
+    i_start: int | None = None,
+    mstore_l_for_colorize: int | None = None,
+    mstore_r_for_colorize: int | None = None,
 ) -> str:
     if hex_string[:2] == "0x":
         hex_string = hex_string[2:]
@@ -46,7 +49,12 @@ def decode_printable_with_color(
         c = chr(int(hex_string[i : i + 2], 16))
         if c not in PRINTABLE:
             c = "."
-        if mstore_l_for_colorize is not None and mstore_l_for_colorize <= i_start + i // 2 < mstore_r_for_colorize:
+        if (
+            mstore_l_for_colorize is not None
+            and mstore_r_for_colorize is not None
+            and i_start is not None
+            and mstore_l_for_colorize <= i_start + i // 2 < mstore_r_for_colorize
+        ):
             c = Colors.GREEN + c + Colors.ENDC
         elif c not in PRINTABLE:
             c = Colors.GRAY + "." + Colors.ENDC

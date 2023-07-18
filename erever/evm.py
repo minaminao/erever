@@ -18,16 +18,16 @@ from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint
 
 def disassemble(
     context: Context,
-    trace=False,
-    entrypoint=0x00,
-    max_steps=UINT256_MAX,
-    decode_stack=False,
-    ignore_stack_underflow=False,
-    silent=False,
-    return_last_jump_to_address=False,
-    hide_pc=False,
-    show_opcodes=False,
-    hide_memory=False,
+    trace: bool = False,
+    entrypoint: int = 0x00,
+    max_steps: int = UINT256_MAX,
+    decode_stack: bool = False,
+    ignore_stack_underflow: bool = False,
+    silent: bool = False,
+    return_last_jump_to_address: bool = False,
+    hide_pc: bool = False,
+    show_opcodes: bool = False,
+    hide_memory: bool = False,
 ):
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
@@ -357,12 +357,12 @@ def disassemble(
 
 def disassemble_symbolic(
     context: Context,
-    entrypoint=0x00,
-    show_symbolic_stack=False,
-    max_steps=UINT256_MAX,
-    hide_pc=False,
-    hide_instructions_with_no_stack_output=False,
-    show_opcodes=False,
+    entrypoint: int = 0x00,
+    show_symbolic_stack: bool = False,
+    max_steps: int = UINT256_MAX,
+    hide_pc: bool = False,
+    hide_instructions_with_no_stack_output: bool = False,
+    show_opcodes: bool = False,
 ) -> None:
     class State:
         context: Context
@@ -370,11 +370,11 @@ def disassemble_symbolic(
         pc: int
 
         steps: int
-        conditions: list[tuple[str, int, bool]]
+        conditions: list[tuple[Node, int, bool]]
         jumped_from: int | None
         jumped: bool | None
 
-        def __init__(self, context: Context, entrypoint=0x00):
+        def __init__(self, context: Context, entrypoint: int = 0x00) -> None:
             self.context = context
             self.stack = SymbolicStack()
             self.pc = entrypoint
@@ -384,7 +384,7 @@ def disassemble_symbolic(
             self.jumped_from = None
             self.jumped = None
 
-        def hash(self):
+        def hash(self) -> int:
             # Contexts are not changed, so they can be ignored
             return hash((self.pc, self.stack.to_string()))
 
@@ -450,10 +450,7 @@ def disassemble_symbolic(
             else:
                 mnemonic_num = 0
 
-            input = []
-            for _ in range(stack_input_count):
-                input.append(stack.pop())
-
+            input: list[Node] = [stack.pop() for _ in range(stack_input_count)]
             end = False
             match mnemonic:
                 # 状態の操作はここに。操作しないものはNodeの__repr__に。
@@ -515,8 +512,10 @@ def disassemble_symbolic(
                     print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
 
             if mnemonic == "JUMP" and input[0].type == "uint256":
+                assert type(input[0].value) is int
                 next_pc = input[0].value
             if mnemonic == "JUMPI" and input[0].type == "uint256":
+                assert type(input[0].value) is int
                 state.steps += 1
                 state_not_jumped = deepcopy(state)
                 state_not_jumped.pc = next_pc
@@ -551,7 +550,9 @@ class ControlType(Enum):
     BAD = -1
 
 
-def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False):
+def disassemble_mermaid(
+    context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX, decode_stack: bool = False
+) -> None:
     """
     ブロックの開始は0x00,JUMPDEST,JUMPIの一つ後。
     ブロックの終了はJUMP,JUMPDESTの一つ前,REVERT,INVALID,SELFDESTRUCT,STOP,RETURN。
@@ -573,7 +574,7 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
         elif mnemonic == "JUMPI":
             start_addresses.append(i + 1)
 
-    def disassemble_block(start_address):
+    def disassemble_block(start_address: int) -> tuple[bool, int, ControlType, list[str]]:
         """
         return is_valid_block, end_address, control_type, instructions
         """
@@ -618,12 +619,14 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
 
             pc = next_pc
 
+        assert False
+
     graph = ""
     for start_address in start_addresses:
         is_valid_block, end_address, control_type, instructions = disassemble_block(start_address)
         if not is_valid_block:
             continue
-        value = "\\n".join(instructions)
+        block = "\\n".join(instructions)
         max_steps = len(instructions)
         error = False
         try:
@@ -633,23 +636,23 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
 
         block_id = pad(hex(start_address), LOCATION_PAD_N) if start_address != entrypoint else "START"
         if error:
-            graph += f"{block_id}({value}) --> ERROR\n"
+            graph += f"{block_id}({block}) --> ERROR\n"
             continue
         match control_type:
             case ControlType.BEFORE_JUMPDEST:
                 next_block_id = pad(hex(end_address), LOCATION_PAD_N)
-                graph += f"{block_id}({value}) --> {next_block_id}\n"
+                graph += f"{block_id}({block}) --> {next_block_id}\n"
             case ControlType.JUMP:
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
-                graph += f"{block_id}({value}) --jump--> {next_block_id}\n"
+                graph += f"{block_id}({block}) --jump--> {next_block_id}\n"
             case ControlType.JUMPI:
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
-                graph += f"{block_id}({value}) --jump--> {next_block_id}\n"
+                graph += f"{block_id}({block}) --jump--> {next_block_id}\n"
                 next_block_id = pad(hex(end_address + 1), LOCATION_PAD_N)
                 graph += f"{block_id} --> {next_block_id}\n"
             case ControlType.END:
                 next_block_id = "END"
-                graph += f"{block_id}({value}) --> {next_block_id}\n"
+                graph += f"{block_id}({block}) --> {next_block_id}\n"
 
     print(
         """<html lang="en">

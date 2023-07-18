@@ -15,7 +15,7 @@ class Memory:
         self.mstore_l_for_colorize = None
         self.mstore_r_for_colorize = None
 
-    def __extend(self, size: int):
+    def __extend(self, size: int) -> None:
         if size % 0x20 > 0:
             size += 0x20 - size % 0x20
         if len(self.memory) >= size:
@@ -25,7 +25,7 @@ class Memory:
     def get_hex(self, start: int, end: int) -> str:
         return bytes(self.memory[start:end]).hex()
 
-    def store8(self, offset: int, value: int):
+    def store8(self, offset: int, value: int) -> None:
         assert value < 0x100
         self.__extend(offset + 1)
         self.memory[offset] = value
@@ -33,7 +33,7 @@ class Memory:
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = offset + 1
 
-    def store256(self, offset: int, value: int):
+    def store256(self, offset: int, value: int) -> None:
         value_bytes = value.to_bytes(32, "big")
         r = offset + 32
         self.__extend(r)
@@ -43,7 +43,7 @@ class Memory:
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = r
 
-    def store(self, offset: int, value: bytes):
+    def store(self, offset: int, value: bytes) -> None:
         r = offset + len(value)
         self.__extend(r)
         for i, b in enumerate(value):
@@ -54,14 +54,14 @@ class Memory:
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = r
 
-    def load(self, offset: int):
+    def load(self, offset: int) -> int:
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
     def to_string(self, line_length=0x20) -> list[str]:
         s = bytes(self.memory).hex()
         ret = []
 
-        def zero_to_gray(s):
+        def zero_to_gray(s: str) -> str:
             ret = ""
             for i in range(0, len(s), 2):
                 b = s[i : i + 2]

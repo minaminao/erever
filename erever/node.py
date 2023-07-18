@@ -4,12 +4,14 @@ from .utils import pad_even
 
 class Node:
     type: str
-    value: str
+    value: str | int
 
     mnemonic_num: int | None
     input_count: int | None
 
-    def __init__(self, type_, value, mnemonic_num=None, input_count=None) -> None:
+    def __init__(
+        self, type_: str, value: str | int, mnemonic_num: int | None = None, input_count: int | None = None
+    ) -> None:
         self.type = type_
         self.value = value
 
@@ -21,7 +23,7 @@ class Node:
         s = str(s)
         return s[1:-1] if s[0] == "(" and s[-1] == ")" else s
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type == "uint256":
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
@@ -121,12 +123,14 @@ class Node:
                     return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value})"
                 case "DUP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    assert type(self.mnemonic_num) is int
                     if self.mnemonic_num >= 2:
                         ret += "..., "
                     ret += f"{str(self.value[-1])}"
                     return ret
                 case "SWAP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    assert type(self.mnemonic_num) is int
                     if self.mnemonic_num >= 2:
                         ret += f"{str(self.value[0])}, ..., {str(self.value[-1])}"
                     else:

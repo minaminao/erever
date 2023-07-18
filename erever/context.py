@@ -40,7 +40,7 @@ class Context:
     gas: int
 
     @staticmethod
-    def from_arg_params_with_bytecode(args, bytecode):
+    def from_arg_params_with_bytecode(args, bytecode) -> "Context":
         self = Context()
         self.bytecode = Context.__hex_to_bytes(bytecode)
 
@@ -86,7 +86,7 @@ class Context:
         return self
 
     @staticmethod
-    def from_tx_hash(args):
+    def from_tx_hash(args) -> "Context":
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
 
@@ -128,7 +128,7 @@ class Context:
         return self
 
     @staticmethod
-    def from_contract_address(args):
+    def from_contract_address(args) -> "Context":
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
 
