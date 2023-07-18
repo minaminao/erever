@@ -3,14 +3,21 @@ from .utils import pad_even
 
 
 class Node:
-    def __init__(self, type_, value, mnemonic_num=None, input_count=None):
+    type: str
+    value: str
+
+    mnemonic_num: int | None
+    input_count: int | None
+
+    def __init__(self, type_, value, mnemonic_num=None, input_count=None) -> None:
         self.type = type_
         self.value = value
 
         self.mnemonic_num = mnemonic_num
         self.input_count = input_count
 
-    def unwrap(s):
+    @staticmethod
+    def unwrap(s: str | int) -> str:
         s = str(s)
         return s[1:-1] if s[0] == "(" and s[-1] == ")" else s
 
@@ -142,4 +149,3 @@ class Node:
                         return f"{Colors.BOLD}{self.type}{Colors.ENDC}({Node.unwrap(self.value[0])})"
                     else:
                         return f"{Colors.BOLD}{self.type}{Colors.ENDC}({str(self.value)[1:-1]})"
-

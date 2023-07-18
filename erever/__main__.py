@@ -7,8 +7,10 @@ from .evm import Context, disassemble, disassemble_mermaid, disassemble_symbolic
 from .utils import UINT256_MAX
 
 
-def main():
-    parser = argparse.ArgumentParser(description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument("-b", "--bytecode")
     parser.add_argument("-f", "--filename")
 
@@ -85,17 +87,34 @@ def main():
     if args.mermaid:
         disassemble_mermaid(context, args.entrypoint, args.max_steps)
     elif args.symbolic:
-        disassemble_symbolic(context, args.entrypoint, args.show_symbolic_stack, args.max_steps, args.hide_pc, hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output, show_opcodes=args.show_opcodes)
+        disassemble_symbolic(
+            context,
+            args.entrypoint,
+            args.show_symbolic_stack,
+            args.max_steps,
+            args.hide_pc,
+            hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
+            show_opcodes=args.show_opcodes,
+        )
     else:
-        disassemble(context, args.trace, args.entrypoint, args.max_steps, args.decode_stack, hide_pc=args.hide_pc, show_opcodes=args.show_opcodes, hide_memory=args.hide_memory)
+        disassemble(
+            context,
+            args.trace,
+            args.entrypoint,
+            args.max_steps,
+            args.decode_stack,
+            hide_pc=args.hide_pc,
+            show_opcodes=args.show_opcodes,
+            hide_memory=args.hide_memory,
+        )
 
 
-def parse_arg_param_to_int(param):
+def parse_arg_param_to_int(param: str) -> int:
     if param.startswith("0x"):
         return int(param, 16)
     else:
         return int(param)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

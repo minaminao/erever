@@ -16,7 +16,19 @@ from .symbolic_stack import SymbolicStack
 from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint256
 
 
-def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT256_MAX, decode_stack=False, ignore_stack_underflow=False, silent=False, return_last_jump_to_address=False, hide_pc=False, show_opcodes=False, hide_memory=False):
+def disassemble(
+    context: Context,
+    trace=False,
+    entrypoint=0x00,
+    max_steps=UINT256_MAX,
+    decode_stack=False,
+    ignore_stack_underflow=False,
+    silent=False,
+    return_last_jump_to_address=False,
+    hide_pc=False,
+    show_opcodes=False,
+    hide_memory=False,
+):
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
@@ -55,9 +67,9 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
-            push_v = bytes_to_long(context.bytecode[pc + 1:pc + 1 + mnemonic_num])
+            push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
             if not silent and mnemonic_num > 0:
-                print(" 0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), end="")
+                print(" 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(), end="")
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic[:4]
         elif mnemonic.startswith("DUP"):
@@ -170,9 +182,12 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                         stack.push(input[1] >> input[0])
                 case "KECCAK256":
                     if not silent:
-                        print(f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}", end="")
+                        print(
+                            f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}",
+                            end="",
+                        )
                     k = keccak.new(digest_bits=256)
-                    k.update(bytes(memory.memory[input[0]:input[0]+input[1]]))
+                    k.update(bytes(memory.memory[input[0] : input[0] + input[1]]))
                     stack.push(bytes_to_long(k.digest()))
                 case "ADDRESS":
                     stack.push(context.address)
@@ -188,7 +203,7 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                     if len(context.calldata) < input[0]:
                         stack.push(0)
                     else:
-                        stack.push(bytes_to_long((context.calldata[input[0]:] + b"\x00" * 32)[:32]))
+                        stack.push(bytes_to_long((context.calldata[input[0] :] + b"\x00" * 32)[:32]))
                 case "CALLDATASIZE":
                     stack.push(len(context.calldata))
                 case "CALLDATACOPY":
@@ -197,14 +212,16 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                     if offset > len(context.calldata):
                         memory.store(input[0], b"\x00" * size)
                     elif offset + size > len(context.calldata):
-                        memory.store(input[0], context.calldata[offset:] + b"\x00" * (offset + size - len(context.calldata)))
+                        memory.store(
+                            input[0], context.calldata[offset:] + b"\x00" * (offset + size - len(context.calldata))
+                        )
                     else:
-                        memory.store(input[0], context.calldata[offset:offset+size])
+                        memory.store(input[0], context.calldata[offset : offset + size])
                 case "CODESIZE":
                     stack.push(len(context.bytecode))
                 case "CODECOPY":
                     # TODO: bound
-                    memory.store(input[0], context.bytecode[input[1]:input[1]+input[2]])
+                    memory.store(input[0], context.bytecode[input[1] : input[1] + input[2]])
                 case "GASPRICE":
                     stack.push(context.callvalue)
                 case "EXTCODESIZE":
@@ -288,7 +305,10 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
                     stack.push(0xCA11)
                 case "RETURN":
                     if not silent:
-                        print(f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}", end="")
+                        print(
+                            f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}",
+                            end="",
+                        )
                     break
                 case "DELEGATECALL":
                     # TODO
@@ -330,30 +350,46 @@ def disassemble(context: Context, trace=False, entrypoint=0x00, max_steps=UINT25
         if warning_messages != "":
             print(Colors.YELLOW + "WARNING:")
             print(warning_messages + Colors.ENDC)
-    
+
     if return_last_jump_to_address:
         return last_jump_to_address
 
 
-def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=False, max_steps=UINT256_MAX, hide_pc=False, hide_instructions_with_no_stack_output=False, show_opcodes=False):
-
+def disassemble_symbolic(
+    context: Context,
+    entrypoint=0x00,
+    show_symbolic_stack=False,
+    max_steps=UINT256_MAX,
+    hide_pc=False,
+    hide_instructions_with_no_stack_output=False,
+    show_opcodes=False,
+) -> None:
     class State:
+        context: Context
+        stack: SymbolicStack
+        pc: int
+
+        steps: int
+        conditions: list[tuple[str, int, bool]]
+        jumped_from: int | None
+        jumped: bool | None
+
         def __init__(self, context: Context, entrypoint=0x00):
             self.context = context
             self.stack = SymbolicStack()
             self.pc = entrypoint
-            
+
             self.steps = 0
-            self.conditions = [] # [(condition, pc, is_met: bool)]
+            self.conditions = []  # [(condition, pc, is_met: bool)]
             self.jumped_from = None
             self.jumped = None
 
         def hash(self):
             # Contexts are not changed, so they can be ignored
             return hash((self.pc, self.stack.to_string()))
-    
+
     initial_state = State(context, entrypoint)
-    queue = deque()
+    queue: deque[State] = deque()
     queue.append(initial_state)
     hashes = set()
 
@@ -375,15 +411,18 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                 print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
             for condition, pc, is_met in state.conditions:
                 if is_met:
-                    print(f"  {Colors.GREEN} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.GREEN}== true{Colors.ENDC}")
+                    print(
+                        f"  {Colors.GREEN} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.GREEN}== true{Colors.ENDC}"
+                    )
                 else:
-                    print(f"  {Colors.RED} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.RED}== false{Colors.ENDC}")
+                    print(
+                        f"  {Colors.RED} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.RED}== false{Colors.ENDC}"
+                    )
         else:
             print()
 
         pc = state.pc
         while pc < len(context.bytecode):
-
             next_pc = pc + 1
             value = context.bytecode[pc]
             if value in OPCODES:
@@ -396,7 +435,7 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
 
             if mnemonic.startswith("PUSH"):
                 mnemonic_num = int(mnemonic[4:])
-                push_v = bytes_to_long(context.bytecode[pc + 1:pc + 1 + mnemonic_num])
+                push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
                 next_pc = pc + 1 + mnemonic_num
                 mnemonic = mnemonic[:4]
             elif mnemonic.startswith("DUP"):
@@ -454,14 +493,22 @@ def disassemble_symbolic(context: Context, entrypoint=0x00, show_symbolic_stack=
                     if mnemonic_num == 0:
                         print(Node(mnemonic, "", mnemonic_num, stack_input_count), end="")
                     else:
-                        print(Node(mnemonic, "0x" + context.bytecode[pc+1:pc+1+mnemonic_num].hex(), mnemonic_num, stack_input_count), end="")
+                        print(
+                            Node(
+                                mnemonic,
+                                "0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(),
+                                mnemonic_num,
+                                stack_input_count,
+                            ),
+                            end="",
+                        )
                 else:
                     res = str(Node(mnemonic, input, mnemonic_num, stack_input_count))
                     if res[0] == "(":
                         print(res[1:-1], end="")
                     else:
                         print(res, end="")
-                
+
                 print()
 
                 if show_symbolic_stack:
@@ -524,8 +571,8 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
             if start_addresses[-1] != i:
                 start_addresses.append(i)
         elif mnemonic == "JUMPI":
-            start_addresses.append(i+1)
-        
+            start_addresses.append(i + 1)
+
     def disassemble_block(start_address):
         """
         return is_valid_block, end_address, control_type, instructions
@@ -554,7 +601,9 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
                 mnemonic_num = int(mnemonic[3:])
 
             if mnemonic.startswith("PUSH"):
-                instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}")
+                instructions.append(
+                    f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}"
+                )
             else:
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}")
 
@@ -568,7 +617,6 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
                 return True, pc, ControlType.END, instructions
 
             pc = next_pc
-    
 
     graph = ""
     for start_address in start_addresses:
@@ -580,7 +628,7 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
         error = False
         try:
             last_jump_to_address = disassemble(context, True, start_address, max_steps, False, True, True, True)
-        except Exception as e:
+        except Exception:
             error = True
 
         block_id = pad(hex(start_address), LOCATION_PAD_N) if start_address != entrypoint else "START"
@@ -603,17 +651,18 @@ def disassemble_mermaid(context: Context, entrypoint=0x00, max_steps=UINT256_MAX
                 next_block_id = "END"
                 graph += f"{block_id}({value}) --> {next_block_id}\n"
 
-    print("""<html lang="en">
+    print(
+        """<html lang="en">
     <head>
         <meta charset="utf-8" />
     </head>
-    <body>""" + \
-    f"""<pre class="mermaid">
+    <body>"""
+        + f"""<pre class="mermaid">
 
 flowchart TB 
 {graph}
-    </pre>""" + \
-    """<script type="module">
+    </pre>"""
+        + """<script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
       mermaid.initialize({ startOnLoad: true });
     </script>
@@ -624,4 +673,5 @@ flowchart TB
     </style>
     </body>
     </html>
-    """) 
+    """
+    )

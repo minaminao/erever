@@ -1,10 +1,15 @@
 from Crypto.Util.number import bytes_to_long
 
+from .colors import Colors
 from .utils import decode_printable_with_color
 
 
 class Memory:
-    def __init__(self):
+    memory: list[int]
+    mstore_l_for_colorize: int | None
+    mstore_r_for_colorize: int | None
+
+    def __init__(self) -> None:
         self.memory = []
 
         self.mstore_l_for_colorize = None
@@ -12,7 +17,7 @@ class Memory:
 
     def __extend(self, size: int):
         if size % 0x20 > 0:
-            size += (0x20 - size % 0x20)
+            size += 0x20 - size % 0x20
         if len(self.memory) >= size:
             return
         self.memory += [0] * (size - len(self.memory))
@@ -29,10 +34,10 @@ class Memory:
         self.mstore_r_for_colorize = offset + 1
 
     def store256(self, offset: int, value: int):
-        value = value.to_bytes(32, "big")
+        value_bytes = value.to_bytes(32, "big")
         r = offset + 32
         self.__extend(r)
-        for i, b in enumerate(value):
+        for i, b in enumerate(value_bytes):
             self.memory[offset + i] = b
 
         self.mstore_l_for_colorize = offset
@@ -50,7 +55,7 @@ class Memory:
         self.mstore_r_for_colorize = r
 
     def load(self, offset: int):
-        return bytes_to_long(bytes(self.memory[offset:offset+32]))
+        return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
     def to_string(self, line_length=0x20) -> list[str]:
         s = bytes(self.memory).hex()
@@ -59,7 +64,7 @@ class Memory:
         def zero_to_gray(s):
             ret = ""
             for i in range(0, len(s), 2):
-                b = s[i:i+2]
+                b = s[i : i + 2]
                 if b == "00":
                     ret += Colors.GRAY + b + Colors.ENDC
                 else:
@@ -67,11 +72,13 @@ class Memory:
             return ret
 
         for i in range(0, len(s), 2 * line_length):
-            ret.append(s[i:i + 2 * line_length])
+            ret.append(s[i : i + 2 * line_length])
 
         decoded_lines = []
         for i, line in enumerate(ret):
-            decoded_line = decode_printable_with_color(line, i * line_length, self.mstore_l_for_colorize, self.mstore_r_for_colorize)
+            decoded_line = decode_printable_with_color(
+                line, i * line_length, self.mstore_l_for_colorize, self.mstore_r_for_colorize
+            )
             decoded_lines.append(decoded_line)
 
         modified = (0, 0)
@@ -84,7 +91,13 @@ class Memory:
                 r_i -= 1
                 r_j = 2 * line_length
             if l_i == r_i:
-                ret[l_i] = zero_to_gray(ret[l_i][:l_j]) + Colors.GREEN + ret[l_i][l_j:r_j] + Colors.ENDC + zero_to_gray(ret[l_i][r_j:])
+                ret[l_i] = (
+                    zero_to_gray(ret[l_i][:l_j])
+                    + Colors.GREEN
+                    + ret[l_i][l_j:r_j]
+                    + Colors.ENDC
+                    + zero_to_gray(ret[l_i][r_j:])
+                )
             else:
                 ret[l_i] = zero_to_gray(ret[l_i][:l_j]) + Colors.GREEN + ret[l_i][l_j:] + Colors.ENDC
                 for i in range(l_i + 1, r_i):
@@ -101,4 +114,3 @@ class Memory:
                 ret[i] = zero_to_gray(ret[i]) + " | " + decoded_lines[i]
 
         return ret
-

@@ -2,7 +2,7 @@ from web3 import HTTPProvider, Web3
 
 
 class Context:
-    DEFAULT_ADDRESS = 0xadd2e55
+    DEFAULT_ADDRESS = 0xADD2E55
     DEFAULT_BALANCE = 0
     DEFAULT_ORIGIN = 0
     DEFAULT_CALLER = 0
@@ -21,7 +21,25 @@ class Context:
     DEFAULT_GAS = 0
 
     bytecode: bytes
+    address: int
+    balance: int
+    origin: int
+    caller: int
+    callvalue: int
+    calldata: bytes
+    calldata_hex: str
+    gasprice: int
+    coinbase: int
+    timestamp: int
+    number: int
+    difficulty: int
+    gaslimit: int
+    chainid: int
+    selfbalance: int
+    basefee: int
+    gas: int
 
+    @staticmethod
     def from_arg_params_with_bytecode(args, bytecode):
         self = Context()
         self.bytecode = Context.__hex_to_bytes(bytecode)
@@ -44,6 +62,7 @@ class Context:
         self.gas = args.gas
         return self
 
+    @staticmethod
     def from_dict(d: dict):
         self = Context()
         self.bytecode = Context.__hex_to_bytes(d["bytecode"])
@@ -65,7 +84,8 @@ class Context:
         self.basefee = d.get("basefee", Context.DEFAULT_BASEFEE)
         self.gas = d.get("gas", Context.DEFAULT_GAS)
         return self
-    
+
+    @staticmethod
     def from_tx_hash(args):
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
@@ -107,6 +127,7 @@ class Context:
 
         return self
 
+    @staticmethod
     def from_contract_address(args):
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
@@ -116,7 +137,7 @@ class Context:
         balance = w3.eth.get_balance(args.contract_address)
 
         self.bytecode = bytes(code)
-        assert args.address == Context.DEFAULT_ADDRESS # TODO: priority
+        assert args.address == Context.DEFAULT_ADDRESS  # TODO: priority
         self.address = Context.__hex_to_int(args.contract_address)
         assert args.balance == Context.DEFAULT_BALANCE
         self.balance = balance
@@ -139,18 +160,20 @@ class Context:
 
         return self
 
-
-    def __hex_to_bytes(h: str | int):
-        if type(h) is int:
-            h = hex(h)
+    @staticmethod
+    def __hex_to_bytes(x: str | int) -> bytes:
+        if type(x) is int:
+            h = hex(x)
+        elif type(x) is str:
+            h = x
         h = h.replace(" ", "").replace("\n", "")
         if h.startswith("0x"):
             h = h[2:]
         return bytes.fromhex(h)
 
-    def __hex_to_int(h: str):
+    @staticmethod
+    def __hex_to_int(h: str) -> int:
         if h.startswith("0x"):
             return int(h, 16)
         else:
             return int(h)
-

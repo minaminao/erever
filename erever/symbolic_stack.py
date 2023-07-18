@@ -2,14 +2,14 @@ from .node import Node
 
 
 class SymbolicStack:
-    def __init__(self):
+    def __init__(self) -> None:
         self.var_n = 0
         self.stack: list[Node] = []
 
-    def push(self, x: Node):
+    def push(self, x: Node) -> None:
         self.stack.append(x)
 
-    def extend(self, x: list[Node]):
+    def extend(self, x: list[Node]) -> None:
         self.stack.extend(x)
 
     def pop(self) -> Node:
@@ -20,11 +20,11 @@ class SymbolicStack:
         else:
             return self.stack.pop()
 
-    def clear(self):
+    def clear(self) -> None:
         self.stack = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.stack[::-1])
-    
-    def to_string(self):
+
+    def to_string(self) -> str:
         return self.__repr__()
