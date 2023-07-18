@@ -1,9 +1,9 @@
 from enum import Enum
 
 from .context import Context
+from .disassemble import disassemble
 from .opcodes import OPCODES
 from .utils import UINT256_MAX, pad
-from .disassemble import disassemble
 
 
 class ControlType(Enum):
@@ -14,9 +14,7 @@ class ControlType(Enum):
     BAD = -1
 
 
-def disassemble_mermaid(
-    context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX
-) -> None:
+def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX) -> None:
     """
     ブロックの開始
     - 0x00

@@ -10,45 +10,108 @@ from .disassemble_symbolic import disassemble_symbolic
 from .utils import UINT256_MAX
 
 
+def command_disassemble(args: argparse.Namespace, context: Context) -> None:
+    disassemble(
+        context,
+        False,
+        args.entrypoint,
+        args.max_steps,
+        args.decode_stack,
+        hide_pc=args.hide_pc,
+        show_opcodes=args.show_opcodes,
+        hide_memory=args.hide_memory,
+    )
+
+
+def command_trace(args: argparse.Namespace, context: Context) -> None:
+    disassemble(
+        context,
+        True,
+        args.entrypoint,
+        args.max_steps,
+        args.decode_stack,
+        hide_pc=args.hide_pc,
+        show_opcodes=args.show_opcodes,
+        hide_memory=args.hide_memory,
+    )
+
+
+def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
+    disassemble_symbolic(
+        context,
+        args.entrypoint,
+        args.show_symbolic_stack,
+        args.max_steps,
+        args.hide_pc,
+        hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
+        show_opcodes=args.show_opcodes,
+    )
+
+
+def command_mermaid(args: argparse.Namespace, context: Context) -> None:
+    disassemble_mermaid(context, args.entrypoint, args.max_steps)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="EVM Reversing Tools", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="EVM Reversing Tools",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        usage="erever <COMMAND>",
     )
-    parser.add_argument("-b", "--bytecode")
-    parser.add_argument("-f", "--filename")
+    subparsers = parser.add_subparsers()
 
-    parser.add_argument("-c", "--contract-address")
-    parser.add_argument("--tx")
-    parser.add_argument("--rpc-url", type=str, default=os.getenv("EREVER_RPC_URL"))
+    parser_disassemble = subparsers.add_parser("disassemble", aliases=["disas"], help="Disassemble the given bytecode")
+    parser_disassemble.set_defaults(handler=command_disassemble)
+    parser_trace = subparsers.add_parser("trace", help="Trace execution of the given bytecode")
+    parser_trace.set_defaults(handler=command_trace)
+    parser_symbolic_trace = subparsers.add_parser(
+        "symbolic-trace", aliases=["symbolic"], help="Trace execution of the given bytecode symbolically"
+    )
+    parser_symbolic_trace.set_defaults(handler=command_symbolic_trace)
+    parser_mermaid = subparsers.add_parser("mermaid", help="Generate the mermaid diagram for the given bytecode")
+    parser_mermaid.set_defaults(handler=command_mermaid)
 
-    parser.add_argument("--trace", action="store_true", default=False)
-    parser.add_argument("--symbolic", action="store_true", default=False)
-    parser.add_argument("--entrypoint", type=str, default="0")
-    parser.add_argument("--show-symbolic-stack", action="store_true", default=False)
-    parser.add_argument("--show-opcodes", action="store_true", default=False)
-    parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
-    parser.add_argument("--decode-stack", action="store_true", default=False)
-    parser.add_argument("--mermaid", action="store_true", default=False)
-    parser.add_argument("--hide-pc", action="store_true", default=False)
-    parser.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
-    parser.add_argument("--hide-memory", action="store_true", default=False)
+    def add_common_arguments(parser):
+        parser.add_argument("-b", "--bytecode")
+        parser.add_argument("-f", "--filename")
 
-    parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
-    parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
-    parser.add_argument("--origin", type=str, default=str(Context.DEFAULT_ORIGIN))
-    parser.add_argument("--caller", type=str, default=str(Context.DEFAULT_CALLER))
-    parser.add_argument("--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE))
-    parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA_HEX)
-    parser.add_argument("--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE))
-    parser.add_argument("--coinbase", type=str, default=str(Context.DEFAULT_COINBASE))
-    parser.add_argument("--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP))
-    parser.add_argument("--number", type=str, default=str(Context.DEFAULT_NUMBER))
-    parser.add_argument("--difficulty", type=str, default=str(Context.DEFAULT_DIFFICULTY))
-    parser.add_argument("--gaslimit", type=str, default=str(Context.DEFAULT_GASLIMIT))
-    parser.add_argument("--chainid", type=str, default=str(Context.DEFAULT_CHAINID))
-    parser.add_argument("--selfbalance", type=str, default=str(Context.DEFAULT_SELFBALANCE))
-    parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
-    parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
+        parser.add_argument("-c", "--contract-address")
+        parser.add_argument("--tx")
+        parser.add_argument("--rpc-url", type=str, default=os.getenv("EREVER_RPC_URL"))
+
+        parser.add_argument("--entrypoint", type=str, default="0")
+        parser.add_argument("--show-opcodes", action="store_true", default=False)
+        parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
+
+        parser.add_argument("--hide-pc", action="store_true", default=False)
+        parser.add_argument("--hide-memory", action="store_true", default=False)
+
+        parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
+        parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
+        parser.add_argument("--origin", type=str, default=str(Context.DEFAULT_ORIGIN))
+        parser.add_argument("--caller", type=str, default=str(Context.DEFAULT_CALLER))
+        parser.add_argument("--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE))
+        parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA_HEX)
+        parser.add_argument("--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE))
+        parser.add_argument("--coinbase", type=str, default=str(Context.DEFAULT_COINBASE))
+        parser.add_argument("--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP))
+        parser.add_argument("--number", type=str, default=str(Context.DEFAULT_NUMBER))
+        parser.add_argument("--difficulty", type=str, default=str(Context.DEFAULT_DIFFICULTY))
+        parser.add_argument("--gaslimit", type=str, default=str(Context.DEFAULT_GASLIMIT))
+        parser.add_argument("--chainid", type=str, default=str(Context.DEFAULT_CHAINID))
+        parser.add_argument("--selfbalance", type=str, default=str(Context.DEFAULT_SELFBALANCE))
+        parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
+        parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
+
+    add_common_arguments(parser_disassemble)
+    add_common_arguments(parser_trace)
+    add_common_arguments(parser_symbolic_trace)
+    add_common_arguments(parser_mermaid)
+
+    parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
+    parser_trace.add_argument("--decode-stack", action="store_true", default=False)
+    parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
+    parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -87,29 +150,11 @@ def main() -> None:
         parser.print_help(sys.stderr)
         exit(1)
 
-    if args.mermaid:
-        disassemble_mermaid(context, args.entrypoint, args.max_steps)
-    elif args.symbolic:
-        disassemble_symbolic(
-            context,
-            args.entrypoint,
-            args.show_symbolic_stack,
-            args.max_steps,
-            args.hide_pc,
-            hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
-            show_opcodes=args.show_opcodes,
-        )
+    if hasattr(args, "handler"):
+        args.handler(args, context)
     else:
-        disassemble(
-            context,
-            args.trace,
-            args.entrypoint,
-            args.max_steps,
-            args.decode_stack,
-            hide_pc=args.hide_pc,
-            show_opcodes=args.show_opcodes,
-            hide_memory=args.hide_memory,
-        )
+        parser.print_help()
+        exit(1)
 
 
 def parse_arg_param_to_int(param: str) -> int:
