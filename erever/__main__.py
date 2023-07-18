@@ -4,7 +4,9 @@ import sys
 import tomllib
 
 from .context import Context
-from .evm import disassemble, disassemble_mermaid, disassemble_symbolic
+from .disassemble import disassemble
+from .disassemble_mermaid import disassemble_mermaid
+from .disassemble_symbolic import disassemble_symbolic
 from .utils import UINT256_MAX
 
 
