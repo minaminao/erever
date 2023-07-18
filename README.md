@@ -1,18 +1,27 @@
 # erever
 
-erever is a CLI tool for reversing EVM bytecode.
-It is specially optimized for solving CTF challenges and is intended to be used for tricky operations.
+erever is a CLI tool for reversing EVM bytecodes.
+erever is specially optimized for solving CTF challenges and is intended to be used for tricky operations.
 For general use, it is recommended to use other useful tools such as the debugger included in Foundry.
-Currently, it is mostly for me to solve challenges and is not intended to be used by others, but if you have trouble using this tool, please open an issue!
+Currently, erever is mostly for me to solve challenges and is not intended to be used by others, but if you have trouble using erever, please open an issue!
 
+**Table of Contents**
+- [Writeups with erever](#writeups-with-erever)
 - [Install](#install)
 - [Usage](#usage)
   - [Disassemble](#disassemble)
-  - [Trace Execution](#trace)
-  - [Trace Execution Symbolically](#symbolic-trace)
+  - [Trace](#trace)
+  - [Symbolic Trace](#symbolic-trace)
   - [Generate Mermaid Diagram](#generate-mermaid-diagram)
   - [Tips](#tips)
-- [Writeups with erever](#writeups-with-erever)
+
+## Writeups with erever
+- [Paradigm CTF 2022: SOURCECODE](https://github.com/minaminao/ctf-blockchain/tree/main/src/ParadigmCTF2022#sourcecode)
+- [DownUnderCTF 2022: EVM Vault Mechanism](https://github.com/minaminao/ctf-blockchain/tree/main/src/DownUnderCTF2022/EVMVaultMechanism)
+- [EKOPARTY CTF 2022: Byte](https://github.com/minaminao/ctf-blockchain/tree/main/src/EkoPartyCTF2022)
+- [EKOPARTY CTF 2022: SmartRev](https://github.com/minaminao/ctf-blockchain/tree/main/src/EkoPartyCTF2022)
+- [Numen Cyber CTF 2023: LittleMoney](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
+- [Numen Cyber CTF 2023: HEXP](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
 
 ## Install
 ```
@@ -140,11 +149,3 @@ START --> 0x00
 
 ### Tips
 - It is useful in combination with commands such as `less -R` and `less -R -S`.
-
-## Writeups with erever
-- [Paradigm CTF 2022: SOURCECODE](https://github.com/minaminao/ctf-blockchain/tree/main/src/ParadigmCTF2022#sourcecode)
-- [DownUnderCTF 2022: EVM Vault Mechanism](https://github.com/minaminao/ctf-blockchain/tree/main/src/DownUnderCTF2022/EVMVaultMechanism)
-- [EKOPARTY CTF 2022: Byte](https://github.com/minaminao/ctf-blockchain/tree/main/src/EkoPartyCTF2022)
-- [EKOPARTY CTF 2022: SmartRev](https://github.com/minaminao/ctf-blockchain/tree/main/src/EkoPartyCTF2022)
-- [Numen Cyber CTF 2023: LittleMoney](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
-- [Numen Cyber CTF 2023: HEXP](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
