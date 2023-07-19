@@ -68,3 +68,6 @@ class Stack:
             ret += x
         ret = "[" + ret + "]"
         return ret
+
+    def __len__(self) -> int:
+        return len(self.stack)

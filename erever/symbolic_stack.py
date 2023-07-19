@@ -2,9 +2,12 @@ from .node import Node
 
 
 class SymbolicStack:
+    var_n: int
+    stack: list[Node]
+
     def __init__(self) -> None:
         self.var_n = 0
-        self.stack: list[Node] = []
+        self.stack = []
 
     def push(self, x: Node) -> None:
         self.stack.append(x)
@@ -19,6 +22,9 @@ class SymbolicStack:
             return ret
         else:
             return self.stack.pop()
+    
+    def __len__(self) -> int:
+        return len(self.stack)
 
     def clear(self) -> None:
         self.stack = []

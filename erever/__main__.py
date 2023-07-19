@@ -7,6 +7,7 @@ from .context import Context
 from .disassemble import disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
+from .find_gadgets import find_gadgets
 from .utils import UINT256_MAX
 
 
@@ -52,6 +53,10 @@ def command_mermaid(args: argparse.Namespace, context: Context) -> None:
     disassemble_mermaid(context, args.entrypoint, args.max_steps)
 
 
+def command_gadget(args: argparse.Namespace, context: Context) -> None:
+    find_gadgets(context, args.max_steps)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="EVM Reversing Tools",
@@ -70,6 +75,8 @@ def main() -> None:
     parser_symbolic_trace.set_defaults(handler=command_symbolic_trace)
     parser_mermaid = subparsers.add_parser("mermaid", help="Generate the mermaid diagram for the given bytecode")
     parser_mermaid.set_defaults(handler=command_mermaid)
+    parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
+    parser_gadget.set_defaults(handler=command_gadget)
 
     def add_common_arguments(parser):
         parser.add_argument("-b", "--bytecode")
@@ -107,6 +114,7 @@ def main() -> None:
     add_common_arguments(parser_trace)
     add_common_arguments(parser_symbolic_trace)
     add_common_arguments(parser_mermaid)
+    add_common_arguments(parser_gadget)
 
     parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)

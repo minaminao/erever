@@ -19,10 +19,12 @@ def disassemble(
     ignore_stack_underflow: bool = False,
     silent: bool = False,
     return_last_jump_to_address: bool = False,
+    return_disassembled_code: bool = False,
     hide_pc: bool = False,
     show_opcodes: bool = False,
     hide_memory: bool = False,
 ):
+    disassembled_code = []
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
@@ -59,6 +61,8 @@ def disassemble(
             else:
                 print(f"{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
 
+        disassembled_code.append((pc, mnemonic))
+
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
@@ -66,6 +70,7 @@ def disassemble(
                 print(" 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(), end="")
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic[:4]
+            disassembled_code.append((pc + 1, push_v))
         elif mnemonic.startswith("DUP"):
             mnemonic_num = int(mnemonic[3:])
             mnemonic = mnemonic[:3]
@@ -347,3 +352,5 @@ def disassemble(
 
     if return_last_jump_to_address:
         return last_jump_to_address
+    elif return_disassembled_code:
+        return disassembled_code

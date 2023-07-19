@@ -19,6 +19,8 @@ def disassemble_symbolic(
     hide_pc: bool = False,
     hide_instructions_with_no_stack_output: bool = False,
     show_opcodes: bool = False,
+    silent: bool = False,
+    return_gadget_list: bool = False,
 ) -> None:
     class State:
         context: Context
@@ -27,6 +29,7 @@ def disassemble_symbolic(
 
         steps: int
         conditions: list[tuple[Node, int, bool]]
+        data_changes = []
         jumped_from: int | None
         jumped: bool | None
 
@@ -37,6 +40,7 @@ def disassemble_symbolic(
 
             self.steps = 0
             self.conditions = []  # [(condition, pc, is_met: bool)]
+            self.data_changes = []
             self.jumped_from = None
             self.jumped = None
 
@@ -48,6 +52,7 @@ def disassemble_symbolic(
     queue: deque[State] = deque()
     queue.append(initial_state)
     hashes = set()
+    gadget_list = []
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
@@ -59,23 +64,24 @@ def disassemble_symbolic(
         context = state.context
         stack = state.stack
 
-        print(f"\n{Colors.BOLD}{pad(hex(state.pc), LOCATION_PAD_N)}{Colors.ENDC}", end="")
-        if state.jumped_from is not None:
-            if state.jumped:
-                print(f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
-            else:
-                print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
-            for condition, pc, is_met in state.conditions:
-                if is_met:
-                    print(
-                        f"  {Colors.GREEN} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.GREEN}== true{Colors.ENDC}"
-                    )
+        if not silent:
+            print(f"\n{Colors.BOLD}{pad(hex(state.pc), LOCATION_PAD_N)}{Colors.ENDC}", end="")
+            if state.jumped_from is not None:
+                if state.jumped:
+                    print(f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
                 else:
-                    print(
-                        f"  {Colors.RED} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.RED}== false{Colors.ENDC}"
-                    )
-        else:
-            print()
+                    print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
+                for condition, pc, is_met in state.conditions:
+                    if is_met:
+                        print(
+                            f"  {Colors.GREEN} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.GREEN}== true{Colors.ENDC}"
+                        )
+                    else:
+                        print(
+                            f"  {Colors.RED} {pad(hex(pc), LOCATION_PAD_N)}{Colors.ENDC}: {condition} {Colors.RED}== false{Colors.ENDC}"
+                        )
+            else:
+                print()
 
         pc = state.pc
         while pc < len(context.bytecode):
@@ -109,9 +115,11 @@ def disassemble_symbolic(
             input: list[Node] = [stack.pop() for _ in range(stack_input_count)]
             end = False
             match mnemonic:
-                # 状態の操作はここに。操作しないものはNodeの__repr__に。
+                # スタックの操作はここに。操作しないものはNodeの__repr__に。
                 case "STOP":
                     end = True
+                case "CALLDATACOPY" | "CODECOPY" | "EXTCODECOPY" | "RETURNDATACOPY" | "MSTORE" | "MSTORE8" | "SSTORE" | "CALL" | "CREATE" | "CALLCODE" | "DELEGATECALL" | "CREATE2":
+                    state.data_changes.append(Node(mnemonic, input, mnemonic_num, stack_input_count))
                 case "PUSH":
                     stack.push(Node("uint256", push_v))
                 case "DUP":
@@ -121,13 +129,7 @@ def disassemble_symbolic(
                     input[0] = input[mnemonic_num]
                     input[mnemonic_num] = top
                     stack.extend(input[::-1])
-                case "RETURN":
-                    end = True
-                case "REVERT":
-                    end = True
-                case "INVALID":
-                    end = True
-                case "SELFDESTRUCT":
+                case "RETURN" | "REVERT" | "INVALID" | "SELFDESTRUCT":
                     end = True
                 case _:
                     assert stack_output_count <= 1
@@ -136,7 +138,7 @@ def disassemble_symbolic(
 
             if hide_instructions_with_no_stack_output and stack_output_count == 0:
                 pass
-            else:
+            elif not silent:
                 if not hide_pc:
                     print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
                 if show_opcodes:
@@ -167,6 +169,32 @@ def disassemble_symbolic(
                 if show_symbolic_stack:
                     print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
 
+            if mnemonic == "JUMP" and input[0].type != "uint256":
+                gadget_list.append(
+                    (pc, input[0], state.stack.var_n, state.stack, state.data_changes, state.conditions)
+                )
+                break
+            if mnemonic == "JUMPI" and input[0].type != "uint256":
+                state.steps += 1
+                state_not_jumped = deepcopy(state)
+                state_not_jumped.pc = next_pc
+                state_not_jumped.jumped_from = pc
+                state_not_jumped.jumped = False
+                state_not_jumped.conditions.append((input[1], pc, False))
+                queue.append(state_not_jumped)
+                state_jumped = state
+                state_jumped.conditions.append((input[1], pc, True))
+                gadget_list.append(
+                    (
+                        pc,
+                        input[0],
+                        state.stack.var_n,
+                        state.stack,
+                        state.data_changes,
+                        state_jumped.conditions,
+                    )
+                )
+                break
             if mnemonic == "JUMP" and input[0].type == "uint256":
                 assert type(input[0].value) is int
                 next_pc = input[0].value
@@ -189,10 +217,14 @@ def disassemble_symbolic(
 
             state.steps += 1
             if state.steps >= max_steps:
-                print("The maximum number of steps has been reached.")
+                if not silent:
+                    print("The maximum number of steps has been reached.")
                 break
 
             if end:
                 break
 
             pc = next_pc
+
+    if return_gadget_list:
+        return gadget_list
