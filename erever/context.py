@@ -94,35 +94,35 @@ class Context:
         tx = w3.eth.get_transaction(args.tx)
 
         # Contract Creation
-        if "to" not in tx or tx.to is None:
-            self.bytecode = Context.__hex_to_bytes(tx.input)
+        if "to" not in tx or tx["to"] is None:
+            self.bytecode = Context.__hex_to_bytes(tx["input"])
             self.calldata = b""
         else:
-            code = w3.eth.get_code(tx.to)
+            code = w3.eth.get_code(tx["to"])
             # Contract
             if len(code) > 0:
                 self.bytecode = bytes(code)
-                self.calldata = Context.__hex_to_bytes(tx.input)
+                self.calldata = Context.__hex_to_bytes(tx["input"])
             # EOA
             else:
-                self.bytecode = Context.__hex_to_bytes(tx.input)
+                self.bytecode = Context.__hex_to_bytes(tx["input"])
                 self.calldata = b""
 
         self.address = args.address
         self.balance = args.balance
         self.origin = args.origin
         self.caller = args.caller
-        self.callvalue = tx.value
-        self.gasprice = tx.gasPrice
+        self.callvalue = tx["value"]
+        self.gasprice = tx["gasPrice"]
         self.coinbase = args.coinbase
         self.timestamp = args.timestamp
-        self.number = tx.blockNumber
+        self.number = tx["blockNumber"]
         self.difficulty = args.difficulty
-        self.gaslimit = tx.gas
-        self.chainid = int(tx.chainId, 16)
+        self.gaslimit = tx["gas"]
+        self.chainid = tx["chainId"]
         self.selfbalance = args.selfbalance
         self.basefee = args.basefee
-        self.gas = tx.gas
+        self.gas = tx["gas"]
         # self.blockchash
 
         return self

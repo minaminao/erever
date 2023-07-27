@@ -21,7 +21,7 @@ def disassemble_symbolic(
     show_opcodes: bool = False,
     silent: bool = False,
     return_gadget_list: bool = False,
-) -> None:
+) -> list | None:
     class State:
         context: Context
         stack: SymbolicStack
@@ -29,7 +29,7 @@ def disassemble_symbolic(
 
         steps: int
         conditions: list[tuple[Node, int, bool]]
-        data_changes = []
+        data_changes: list[Node] = []
         jumped_from: int | None
         jumped: bool | None
 
@@ -52,7 +52,7 @@ def disassemble_symbolic(
     queue: deque[State] = deque()
     queue.append(initial_state)
     hashes = set()
-    gadget_list = []
+    gadget_list: list[tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]] = []
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
@@ -151,7 +151,7 @@ def disassemble_symbolic(
                         print(
                             Node(
                                 mnemonic,
-                                "0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(),
+                                ["0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()],
                                 mnemonic_num,
                                 stack_input_count,
                             ),
@@ -170,9 +170,7 @@ def disassemble_symbolic(
                     print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
 
             if mnemonic == "JUMP" and input[0].type != "uint256":
-                gadget_list.append(
-                    (pc, input[0], state.stack.var_n, state.stack, state.data_changes, state.conditions)
-                )
+                gadget_list.append((pc, input[0], state.stack.var_n, state.stack, state.data_changes, state.conditions))
                 break
             if mnemonic == "JUMPI" and input[0].type != "uint256":
                 state.steps += 1
@@ -214,6 +212,9 @@ def disassemble_symbolic(
                 queue.append(state_jumped)
                 queue.append(state_not_jumped)
                 break
+            if mnemonic == "STOP" or mnemonic == "RETURN":
+                gadget_list.append((pc, None, state.stack.var_n, state.stack, state.data_changes, state.conditions))
+                break
 
             state.steps += 1
             if state.steps >= max_steps:
@@ -228,3 +229,5 @@ def disassemble_symbolic(
 
     if return_gadget_list:
         return gadget_list
+    else:
+        return None

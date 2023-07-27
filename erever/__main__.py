@@ -78,7 +78,7 @@ def main() -> None:
     parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
     parser_gadget.set_defaults(handler=command_gadget)
 
-    def add_common_arguments(parser):
+    def add_common_arguments(parser) -> None:
         parser.add_argument("-b", "--bytecode")
         parser.add_argument("-f", "--filename")
 

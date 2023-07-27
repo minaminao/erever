@@ -22,7 +22,7 @@ class SymbolicStack:
             return ret
         else:
             return self.stack.pop()
-    
+
     def __len__(self) -> int:
         return len(self.stack)
 

@@ -4,13 +4,13 @@ from .utils import pad_even
 
 class Node:
     type: str
-    value: str | int
+    value: str | int | list
 
     mnemonic_num: int | None
     input_count: int | None
 
     def __init__(
-        self, type_: str, value: str | int, mnemonic_num: int | None = None, input_count: int | None = None
+        self, type_: str, value: str | int | list, mnemonic_num: int | None = None, input_count: int | None = None
     ) -> None:
         self.type = type_
         self.value = value
@@ -25,10 +25,13 @@ class Node:
 
     def __repr__(self) -> str:
         if self.type == "uint256":
+            assert type(self.value) is int
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
+            assert type(self.value) is str
             return self.value
         else:
+            assert type(self.value) is list
             match self.type:
                 # case "STOP":
                 case "ADD":
@@ -120,7 +123,7 @@ class Node:
                 case "JUMPDEST":
                     return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.BLUE}(){Colors.ENDC}"
                 case "PUSH":
-                    return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value})"
+                    return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value[0]})"
                 case "DUP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
                     assert type(self.mnemonic_num) is int

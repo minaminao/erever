@@ -24,14 +24,14 @@ def disassemble(
     show_opcodes: bool = False,
     hide_memory: bool = False,
 ):
-    disassembled_code = []
+    disassembled_code: list[tuple[int, str | int]] = []  # (pc, mnemonic)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     storage = Storage()
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
-    warning_messages = ""
+    warning_messages: str = ""
 
     pc = entrypoint
     steps = 0
