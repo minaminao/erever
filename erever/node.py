@@ -123,7 +123,10 @@ class Node:
                 case "JUMPDEST":
                     return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.BLUE}(){Colors.ENDC}"
                 case "PUSH":
-                    return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value[0]})"
+                    if self.mnemonic_num == 0:
+                        return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}"
+                    else:
+                        return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value[0]})"
                 case "DUP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
                     assert type(self.mnemonic_num) is int

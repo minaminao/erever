@@ -145,18 +145,15 @@ def disassemble_symbolic(
                     print(f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ", end="")
 
                 if mnemonic == "PUSH":
-                    if mnemonic_num == 0:
-                        print(Node(mnemonic, "", mnemonic_num, stack_input_count), end="")
-                    else:
-                        print(
-                            Node(
-                                mnemonic,
-                                ["0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()],
-                                mnemonic_num,
-                                stack_input_count,
-                            ),
-                            end="",
-                        )
+                    print(
+                        Node(
+                            mnemonic,
+                            ["0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()],
+                            mnemonic_num,
+                            stack_input_count,
+                        ),
+                        end="",
+                    )
                 else:
                     res = str(Node(mnemonic, input, mnemonic_num, stack_input_count))
                     if res[0] == "(":
