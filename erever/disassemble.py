@@ -7,7 +7,8 @@ from .memory import Memory
 from .opcodes import OPCODES
 from .stack import Stack
 from .storage import Storage
-from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint256, is_invocation_mnemonic
+from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, is_invocation_mnemonic, pad, pad_even, uint256
+
 
 def disassemble(
     context: Context,
@@ -41,9 +42,9 @@ def disassemble(
         next_pc = pc + 1
         value = context.bytecode[pc]
         if value in OPCODES:
-            mnemonic, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
+            mnemonic_raw, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
         else:
-            mnemonic = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
+            mnemonic_raw = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
             _stack_output_count = 0
             _description = None
@@ -55,34 +56,37 @@ def disassemble(
                 instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
                 instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
-            if mnemonic in ["JUMP", "JUMPI"]:
-                instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}"
-            elif mnemonic == "JUMPDEST":
-                instruction_message += f"{Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}"
+            if mnemonic_raw in ["JUMP", "JUMPI"]:
+                instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
+            elif mnemonic_raw == "JUMPDEST":
+                instruction_message += f"{Colors.BLUE}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
             else:
-                instruction_message += f"{Colors.BOLD}{mnemonic}{Colors.ENDC}"
+                instruction_message += f"{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
 
-        disassembled_code.append((pc, mnemonic))
+        disassembled_code.append((pc, mnemonic_raw))
 
-        if mnemonic.startswith("PUSH"):
-            mnemonic_num = int(mnemonic[4:])
+        mnemonic = ""
+        if mnemonic_raw.startswith("PUSH"):
+            mnemonic_num = int(mnemonic_raw[4:])
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
             if not silent and mnemonic_num > 0 and not invocation_only:
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
             next_pc = pc + 1 + mnemonic_num
-            mnemonic = mnemonic[:4]
+            mnemonic = mnemonic_raw[:4]
             disassembled_code.append((pc + 1, push_v))
-        elif mnemonic.startswith("DUP"):
-            mnemonic_num = int(mnemonic[3:])
-            mnemonic = mnemonic[:3]
-        elif mnemonic.startswith("SWAP"):
-            mnemonic_num = int(mnemonic[4:])
-            mnemonic = mnemonic[:4]
-        elif mnemonic.startswith("LOG"):
-            mnemonic_num = int(mnemonic[3:])
-            mnemonic = mnemonic[:3]
+        elif mnemonic_raw.startswith("DUP"):
+            mnemonic_num = int(mnemonic_raw[3:])
+            mnemonic = mnemonic_raw[:3]
+        elif mnemonic_raw.startswith("SWAP"):
+            mnemonic_num = int(mnemonic_raw[4:])
+            mnemonic = mnemonic_raw[:4]
+        elif mnemonic_raw.startswith("LOG"):
+            mnemonic_num = int(mnemonic_raw[3:])
+            mnemonic = mnemonic_raw[:3]
         else:
             mnemonic_num = 0
+            mnemonic = mnemonic_raw
+        assert mnemonic != ""
 
         if trace:
             input = []

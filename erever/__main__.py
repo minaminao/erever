@@ -37,6 +37,7 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         invocation_only=args.invocation_only,
     )
 
+
 def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
     disassemble_symbolic(
         context,
