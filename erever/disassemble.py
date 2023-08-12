@@ -1,3 +1,6 @@
+import copy
+from dataclasses import dataclass
+
 from Crypto.Hash import keccak
 from Crypto.Util.number import bytes_to_long
 
@@ -10,6 +13,21 @@ from .storage import Storage
 from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, is_invocation_mnemonic, pad, pad_even, uint256
 
 
+@dataclass
+class TraceLog:
+    mnemonic_raw: str
+    mnemonic: str
+    input: list[int]
+    stack_after_execution: Stack
+
+
+@dataclass
+class DisassembleResult:
+    last_jump_to_address: int | None
+    disassemble_code: list[tuple[int, str | int]]
+    trace_logs: list[TraceLog]
+
+
 def disassemble(
     context: Context,
     trace: bool = False,
@@ -18,13 +36,12 @@ def disassemble(
     decode_stack: bool = False,
     ignore_stack_underflow: bool = False,
     silent: bool = False,
-    return_last_jump_to_address: bool = False,
-    return_disassembled_code: bool = False,
+    return_trace_logs: bool = False,
     hide_pc: bool = False,
     show_opcodes: bool = False,
     hide_memory: bool = False,
     invocation_only: bool = False,
-):
+) -> DisassembleResult:
     disassembled_code: list[tuple[int, str | int]] = []  # (pc, mnemonic)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
@@ -37,6 +54,8 @@ def disassemble(
     pc = entrypoint
     steps = 0
     last_jump_to_address = None
+    trace_logs = []
+
     while pc < len(context.bytecode):
         instruction_message = ""
         next_pc = pc + 1
@@ -65,6 +84,7 @@ def disassemble(
 
         disassembled_code.append((pc, mnemonic_raw))
 
+        # separate instruction names from numerical values
         mnemonic = ""
         if mnemonic_raw.startswith("PUSH"):
             mnemonic_num = int(mnemonic_raw[4:])
@@ -269,10 +289,12 @@ def disassemble(
                     storage.store(input[0], input[1])
                 case "JUMP":
                     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                    assert type(input[0]) is int
                     next_pc = input[0]
                     last_jump_to_address = input[0]
                 case "JUMPI":
                     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                    assert type(input[0]) is int
                     if input[1] != 0:
                         next_pc = input[0]
                     last_jump_to_address = input[0]
@@ -324,6 +346,9 @@ def disassemble(
                 case "SELFDESTRUCT":
                     break
 
+        if trace and return_trace_logs:
+            trace_logs.append(TraceLog(mnemonic_raw, mnemonic, input, copy.deepcopy(stack)))
+
         if trace and not silent:
             instruction_message += f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
             if decode_stack:
@@ -356,7 +381,4 @@ def disassemble(
             print(Colors.YELLOW + "WARNING:")
             print(warning_messages + Colors.ENDC)
 
-    if return_last_jump_to_address:
-        return last_jump_to_address
-    elif return_disassembled_code:
-        return disassembled_code
+    return DisassembleResult(last_jump_to_address, disassembled_code, [])

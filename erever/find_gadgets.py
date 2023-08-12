@@ -9,7 +9,7 @@ def find_gadgets(
     context: Context,
     max_steps: int = 1000,
 ) -> None:
-    disassembled_code = disassemble(context, return_disassembled_code=True, silent=True)
+    disassembled_code = disassemble(context, silent=True).disassemble_code
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
     for pc, mnemonic in disassembled_code:
