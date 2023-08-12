@@ -7,8 +7,7 @@ from .memory import Memory
 from .opcodes import OPCODES
 from .stack import Stack
 from .storage import Storage
-from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint256
-
+from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, pad, pad_even, uint256, is_invocation_mnemonic
 
 def disassemble(
     context: Context,
@@ -23,6 +22,7 @@ def disassemble(
     hide_pc: bool = False,
     show_opcodes: bool = False,
     hide_memory: bool = False,
+    invocation_only: bool = False,
 ):
     disassembled_code: list[tuple[int, str | int]] = []  # (pc, mnemonic)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
@@ -37,6 +37,7 @@ def disassemble(
     steps = 0
     last_jump_to_address = None
     while pc < len(context.bytecode):
+        instruction_message = ""
         next_pc = pc + 1
         value = context.bytecode[pc]
         if value in OPCODES:
@@ -51,23 +52,23 @@ def disassemble(
 
         if not silent:
             if not hide_pc:
-                print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
+                instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
-                print(f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ", end="")
-            if mnemonic == "JUMP" or mnemonic == "JUMPI":
-                print(f"{Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
+            if mnemonic in ["JUMP", "JUMPI"]:
+                instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic}{Colors.ENDC}"
             elif mnemonic == "JUMPDEST":
-                print(f"{Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                instruction_message += f"{Colors.BLUE}{Colors.BOLD}{mnemonic}{Colors.ENDC}"
             else:
-                print(f"{Colors.BOLD}{mnemonic}{Colors.ENDC}", end="")
+                instruction_message += f"{Colors.BOLD}{mnemonic}{Colors.ENDC}"
 
         disassembled_code.append((pc, mnemonic))
 
         if mnemonic.startswith("PUSH"):
             mnemonic_num = int(mnemonic[4:])
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
-            if not silent and mnemonic_num > 0:
-                print(" 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(), end="")
+            if not silent and mnemonic_num > 0 and not invocation_only:
+                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic[:4]
             disassembled_code.append((pc + 1, push_v))
@@ -90,24 +91,24 @@ def disassemble(
 
             if not silent:
                 if len(stack_input_names) > 0:
-                    print("(", end="")
+                    instruction_message += "("
                     if mnemonic == "DUP":
                         if mnemonic_num >= 2:
-                            print("..., ", end="")
-                        print(f"{pad_even(hex(input[-1]))}", end="")
+                            instruction_message += "..., "
+                        instruction_message += f"{pad_even(hex(input[-1]))}"
                     elif mnemonic == "SWAP":
                         if mnemonic_num >= 2:
-                            print(f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}", end="")
+                            instruction_message += f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}"
                         else:
-                            print(f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}", end="")
+                            instruction_message += f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}"
                     else:
                         for i, name in enumerate(stack_input_names):
                             if i > 0:
-                                print(", ", end="")
+                                instruction_message += ", "
                             if name != "":
-                                print(f"{name}:", end="")
-                            print(f"{pad_even(hex(input[i]))}", end="")
-                    print(")", end="")
+                                instruction_message += f"{name}:"
+                            instruction_message += f"{pad_even(hex(input[i]))}"
+                    instruction_message += ")"
 
             match mnemonic:
                 case "STOP":
@@ -181,10 +182,7 @@ def disassemble(
                         stack.push(input[1] >> input[0])
                 case "KECCAK256":
                     if not silent:
-                        print(
-                            f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}",
-                            end="",
-                        )
+                        instruction_message += f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}"
                     k = keccak.new(digest_bits=256)
                     k.update(bytes(memory.memory[input[0] : input[0] + input[1]]))
                     stack.push(bytes_to_long(k.digest()))
@@ -224,16 +222,15 @@ def disassemble(
                 case "GASPRICE":
                     stack.push(context.callvalue)
                 case "EXTCODESIZE":
-                    # assert False
+                    assert False
                     stack.push(0)
                 case "EXTCODECOPY":
                     assert False
                 case "RETURNDATASIZE":
-                    # assert False
+                    assert False
                     stack.push(0)
                 case "RETURNDATACOPY":
-                    # assert False
-                    pass
+                    assert False
                 case "EXTCODEHASH":
                     assert False
                 case "BLOCKHASH":
@@ -297,19 +294,19 @@ def disassemble(
                 case "CREATE":
                     assert False
                 case "CALL":
+                    assert False
                     # TODO
                     stack.push(0xCA11)
                 case "CALLCODE":
+                    assert False
                     # TODO
                     stack.push(0xCA11)
                 case "RETURN":
                     if not silent:
-                        print(
-                            f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}",
-                            end="",
-                        )
+                        instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}"
                     break
                 case "DELEGATECALL":
+                    assert False
                     # TODO
                     stack.push(0xCA11)
                 case "CREATE2":
@@ -324,21 +321,26 @@ def disassemble(
                     break
 
         if trace and not silent:
-            print(f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}", end="")
+            instruction_message += f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
             if decode_stack:
-                print(f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}", end="")
+                instruction_message += f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}"
 
             if not hide_memory:
                 lines = memory.to_string()
                 for pc, line in enumerate(lines):
                     if pc == 0:
-                        print(f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}", end="")
+                        instruction_message += f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}"
                     else:
-                        print(f"\n{' ' * (TAB_SIZE * 3)}", end="")
-                    print(f"{line}", end="")
+                        instruction_message += f"\n{' ' * (TAB_SIZE * 3)}"
+                    instruction_message += f"{line}"
 
         if not silent:
-            print()
+            if invocation_only:
+                if is_invocation_mnemonic(mnemonic):
+                    print(instruction_message)
+            else:
+                print(instruction_message)
+
         steps += 1
         if steps >= max_steps:
             break

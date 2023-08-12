@@ -1,4 +1,4 @@
-OPCODES: dict[int, tuple[str, int, int, str, tuple]] = {
+OPCODES: dict[int, tuple[str, int, int, str, tuple[str, ...]]] = {
     # value: (mnemonic, stack input count, stack output count, description, stack input names)
     0x00: ("STOP", 0, 0, "Halts execution.", ()),
     0x01: ("ADD", 2, 1, "Addition operation.", ("a", "b")),

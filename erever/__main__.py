@@ -34,8 +34,8 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         hide_pc=args.hide_pc,
         show_opcodes=args.show_opcodes,
         hide_memory=args.hide_memory,
+        invocation_only=args.invocation_only,
     )
-
 
 def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
     disassemble_symbolic(
@@ -67,14 +67,18 @@ def main() -> None:
 
     parser_disassemble = subparsers.add_parser("disassemble", aliases=["disas"], help="Disassemble the given bytecode")
     parser_disassemble.set_defaults(handler=command_disassemble)
+
     parser_trace = subparsers.add_parser("trace", help="Trace execution of the given bytecode")
     parser_trace.set_defaults(handler=command_trace)
+
     parser_symbolic_trace = subparsers.add_parser(
         "symbolic-trace", aliases=["symbolic"], help="Trace execution of the given bytecode symbolically"
     )
     parser_symbolic_trace.set_defaults(handler=command_symbolic_trace)
+
     parser_mermaid = subparsers.add_parser("mermaid", help="Generate the mermaid diagram for the given bytecode")
     parser_mermaid.set_defaults(handler=command_mermaid)
+
     parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
     parser_gadget.set_defaults(handler=command_gadget)
 
@@ -118,6 +122,7 @@ def main() -> None:
 
     parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
+    parser_trace.add_argument("--invocation-only", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
 

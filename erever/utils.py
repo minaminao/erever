@@ -60,3 +60,6 @@ def decode_printable_with_color(
             c = Colors.GRAY + "." + Colors.ENDC
         decoded += c
     return decoded
+
+def is_invocation_mnemonic(mnemonic: str) -> bool:
+    return mnemonic in ["CALL", "CALLCODE", "DELEGATECALL", "STATICCALL", "CREATE", "CREATE2", "SELFDESTRUCT", "LOG"]
