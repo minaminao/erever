@@ -58,7 +58,9 @@ def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int
             value = context.bytecode[pc]
 
             if value in OPCODES:
-                mnemonic, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
+                mnemonic, stack_input_count, _stack_output_count, _base_gas, _description, stack_input_names = OPCODES[
+                    value
+                ]
             else:
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: 0x (?)")
                 return False, pc, ControlType.BAD, instructions

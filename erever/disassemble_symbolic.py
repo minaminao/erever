@@ -88,7 +88,9 @@ def disassemble_symbolic(
             next_pc = pc + 1
             value = context.bytecode[pc]
             if value in OPCODES:
-                mnemonic, stack_input_count, stack_output_count, _description, _stack_input_names = OPCODES[value]
+                mnemonic, stack_input_count, stack_output_count, _base_gas, _description, _stack_input_names = OPCODES[
+                    value
+                ]
             else:
                 mnemonic = f"{Colors.YELLOW}0x{value:02x} (?){Colors.ENDC}"
                 stack_input_count = 0

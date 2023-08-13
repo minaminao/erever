@@ -46,13 +46,15 @@ with cast_output_file.open() as f:
         trace_log = trace_logs[trace_log_i]
 
         erever_stack = trace_log["stack_before_execution"]
+        erever_gas = trace_log["gas"]
 
         invalid = False
         invalid |= mnemonic_raw != trace_log["mnemonic_raw"]
         invalid |= stack != erever_stack
+        invalid |= gas != erever_gas
 
-        print("erever", trace_log["mnemonic_raw"], erever_stack)
-        print("cast  ", mnemonic_raw, stack)
+        print("erever", erever_gas, trace_log["mnemonic_raw"], erever_stack)
+        print("cast  ", gas, mnemonic_raw, stack)
 
         if invalid:
             print()

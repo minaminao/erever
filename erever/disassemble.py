@@ -19,13 +19,15 @@ class TraceLog:
     mnemonic: str
     input: list[int]
     stack_before_execution: Stack
+    gas: int
 
-    def to_dict(self) -> dict[str, str | list[int]]:
-        log_dict: dict[str, str | list[int]] = {}
+    def to_dict(self) -> dict[str, int | str | list[int]]:
+        log_dict: dict[str, int | str | list[int]] = {}
         log_dict["mnemonic_raw"] = self.mnemonic_raw
         log_dict["mnemonic"] = self.mnemonic
         log_dict["input"] = self.input
         log_dict["stack_before_execution"] = self.stack_before_execution.stack
+        log_dict["gas"] = self.gas
         return log_dict
 
 
@@ -37,8 +39,8 @@ class DisassembleResult:
     success: bool
     return_data: bytes
 
-    def to_dict(self) -> dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | list[int]]]]:
-        result_dict: dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | list[int]]]] = {}
+    def to_dict(self) -> dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]]]:
+        result_dict: dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]]] = {}
         result_dict["last_jump_to_address"] = self.last_jump_to_address
         result_dict["disassemble_code"] = self.disassemble_code
         result_dict["trace_logs"] = [log.to_dict() for log in self.trace_logs]
@@ -81,7 +83,9 @@ def disassemble(
         next_pc = pc + 1
         value = context.bytecode[pc]
         if value in OPCODES:
-            mnemonic_raw, stack_input_count, _stack_output_count, _description, stack_input_names = OPCODES[value]
+            mnemonic_raw, stack_input_count, _stack_output_count, base_gas, _description, stack_input_names = OPCODES[
+                value
+            ]
         else:
             mnemonic_raw = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
@@ -139,7 +143,7 @@ def disassemble(
                 input.append(stack.pop())
 
             if return_trace_logs:
-                trace_logs.append(TraceLog(mnemonic_raw, mnemonic, copy.deepcopy(input), copied_stack))
+                trace_logs.append(TraceLog(mnemonic_raw, mnemonic, copy.deepcopy(input), copied_stack, context.gas))
 
             if not silent:
                 if len(stack_input_names) > 0:
@@ -356,6 +360,7 @@ def disassemble(
                         child_context.caller = context.address
                         child_context.callvalue = value
                         child_context.calldata = memory.get_as_bytes(args_offset, args_size)
+                        context.gas -= gas
                         result = disassemble(
                             child_context,
                             trace,
@@ -371,6 +376,7 @@ def disassemble(
                             rpc_url,
                         )
                         if result.success:
+                            context.gas += child_context.gas
                             context.state = child_context.state
                             memory.store(ret_offset, result.return_data[:ret_size])
                         trace_logs.extend(result.trace_logs)
@@ -427,6 +433,7 @@ def disassemble(
             else:
                 print(instruction_message)
 
+        context.gas -= base_gas
         steps += 1
         if steps >= max_steps:
             break
