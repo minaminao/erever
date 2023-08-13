@@ -22,8 +22,12 @@ class Memory:
             return
         self.memory += [0] * (size - len(self.memory))
 
-    def get_hex(self, start: int, end: int) -> str:
-        return bytes(self.memory[start:end]).hex()
+    def get_as_bytes(self, offset: int, size: int) -> bytes:
+        self.__extend(offset + size)
+        return bytes(self.memory[offset : offset + size])
+
+    def get_as_hex(self, offset: int, size: int) -> str:
+        return self.get_as_bytes(offset, size).hex()
 
     def store8(self, offset: int, value: int) -> None:
         assert value < 0x100
@@ -55,6 +59,7 @@ class Memory:
         self.mstore_r_for_colorize = r
 
     def load(self, offset: int) -> int:
+        self.__extend(offset + 32)
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
     def to_string(self, line_length: int = 0x20) -> list[str]:

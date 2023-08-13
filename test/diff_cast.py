@@ -45,14 +45,13 @@ with cast_output_file.open() as f:
         data = result.group(11)
         trace_log = trace_logs[trace_log_i]
 
-        erever_stack = trace_log["stack_after_execution"]
-        erever_prev_stack = trace_logs[trace_log_i - 1]["stack_after_execution"] if trace_log_i > 0 else []
+        erever_stack = trace_log["stack_before_execution"]
 
         invalid = False
         invalid |= mnemonic_raw != trace_log["mnemonic_raw"]
-        invalid |= stack != erever_prev_stack
+        invalid |= stack != erever_stack
 
-        print("erever", trace_log["mnemonic_raw"], erever_prev_stack)
+        print("erever", trace_log["mnemonic_raw"], erever_stack)
         print("cast  ", mnemonic_raw, stack)
 
         if invalid:

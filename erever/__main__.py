@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 import tomllib
@@ -25,7 +26,7 @@ def command_disassemble(args: argparse.Namespace, context: Context) -> None:
 
 
 def command_trace(args: argparse.Namespace, context: Context) -> None:
-    disassemble(
+    result = disassemble(
         context,
         True,
         args.entrypoint,
@@ -35,9 +36,12 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         show_opcodes=args.show_opcodes,
         hide_memory=args.hide_memory,
         invocation_only=args.invocation_only,
-        output_json=args.output_json,
+        silent=args.silent,
         rpc_url=args.rpc_url,
+        return_trace_logs=args.return_trace_logs,
     )
+    if args.output_json:
+        print(json.dumps(result.to_dict()))
 
 
 def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
@@ -127,6 +131,8 @@ def main() -> None:
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--invocation-only", action="store_true", default=False)
     parser_trace.add_argument("--output-json", action="store_true", default=False)
+    parser_trace.add_argument("--return-trace-logs", action="store_true", default=False)
+    parser_trace.add_argument("--silent", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
 
