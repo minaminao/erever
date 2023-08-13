@@ -1,5 +1,8 @@
 import string
 
+from web3 import Web3
+from web3.types import ChecksumAddress
+
 from .colors import Colors
 
 UINT256_MAX = (1 << 256) - 1
@@ -64,3 +67,7 @@ def decode_printable_with_color(
 
 def is_invocation_mnemonic(mnemonic: str) -> bool:
     return mnemonic in ["CALL", "CALLCODE", "DELEGATECALL", "STATICCALL", "CREATE", "CREATE2", "SELFDESTRUCT", "LOG"]
+
+
+def int_to_check_sum_address(x: int) -> ChecksumAddress:
+    return Web3.to_checksum_address(pad(hex(x), 40))

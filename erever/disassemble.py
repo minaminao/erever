@@ -1,15 +1,16 @@
 import copy
+import json
 from dataclasses import dataclass
 
 from Crypto.Hash import keccak
 from Crypto.Util.number import bytes_to_long
+from web3 import HTTPProvider, Web3
 
 from .colors import Colors
 from .context import Context
 from .memory import Memory
 from .opcodes import OPCODES
 from .stack import Stack
-from .storage import Storage
 from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, is_invocation_mnemonic, pad, pad_even, uint256
 
 
@@ -20,12 +21,27 @@ class TraceLog:
     input: list[int]
     stack_after_execution: Stack
 
+    def to_dict(self) -> dict[str, str | list[int]]:
+        log_dict: dict[str, str | list[int]] = {}
+        log_dict["mnemonic_raw"] = self.mnemonic_raw
+        log_dict["mnemonic"] = self.mnemonic
+        log_dict["input"] = self.input
+        log_dict["stack_after_execution"] = self.stack_after_execution.stack
+        return log_dict
+
 
 @dataclass
 class DisassembleResult:
     last_jump_to_address: int | None
     disassemble_code: list[tuple[int, str | int]]
     trace_logs: list[TraceLog]
+
+    def to_dict(self) -> dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | list[int]]]]:
+        result_dict: dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | list[int]]]] = {}
+        result_dict["last_jump_to_address"] = self.last_jump_to_address
+        result_dict["disassemble_code"] = self.disassemble_code
+        result_dict["trace_logs"] = [log.to_dict() for log in self.trace_logs]
+        return result_dict
 
 
 def disassemble(
@@ -36,16 +52,20 @@ def disassemble(
     decode_stack: bool = False,
     ignore_stack_underflow: bool = False,
     silent: bool = False,
-    return_trace_logs: bool = False,
     hide_pc: bool = False,
     show_opcodes: bool = False,
     hide_memory: bool = False,
     invocation_only: bool = False,
+    output_json: bool = False,
+    rpc_url: str | None = None,
 ) -> DisassembleResult:
     disassembled_code: list[tuple[int, str | int]] = []  # (pc, mnemonic)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
-    storage = Storage()
+    state = context.state
+    return_trace_logs = output_json
+
+    w3 = Web3(HTTPProvider(rpc_url)) if rpc_url is not None else None
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
@@ -108,8 +128,10 @@ def disassemble(
             mnemonic = mnemonic_raw
         assert mnemonic != ""
 
+        break_flag = False
+
         if trace:
-            input = []
+            input: list[int] = []
             for _ in range(stack_input_count):
                 input.append(stack.pop())
 
@@ -136,7 +158,7 @@ def disassemble(
 
             match mnemonic:
                 case "STOP":
-                    break
+                    break_flag = True
                 case "ADD":
                     stack.push(uint256(input[0] + input[1]))
                 case "MUL":
@@ -246,19 +268,23 @@ def disassemble(
                 case "GASPRICE":
                     stack.push(context.callvalue)
                 case "EXTCODESIZE":
-                    assert False
-                    stack.push(0)
+                    if w3:
+                        code = w3.eth.get_code(w3.to_checksum_address(pad(hex(input[0]), 40)))[2:]
+                        stack.push(len(code))
+                    else:
+                        assert False, "EXTCODESIZE is not supported"
+                        stack.push(0)
                 case "EXTCODECOPY":
-                    assert False
+                    assert False, "EXTCODECOPY is not supported"
                 case "RETURNDATASIZE":
-                    assert False
+                    assert False, "RETURNDATASIZE is not supported"
                     stack.push(0)
                 case "RETURNDATACOPY":
-                    assert False
+                    assert False, "RETURNDATACOPY is not supported"
                 case "EXTCODEHASH":
-                    assert False
+                    assert False, "EXTCODEHASH is not supported"
                 case "BLOCKHASH":
-                    assert False
+                    assert False, "BLOCKHASH is not supported"
                 case "COINBASE":
                     stack.push(context.coinbase)
                 case "TIMESTAMP":
@@ -284,9 +310,9 @@ def disassemble(
                 case "MSTORE8":
                     memory.store8(input[0], input[1])
                 case "SLOAD":
-                    stack.push(storage.load(input[0]))
+                    stack.push(state.get_storage_at(context.address, input[0]))
                 case "SSTORE":
-                    storage.store(input[0], input[1])
+                    state.set_storage_at(context.address, input[0], input[1])
                 case "JUMP":
                     assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
                     assert type(input[0]) is int
@@ -318,33 +344,33 @@ def disassemble(
                 case "LOG":
                     pass
                 case "CREATE":
-                    assert False
+                    assert False, "CREATE is not supported"
                 case "CALL":
-                    assert False
+                    assert False, "CALL is not supported"
                     # TODO
                     stack.push(0xCA11)
                 case "CALLCODE":
-                    assert False
+                    assert False, "CALLCODE is not supported"
                     # TODO
                     stack.push(0xCA11)
                 case "RETURN":
                     if not silent:
                         instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_hex(input[0], input[0] + input[1])}"
-                    break
+                    break_flag = True
                 case "DELEGATECALL":
-                    assert False
+                    assert False, "DELEGATECALL is not supported"
                     # TODO
                     stack.push(0xCA11)
                 case "CREATE2":
-                    assert False
+                    assert False, "CREATE2 is not supported"
                 case "STATICCALL":
-                    assert False
+                    assert False, "STATICCALL is not supported"
                 case "REVERT":
-                    break
+                    break_flag = True
                 case "INVALID":
-                    break
+                    break_flag = True
                 case "SELFDESTRUCT":
-                    break
+                    break_flag = True
 
         if trace and return_trace_logs:
             trace_logs.append(TraceLog(mnemonic_raw, mnemonic, input, copy.deepcopy(stack)))
@@ -363,7 +389,7 @@ def disassemble(
                         instruction_message += f"\n{' ' * (TAB_SIZE * 3)}"
                     instruction_message += f"{line}"
 
-        if not silent:
+        if not silent and not output_json:
             if invocation_only:
                 if is_invocation_mnemonic(mnemonic):
                     print(instruction_message)
@@ -373,12 +399,21 @@ def disassemble(
         steps += 1
         if steps >= max_steps:
             break
+        if break_flag:
+            break
         pc = next_pc
 
-    if not silent:
+    if not silent and not output_json:
         print()
         if warning_messages != "":
             print(Colors.YELLOW + "WARNING:")
             print(warning_messages + Colors.ENDC)
 
-    return DisassembleResult(last_jump_to_address, disassembled_code, [])
+    disassemble_result = DisassembleResult(
+        last_jump_to_address, disassembled_code, trace_logs if trace and return_trace_logs else []
+    )
+
+    if not silent and output_json:
+        print(json.dumps(disassemble_result.to_dict()))
+
+    return disassemble_result

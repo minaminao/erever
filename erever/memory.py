@@ -57,7 +57,7 @@ class Memory:
     def load(self, offset: int) -> int:
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
-    def to_string(self, line_length=0x20) -> list[str]:
+    def to_string(self, line_length: int = 0x20) -> list[str]:
         s = bytes(self.memory).hex()
         ret = []
 
@@ -82,7 +82,7 @@ class Memory:
             decoded_lines.append(decoded_line)
 
         modified = (0, 0)
-        if self.mstore_l_for_colorize is not None:
+        if self.mstore_l_for_colorize is not None and self.mstore_r_for_colorize is not None:
             l_i = self.mstore_l_for_colorize // line_length
             l_j = 2 * (self.mstore_l_for_colorize % line_length)
             r_i = self.mstore_r_for_colorize // line_length

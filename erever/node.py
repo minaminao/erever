@@ -1,16 +1,18 @@
 from .colors import Colors
 from .utils import pad_even
 
+NodeValue = str | int | list["Node"]
+
 
 class Node:
     type: str
-    value: str | int | list
+    value: NodeValue
 
     mnemonic_num: int | None
     input_count: int | None
 
     def __init__(
-        self, type_: str, value: str | int | list, mnemonic_num: int | None = None, input_count: int | None = None
+        self, type_: str, value: NodeValue, mnemonic_num: int | None = None, input_count: int | None = None
     ) -> None:
         self.type = type_
         self.value = value
@@ -19,7 +21,7 @@ class Node:
         self.input_count = input_count
 
     @staticmethod
-    def unwrap(s: str | int) -> str:
+    def unwrap(s: "str | int | Node") -> str:
         s = str(s)
         return s[1:-1] if s[0] == "(" and s[-1] == ")" else s
 
@@ -31,7 +33,7 @@ class Node:
             assert type(self.value) is str
             return self.value
         else:
-            assert type(self.value) is list
+            assert type(self.value) is list["Node"]
             match self.type:
                 # case "STOP":
                 case "ADD":

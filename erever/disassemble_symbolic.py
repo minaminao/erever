@@ -148,7 +148,7 @@ def disassemble_symbolic(
                     print(
                         Node(
                             mnemonic,
-                            ["0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()],
+                            "0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(),
                             mnemonic_num,
                             stack_input_count,
                         ),

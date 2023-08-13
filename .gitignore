@@ -7,3 +7,5 @@ samples
 
 .mypy_cache
 .ruff_cache
+
+poetry.lock

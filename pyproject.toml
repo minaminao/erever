@@ -8,8 +8,10 @@ license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pycryptodome = "^3.15.0"
-web3 = "^6.0.0"
+pycryptodome = "^3.18.0"
+# web3 = "^6.8.0"
+web3 = { git = "https://github.com/minaminao/web3.py.git", branch = "develop" }
+
 
 [tool.poetry.scripts]
 erever = "erever.__main__:main"

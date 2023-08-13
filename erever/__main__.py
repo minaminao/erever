@@ -35,6 +35,8 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         show_opcodes=args.show_opcodes,
         hide_memory=args.hide_memory,
         invocation_only=args.invocation_only,
+        output_json=args.output_json,
+        rpc_url=args.rpc_url,
     )
 
 
@@ -83,7 +85,7 @@ def main() -> None:
     parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
     parser_gadget.set_defaults(handler=command_gadget)
 
-    def add_common_arguments(parser) -> None:
+    def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         parser.add_argument("-b", "--bytecode")
         parser.add_argument("-f", "--filename")
 
@@ -124,6 +126,7 @@ def main() -> None:
     parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--invocation-only", action="store_true", default=False)
+    parser_trace.add_argument("--output-json", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
 

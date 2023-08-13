@@ -9,3 +9,6 @@ class Storage:
 
     def store(self, key: int, value: int) -> None:
         self.storage[key] = value
+
+    def has(self, key: int) -> bool:
+        return key in self.storage

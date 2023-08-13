@@ -1,7 +1,4 @@
-all:
-	make fmt
-	make lint
-	make type-check
+all: fmt lint type-check
 
 fmt:
 	isort erever/*.py
