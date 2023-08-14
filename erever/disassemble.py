@@ -7,6 +7,7 @@ from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
 from .context import Context
+from .gas import calculate_message_call_gas
 from .memory import Memory
 from .opcodes import OPCODES
 from .stack import Stack
@@ -19,6 +20,7 @@ class TraceLog:
     mnemonic: str
     input: list[int]
     stack_before_execution: Stack
+    memory_before_execution: Memory
     gas: int
 
     def to_dict(self) -> dict[str, int | str | list[int]]:
@@ -27,6 +29,7 @@ class TraceLog:
         log_dict["mnemonic"] = self.mnemonic
         log_dict["input"] = self.input
         log_dict["stack_before_execution"] = self.stack_before_execution.stack
+        log_dict["memory_before_execution"] = bytes(self.memory_before_execution.memory).hex()
         log_dict["gas"] = self.gas
         return log_dict
 
@@ -137,13 +140,18 @@ def disassemble(
         if trace:
             if return_trace_logs:
                 copied_stack = copy.deepcopy(stack)
+                copied_memory = copy.deepcopy(memory)
 
             input: list[int] = []
             for _ in range(stack_input_count):
                 input.append(stack.pop())
 
             if return_trace_logs:
-                trace_logs.append(TraceLog(mnemonic_raw, mnemonic, copy.deepcopy(input), copied_stack, context.gas))
+                trace_logs.append(
+                    TraceLog(mnemonic_raw, mnemonic, copy.deepcopy(input), copied_stack, copied_memory, context.gas)
+                )
+
+            context.gas -= base_gas
 
             if not silent:
                 if len(stack_input_names) > 0:
@@ -238,10 +246,13 @@ def disassemble(
                         else:
                             stack.push(input[1] >> input[0])
                     case "KECCAK256":
+                        input_data = memory.get_as_bytes(input[0], input[1])
                         if not silent:
-                            instruction_message += f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{bytes(memory.memory[input[0]:input[0]+input[1]]).hex()}"
+                            instruction_message += f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{input_data.hex()}"
                         k = keccak.new(digest_bits=256)
-                        k.update(bytes(memory.memory[input[0] : input[0] + input[1]]))
+                        k.update(input_data)
+                        GAS_KECCAK256_WORD = 6
+                        context.gas -= GAS_KECCAK256_WORD * ((len(input_data) + 31) // 32)
                         stack.push(bytes_to_long(k.digest()))
                     case "ADDRESS":
                         stack.push(context.address)
@@ -264,13 +275,14 @@ def disassemble(
                         offset = input[1]
                         size = input[2]
                         if offset > len(context.calldata):
-                            memory.store(input[0], b"\x00" * size)
+                            context.gas -= memory.store(input[0], b"\x00" * size)
                         elif offset + size > len(context.calldata):
-                            memory.store(
+                            context.gas -= memory.store(
                                 input[0], context.calldata[offset:] + b"\x00" * (offset + size - len(context.calldata))
                             )
                         else:
-                            memory.store(input[0], context.calldata[offset : offset + size])
+                            context.gas -= memory.store(input[0], context.calldata[offset : offset + size])
+                        context.gas -= 3 * ((size + 31) // 32)
                     case "CODESIZE":
                         stack.push(len(context.bytecode))
                     case "CODECOPY":
@@ -279,8 +291,9 @@ def disassemble(
                     case "GASPRICE":
                         stack.push(context.callvalue)
                     case "EXTCODESIZE":
-                        code = state.get_code(input[0])
+                        code, gas = state.get_code(input[0])
                         stack.push(len(code))
+                        context.gas -= gas
                     case "EXTCODECOPY":
                         assert False, "EXTCODECOPY is not supported"
                     case "RETURNDATASIZE":
@@ -313,13 +326,16 @@ def disassemble(
                     case "MLOAD":
                         stack.push(memory.load(input[0]))
                     case "MSTORE":
-                        memory.store256(input[0], input[1])
+                        context.gas -= memory.store256(input[0], input[1])
                     case "MSTORE8":
                         memory.store8(input[0], input[1])
                     case "SLOAD":
-                        stack.push(state.get_storage_at(context.address, input[0]))
+                        value, gas = state.get_storage_at(context.address, input[0])
+                        stack.push(value)
+                        context.gas -= gas
                     case "SSTORE":
-                        state.set_storage_at(context.address, input[0], input[1])
+                        gas = state.set_storage_at(context.address, input[0], input[1])
+                        context.gas -= gas
                     case "JUMP":
                         assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
                         assert type(input[0]) is int
@@ -354,33 +370,36 @@ def disassemble(
                         assert False, "CREATE is not supported"
                     case "CALL":
                         gas, address, value, args_offset, args_size, ret_offset, ret_size = input
+                        memory_cost = memory.extend(ret_offset + ret_size)
+                        call_gas_cost = calculate_message_call_gas(value, gas, context.gas, memory_cost, 0).cost
+                        context.gas -= call_gas_cost
                         child_context = copy.deepcopy(context)
-                        child_context.gas = gas
+                        child_context.bytecode = state.get_code(address, to_warm=False)[0]
+                        child_context.gas = call_gas_cost
                         child_context.address = address
                         child_context.caller = context.address
                         child_context.callvalue = value
                         child_context.calldata = memory.get_as_bytes(args_offset, args_size)
-                        context.gas -= gas
                         result = disassemble(
-                            child_context,
-                            trace,
-                            0,
-                            max_steps - steps,
-                            decode_stack,
-                            ignore_stack_underflow,
-                            silent,
-                            hide_pc,
-                            show_opcodes,
-                            hide_memory,
-                            invocation_only,
-                            rpc_url,
+                            context=child_context,
+                            trace=trace,
+                            entrypoint=0,
+                            max_steps=max_steps - steps,
+                            decode_stack=decode_stack,
+                            ignore_stack_underflow=ignore_stack_underflow,
+                            silent=silent,
+                            hide_pc=hide_pc,
+                            show_opcodes=show_opcodes,
+                            hide_memory=hide_memory,
+                            invocation_only=invocation_only,
+                            rpc_url=rpc_url,
+                            return_trace_logs=return_trace_logs,
                         )
                         if result.success:
                             context.gas += child_context.gas
                             context.state = child_context.state
                             memory.store(ret_offset, result.return_data[:ret_size])
                         trace_logs.extend(result.trace_logs)
-                        # assert False, "CALL is not supported"
                     case "CALLCODE":
                         assert False, "CALLCODE is not supported"
                     case "RETURN":
@@ -433,7 +452,6 @@ def disassemble(
             else:
                 print(instruction_message)
 
-        context.gas -= base_gas
         steps += 1
         if steps >= max_steps:
             break

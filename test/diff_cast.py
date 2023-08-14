@@ -25,7 +25,7 @@ trace_logs = erever_output["trace_logs"]
 with cast_output_file.open() as f:
     # Example: depth:1, PC:0, gas:0x1ba2740(28976960), OPCODE: "PUSH1"(96)  refund:0x0(0) Stack:[], Data size:0, Data: 0x
     pattern = re.compile(
-        r"depth:(\d+), PC:(\d+), gas:(0x[0-9a-f]+)\((\d+)\), OPCODE: \"([A-Z0-9]+)\"\((\d+)\)  refund:(0x[0-9a-f]+)\((\d+)\) Stack:\[(.*)\], Data size:(\d+), Data: (0x[0-9a-f]*)"
+        r"depth:(\d+), PC:(\d+), gas:(0x[0-9a-f]+)\((\d+)\), OPCODE: \"([A-Z0-9]+)\"\((\d+)\)  refund:(0x[0-9a-f]+)\((\d+)\) Stack:\[(.*)\], Data size:(\d+), Data: 0x([0-9a-f]*)"
     )
     trace_log_i = 0
     for line in f:
@@ -46,15 +46,21 @@ with cast_output_file.open() as f:
         trace_log = trace_logs[trace_log_i]
 
         erever_stack = trace_log["stack_before_execution"]
+        erever_memory = trace_log["memory_before_execution"]
         erever_gas = trace_log["gas"]
 
         invalid = False
         invalid |= mnemonic_raw != trace_log["mnemonic_raw"]
         invalid |= stack != erever_stack
         invalid |= gas != erever_gas
+        invalid |= data != erever_memory
 
-        print("erever", erever_gas, trace_log["mnemonic_raw"], erever_stack)
-        print("cast  ", gas, mnemonic_raw, stack)
+        print(
+            "erever", len(erever_memory) // 2, erever_gas, trace_log["mnemonic_raw"], erever_stack[::-1], erever_memory
+        )
+        print("cast  ", len(data) // 2, gas, mnemonic_raw, stack[::-1], data)
+        print(line)
+        print()
 
         if invalid:
             print()

@@ -1,6 +1,7 @@
 from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
+from .types import Gas
 from .utils import decode_printable_with_color
 
 
@@ -15,15 +16,17 @@ class Memory:
         self.mstore_l_for_colorize = None
         self.mstore_r_for_colorize = None
 
-    def __extend(self, size: int) -> None:
+    def extend(self, size: int) -> Gas:
         if size % 0x20 > 0:
             size += 0x20 - size % 0x20
         if len(self.memory) >= size:
-            return
+            return 0
+        gas = self.calculate_gas_extend_memory(size)
         self.memory += [0] * (size - len(self.memory))
+        return gas
 
     def get_as_bytes(self, offset: int, size: int) -> bytes:
-        self.__extend(offset + size)
+        self.extend(offset + size)
         return bytes(self.memory[offset : offset + size])
 
     def get_as_hex(self, offset: int, size: int) -> str:
@@ -31,25 +34,26 @@ class Memory:
 
     def store8(self, offset: int, value: int) -> None:
         assert value < 0x100
-        self.__extend(offset + 1)
+        self.extend(offset + 1)
         self.memory[offset] = value
 
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = offset + 1
 
-    def store256(self, offset: int, value: int) -> None:
+    def store256(self, offset: int, value: int) -> Gas:
         value_bytes = value.to_bytes(32, "big")
         r = offset + 32
-        self.__extend(r)
+        allocation_gas = self.extend(r)
         for i, b in enumerate(value_bytes):
             self.memory[offset + i] = b
 
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = r
+        return allocation_gas
 
-    def store(self, offset: int, value: bytes) -> None:
+    def store(self, offset: int, value: bytes) -> Gas:
         r = offset + len(value)
-        self.__extend(r)
+        allocation_gas = self.extend(r)
         for i, b in enumerate(value):
             self.memory[offset + i] = b
         for i, b in enumerate(value):
@@ -57,9 +61,10 @@ class Memory:
 
         self.mstore_l_for_colorize = offset
         self.mstore_r_for_colorize = r
+        return allocation_gas
 
     def load(self, offset: int) -> int:
-        self.__extend(offset + 32)
+        self.extend(offset + 32)
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
     def to_string(self, line_length: int = 0x20) -> list[str]:
@@ -119,3 +124,15 @@ class Memory:
                 ret[i] = zero_to_gray(ret[i]) + " | " + decoded_lines[i]
 
         return ret
+
+    def calculate_gas_extend_memory(self, size: int) -> Gas:
+        return Memory.calculate_memory_gas_cost(size) - Memory.calculate_memory_gas_cost(len(self.memory))
+
+    @staticmethod
+    def calculate_memory_gas_cost(size: int) -> Gas:
+        GAS_MEMORY = 3
+        size_in_words = (size + 31) // 32
+        linear_cost = size_in_words * GAS_MEMORY
+        quadratic_cost = size_in_words**2 // 512
+        total_gas_cost = linear_cost + quadratic_cost
+        return total_gas_cost

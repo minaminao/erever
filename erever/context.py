@@ -1,8 +1,11 @@
+import sys
+
 from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
-from web3.types import TxData
+from web3.types import BlockData, TxData
 
 from .storage import Storage
+from .types import Gas
 from .utils import int_to_check_sum_address
 
 AddressInt = int
@@ -11,14 +14,16 @@ AddressInt = int
 class State:
     w3: Web3 | None
     balances: dict[AddressInt, int]
-    codes: dict[AddressInt, bytes]
+    codes: dict[AddressInt, tuple[bytes, bool]]
     storages: dict[AddressInt, Storage]
+    original_storages: dict[AddressInt, Storage]
     block_number: int
 
     def __init__(self, block_number, rpc_url: str | None = None):
         self.w3 = Web3(HTTPProvider(rpc_url)) if rpc_url else None
         self.block_number = block_number
         self.storages = {}
+        self.original_storages = {}
         self.codes = {}
         self.balances = {}
 
@@ -34,36 +39,117 @@ class State:
     def set_balance(self, address: AddressInt, balance: int) -> None:
         self.balances[address] = balance
 
-    def get_code(self, address: AddressInt) -> bytes:
+    def get_code(self, address: AddressInt, to_warm=True) -> tuple[bytes, Gas]:
+        GAS_CODE_WARM_COLD_DIFF = 2600 - 100
         if address in self.codes:
-            return self.codes[address]
+            code, warm = self.codes[address]
+            if warm:
+                return (code, 0)
+            else:
+                return (code, GAS_CODE_WARM_COLD_DIFF)
         elif self.w3:
-            self.codes[address] = bytes(self.w3.eth.get_code(int_to_check_sum_address(address), self.block_number))
-            return self.codes[address]
+            code = bytes(self.w3.eth.get_code(int_to_check_sum_address(address), self.block_number))
+            self.codes[address] = (code, to_warm)
+            return (code, GAS_CODE_WARM_COLD_DIFF if to_warm else 0)
         else:
-            return b""
+            return (b"", 0)
 
     def set_code(self, address: AddressInt, code: bytes) -> None:
-        self.codes[address] = code
+        self.codes[address] = (code, False)
 
-    def get_storage_at(self, address: AddressInt, slot: int) -> int:
+    def get_storage_at(self, address: AddressInt, slot: int) -> tuple[int, Gas]:
+        GAS_WARM_COLD_DIFF = 2100 - 100
+
         if address not in self.storages:
             self.storages[address] = Storage()
-        if self.storages[address].has(slot):
-            return self.storages[address].load(slot)
-        elif self.w3:
-            self.storages[address].store(
-                slot,
-                bytes_to_long(self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)),
-            )
-            return self.storages[address].load(slot)
+        if address not in self.original_storages:
+            self.original_storages[address] = Storage()
+
+        storage = self.storages[address]
+        original_storage = self.original_storages[address]
+
+        if not original_storage.has(slot):
+            if self.w3:
+                original_storage.store(
+                    slot,
+                    bytes_to_long(
+                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
+                    ),
+                )
+            else:
+                original_storage.store(slot, 0)
+
+        original_value = original_storage.load(slot)
+        warm = storage.has(slot)
+        if not warm:
+            storage.store(slot, original_value)
+        current_value = storage.load(slot)
+
+        return (current_value, 0 if warm else GAS_WARM_COLD_DIFF)
+
+    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> Gas:
+        if address not in self.storages:
+            self.storages[address] = Storage()
+        if address not in self.original_storages:
+            self.original_storages[address] = Storage()
+
+        storage = self.storages[address]
+        original_storage = self.original_storages[address]
+
+        if not original_storage.has(slot):
+            if self.w3:
+                original_storage.store(
+                    slot,
+                    bytes_to_long(
+                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
+                    ),
+                )
+            else:
+                original_storage.store(slot, 0)
+
+        original_value = original_storage.load(slot)
+        warm = storage.has(slot)
+        if not warm:
+            storage.store(slot, original_value)
+        current_value = storage.load(slot)
+
+        # https://www.evm.codes/?fork=shanghai
+        if current_value == original_value:
+            if original_value == 0:
+                base_dynamic_gas = 20000
+            else:
+                base_dynamic_gas = 2900
         else:
-            return 0
+            base_dynamic_gas = 100
 
-    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> None:
-        if address not in self.storages:
-            self.storages[address] = Storage()
-        self.storages[address].store(slot, value)
+        gas_refunds = 0
+        if value != current_value:
+            if current_value == original_value:
+                if original_value != 0 and value == 0:
+                    gas_refunds += 4800
+            else:
+                if original_value != 0:
+                    if current_value == 0:
+                        gas_refunds -= 4800
+                    elif value == 0:
+                        gas_refunds += 4800
+                if value == original_value:
+                    if original_value == 0:
+                        if warm:
+                            gas_refunds += 20000 - 100
+                        else:
+                            gas_refunds += 19900
+                    else:
+                        if warm:
+                            gas_refunds += 5000 - 2100 - 100
+                        else:
+                            gas_refunds += 4900
+        storage.store(slot, value)
+
+        print(base_dynamic_gas, gas_refunds, value, current_value, original_value, warm, file=sys.stderr)
+
+        gas = base_dynamic_gas + gas_refunds - 100
+        return gas
 
 
 class Context:
@@ -93,7 +179,6 @@ class Context:
     caller: int
     callvalue: int
     calldata: bytes
-    calldata_hex: str
     gasprice: int
     coinbase: int
     timestamp: int
@@ -163,14 +248,18 @@ class Context:
         tx: TxData = w3.eth.get_transaction(args.tx)
 
         self = Context()
-        self.state = State(tx["blockNumber"], args.rpc_url)
+        previous_block_number = tx["blockNumber"] - 1  # not includes tx
+        current_block_number = tx["blockNumber"]  # includes tx
+        self.state = State(previous_block_number, args.rpc_url)
+
+        current_block: BlockData = w3.eth.get_block(current_block_number)
 
         # Contract Creation
         if "to" not in tx or tx["to"] is None:
             self.bytecode = bytes(tx["input"])
             self.calldata = b""
         else:
-            code = w3.eth.get_code(tx["to"], tx["blockNumber"])
+            code = w3.eth.get_code(tx["to"], previous_block_number)
             # Contract
             if len(code) > 0:
                 self.bytecode = bytes(code)
@@ -187,13 +276,13 @@ class Context:
         self.callvalue = tx["value"]
         self.gasprice = tx["gasPrice"]
         self.coinbase = args.coinbase
-        self.timestamp = args.timestamp
-        self.number = tx["blockNumber"]
+        self.timestamp = current_block["timestamp"]
+        self.number = current_block_number
         self.difficulty = args.difficulty
         self.gaslimit = tx["gas"]
         self.chainid = tx["chainId"]
         self.selfbalance = args.selfbalance
-        self.basefee = args.basefee
+        self.basefee = current_block["baseFeePerGas"]
         self.gas = tx["gas"]
         # self.blockchash
 

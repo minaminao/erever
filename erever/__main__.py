@@ -26,6 +26,16 @@ def command_disassemble(args: argparse.Namespace, context: Context) -> None:
 
 
 def command_trace(args: argparse.Namespace, context: Context) -> None:
+    # tx gas
+    context.gas -= 21000
+
+    # tx data gas
+    for byte in context.calldata:
+        if byte == 0:
+            context.gas -= 4
+        else:
+            context.gas -= 16
+
     result = disassemble(
         context,
         True,
