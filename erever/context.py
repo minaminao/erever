@@ -190,6 +190,8 @@ class Context:
     basefee: int
     gas: int
 
+    static: bool
+
     @staticmethod
     def from_arg_params_with_bytecode(args, bytecode: str) -> "Context":
         self = Context()
@@ -213,6 +215,7 @@ class Context:
         self.gas = args.gas
 
         self.state = State(self.number)
+        self.static = False
         return self
 
     @staticmethod
@@ -238,6 +241,7 @@ class Context:
         self.gas = d.get("gas", Context.DEFAULT_GAS)
 
         self.state = State(self.number)
+        self.static = False
         return self
 
     @staticmethod
@@ -286,6 +290,7 @@ class Context:
         self.gas = tx["gas"]
         # self.blockchash
 
+        self.static = False
         return self
 
     @staticmethod
@@ -320,7 +325,7 @@ class Context:
         # self.blockchash
 
         self.state = State(self.number, args.rpc_url)
-
+        self.static = False
         return self
 
     @staticmethod

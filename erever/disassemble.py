@@ -50,6 +50,10 @@ class DisassembleResult:
         return result_dict
 
 
+class StaticCallError(Exception):
+    pass
+
+
 def disassemble(
     context: Context,
     trace: bool = False,
@@ -175,6 +179,16 @@ def disassemble(
                     instruction_message += ")"
 
             try:
+                if context.static and mnemonic in [
+                    "SSTORE",
+                    "CREATE",
+                    "CREATE2",
+                    "CALL",
+                    "CALLCODE",
+                    "DELEGATECALL",
+                    "SELFDESTRUCT",
+                ]:
+                    raise StaticCallError
                 match mnemonic:
                     case "STOP":
                         break_flag = True
@@ -368,8 +382,12 @@ def disassemble(
                         pass
                     case "CREATE":
                         assert False, "CREATE is not supported"
-                    case "CALL":
-                        gas, address, value, args_offset, args_size, ret_offset, ret_size = input
+                    case "CALL" | "STATICCALL":
+                        if mnemonic == "CALL":
+                            gas, address, value, args_offset, args_size, ret_offset, ret_size = input
+                        elif mnemonic == "STATICCALL":
+                            value = 0
+                            gas, address, args_offset, args_size, ret_offset, ret_size = input
                         memory_cost = memory.extend(ret_offset + ret_size)
                         call_gas_cost = calculate_message_call_gas(value, gas, context.gas, memory_cost, 0).cost
                         context.gas -= call_gas_cost
@@ -380,6 +398,8 @@ def disassemble(
                         child_context.caller = context.address
                         child_context.callvalue = value
                         child_context.calldata = memory.get_as_bytes(args_offset, args_size)
+                        if mnemonic == "STATICCALL":
+                            child_context.static = True
                         result = disassemble(
                             context=child_context,
                             trace=trace,
@@ -410,8 +430,6 @@ def disassemble(
                         assert False, "DELEGATECALL is not supported"
                     case "CREATE2":
                         assert False, "CREATE2 is not supported"
-                    case "STATICCALL":
-                        assert False, "STATICCALL is not supported"
                     case "REVERT":
                         break_flag = True
                         success = False
@@ -426,6 +444,10 @@ def disassemble(
                         break_flag = True
                         success = False
 
+            except StaticCallError as e:
+                print("Static call revert", e, file=sys.stderr)
+                break_flag = True
+                success = False
             except Exception as e:
                 print("Error", e, file=sys.stderr)
                 break_flag = True
