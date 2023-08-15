@@ -88,31 +88,37 @@ def disassemble_symbolic(
             next_pc = pc + 1
             value = context.bytecode[pc]
             if value in OPCODES:
-                mnemonic, stack_input_count, stack_output_count, _base_gas, _description, _stack_input_names = OPCODES[
-                    value
-                ]
+                (
+                    mnemonic_raw,
+                    stack_input_count,
+                    stack_output_count,
+                    _base_gas,
+                    _description,
+                    _stack_input_names,
+                ) = OPCODES[value]
             else:
-                mnemonic = f"{Colors.YELLOW}0x{value:02x} (?){Colors.ENDC}"
+                mnemonic_raw = f"{Colors.YELLOW}0x{value:02x} (?){Colors.ENDC}"
                 stack_input_count = 0
                 stack_output_count = 0
                 _description = None
 
-            if mnemonic.startswith("PUSH"):
-                mnemonic_num = int(mnemonic[4:])
+            if mnemonic_raw.startswith("PUSH"):
+                mnemonic_num = int(mnemonic_raw[4:])
                 push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
                 next_pc = pc + 1 + mnemonic_num
-                mnemonic = mnemonic[:4]
-            elif mnemonic.startswith("DUP"):
-                mnemonic_num = int(mnemonic[3:])
-                mnemonic = mnemonic[:3]
-            elif mnemonic.startswith("SWAP"):
-                mnemonic_num = int(mnemonic[4:])
-                mnemonic = mnemonic[:4]
-            elif mnemonic.startswith("LOG"):
-                mnemonic_num = int(mnemonic[3:])
-                mnemonic = mnemonic[:3]
+                mnemonic = mnemonic_raw[:4]
+            elif mnemonic_raw.startswith("DUP"):
+                mnemonic_num = int(mnemonic_raw[3:])
+                mnemonic = mnemonic_raw[:3]
+            elif mnemonic_raw.startswith("SWAP"):
+                mnemonic_num = int(mnemonic_raw[4:])
+                mnemonic = mnemonic_raw[:4]
+            elif mnemonic_raw.startswith("LOG"):
+                mnemonic_num = int(mnemonic_raw[3:])
+                mnemonic = mnemonic_raw[:3]
             else:
                 mnemonic_num = 0
+                mnemonic = mnemonic_raw
 
             input: list[Node] = [stack.pop() for _ in range(stack_input_count)]
             end = False
@@ -150,7 +156,7 @@ def disassemble_symbolic(
                     print(
                         Node(
                             mnemonic,
-                            "0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex(),
+                            [Node("uint256", push_v)],
                             mnemonic_num,
                             stack_input_count,
                         ),

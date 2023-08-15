@@ -27,13 +27,13 @@ class Node:
 
     def __repr__(self) -> str:
         if self.type == "uint256":
-            assert type(self.value) is int
+            assert type(self.value) is int, f"{self.type} {type(self.value)} {self.value}"
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
-            assert type(self.value) is str
+            assert type(self.value) is str, f"{self.type} {type(self.value)} {self.value}"
             return self.value
         else:
-            assert type(self.value) is list["Node"]
+            assert type(self.value) is list, f"{self.type} {type(self.value)} {self.value}"
             match self.type:
                 # case "STOP":
                 case "ADD":
