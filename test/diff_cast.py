@@ -48,23 +48,36 @@ with cast_output_file.open() as f:
         erever_stack = trace_log["stack_before_execution"]
         erever_memory = trace_log["memory_before_execution"]
         erever_gas = trace_log["gas"]
-
-        invalid = False
-        invalid |= mnemonic_raw != trace_log["mnemonic_raw"]
-        invalid |= stack != erever_stack
-        invalid |= gas != erever_gas
-        invalid |= data != erever_memory
+        erever_depth = trace_log["depth"]
 
         print(
-            "erever", len(erever_memory) // 2, erever_gas, trace_log["mnemonic_raw"], erever_stack[::-1], erever_memory
+            "erever",
+            f"depth:{erever_depth}",
+            len(erever_memory) // 2,
+            erever_gas,
+            trace_log["mnemonic_raw"],
+            erever_stack[::-1],
         )
-        print("cast  ", len(data) // 2, gas, mnemonic_raw, stack[::-1], data)
-        print(line)
+        print("cast  ", f"depth:{depth}", len(data) // 2, gas, mnemonic_raw, stack[::-1])
+        # print(line)
         print()
 
-        if invalid:
-            print()
-            print("INVALID")
+        if mnemonic_raw != trace_log["mnemonic_raw"]:
+            print("mnemonic mismatch")
+            break
+        # if stack != erever_stack:
+        #     print("stack mismatch")
+        #     break
+        # if gas != erever_gas:
+        #     print("gas mismatch")
+        #     break
+        if data != erever_memory:
+            print("erever mem", erever_memory)
+            print("cast mem  ", data)
+            print("memory mismatch")
+            break
+        if depth != erever_depth:
+            print("depth mismatch")
             break
 
         trace_log_i += 1

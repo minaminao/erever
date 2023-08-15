@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from .types import Gas
 
 GAS_CALL_STIPEND = 2300
+GAS_CODE_WARM_COLD_DIFF = 2600 - 100
 
 
 @dataclass

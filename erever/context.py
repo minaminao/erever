@@ -1,9 +1,8 @@
-import sys
-
 from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 from web3.types import BlockData, TxData
 
+from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .storage import Storage
 from .types import Gas
 from .utils import int_to_check_sum_address
@@ -14,9 +13,10 @@ AddressInt = int
 class State:
     w3: Web3 | None
     balances: dict[AddressInt, int]
-    codes: dict[AddressInt, tuple[bytes, bool]]
+    codes: dict[AddressInt, bytes]
     storages: dict[AddressInt, Storage]
     original_storages: dict[AddressInt, Storage]
+    address_access_set: set[AddressInt]
     block_number: int
 
     def __init__(self, block_number, rpc_url: str | None = None):
@@ -24,7 +24,8 @@ class State:
         self.block_number = block_number
         self.storages = {}
         self.original_storages = {}
-        self.codes = {}
+        self.codes = {address: b"" for address in PRECOMPILED_CONTRACTS}
+        self.address_access_set = set([address for address in PRECOMPILED_CONTRACTS])
         self.balances = {}
 
     def get_balance(self, address: AddressInt) -> int:
@@ -39,23 +40,19 @@ class State:
     def set_balance(self, address: AddressInt, balance: int) -> None:
         self.balances[address] = balance
 
-    def get_code(self, address: AddressInt, to_warm=True) -> tuple[bytes, Gas]:
-        GAS_CODE_WARM_COLD_DIFF = 2600 - 100
+    def get_code(self, address: AddressInt) -> bytes:
         if address in self.codes:
-            code, warm = self.codes[address]
-            if warm:
-                return (code, 0)
-            else:
-                return (code, GAS_CODE_WARM_COLD_DIFF)
+            code = self.codes[address]
+            return code
         elif self.w3:
             code = bytes(self.w3.eth.get_code(int_to_check_sum_address(address), self.block_number))
-            self.codes[address] = (code, to_warm)
-            return (code, GAS_CODE_WARM_COLD_DIFF if to_warm else 0)
+            self.codes[address] = code
+            return code
         else:
-            return (b"", 0)
+            return b""
 
     def set_code(self, address: AddressInt, code: bytes) -> None:
-        self.codes[address] = (code, False)
+        self.codes[address] = code
 
     def get_storage_at(self, address: AddressInt, slot: int) -> tuple[int, Gas]:
         GAS_WARM_COLD_DIFF = 2100 - 100
@@ -87,7 +84,7 @@ class State:
 
         return (current_value, 0 if warm else GAS_WARM_COLD_DIFF)
 
-    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> Gas:
+    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> tuple[Gas, Gas]:
         if address not in self.storages:
             self.storages[address] = Storage()
         if address not in self.original_storages:
@@ -113,8 +110,10 @@ class State:
             storage.store(slot, original_value)
         current_value = storage.load(slot)
 
-        # https://www.evm.codes/?fork=shanghai
-        if current_value == original_value:
+        # https://www.evm.codes/#55?fork=shanghai
+        if value == current_value:
+            base_dynamic_gas = 100
+        elif current_value == original_value:
             if original_value == 0:
                 base_dynamic_gas = 20000
             else:
@@ -135,10 +134,7 @@ class State:
                         gas_refunds += 4800
                 if value == original_value:
                     if original_value == 0:
-                        if warm:
-                            gas_refunds += 20000 - 100
-                        else:
-                            gas_refunds += 19900
+                        gas_refunds += 19900
                     else:
                         if warm:
                             gas_refunds += 5000 - 2100 - 100
@@ -146,10 +142,11 @@ class State:
                             gas_refunds += 4900
         storage.store(slot, value)
 
-        print(base_dynamic_gas, gas_refunds, value, current_value, original_value, warm, file=sys.stderr)
+        # print(address, slot, " ", base_dynamic_gas, gas_refunds, value, current_value, original_value, warm, file=sys.stderr)
 
-        gas = base_dynamic_gas + gas_refunds - 100
-        return gas
+        gas = base_dynamic_gas - 100
+        # gas refunds are applied at the end of the transaction
+        return (gas, gas_refunds)
 
 
 class Context:
@@ -191,6 +188,9 @@ class Context:
     gas: int
 
     static: bool
+    return_data: bytes
+    depth: int
+    steps: int
 
     @staticmethod
     def from_arg_params_with_bytecode(args, bytecode: str) -> "Context":
@@ -216,6 +216,9 @@ class Context:
 
         self.state = State(self.number)
         self.static = False
+        self.return_data = b""
+        self.depth = 1
+        self.steps = 0
         return self
 
     @staticmethod
@@ -242,6 +245,9 @@ class Context:
 
         self.state = State(self.number)
         self.static = False
+        self.return_data = b""
+        self.depth = 1
+        self.steps = 0
         return self
 
     @staticmethod
@@ -263,7 +269,9 @@ class Context:
             self.bytecode = bytes(tx["input"])
             self.calldata = b""
         else:
-            code = w3.eth.get_code(tx["to"], previous_block_number)
+            to_address = int(tx["to"], 16)
+            self.state.address_access_set.add(to_address)
+            code = self.state.get_code(to_address)
             # Contract
             if len(code) > 0:
                 self.bytecode = bytes(code)
@@ -291,6 +299,9 @@ class Context:
         # self.blockchash
 
         self.static = False
+        self.return_data = b""
+        self.depth = 1
+        self.steps = 0
         return self
 
     @staticmethod
@@ -326,6 +337,9 @@ class Context:
 
         self.state = State(self.number, args.rpc_url)
         self.static = False
+        self.return_data = b""
+        self.depth = 1
+        self.steps = 0
         return self
 
     @staticmethod
