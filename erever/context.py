@@ -1,13 +1,13 @@
+import argparse
+
 from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 from web3.types import BlockData, TxData
 
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .storage import Storage
-from .types import Gas
+from .types import AddressInt, Gas
 from .utils import int_to_check_sum_address
-
-AddressInt = int
 
 
 class State:
@@ -19,7 +19,7 @@ class State:
     address_access_set: set[AddressInt]
     block_number: int
 
-    def __init__(self, block_number, rpc_url: str | None = None):
+    def __init__(self, block_number: int, rpc_url: str | None = None) -> None:
         self.w3 = Web3(HTTPProvider(rpc_url)) if rpc_url else None
         self.block_number = block_number
         self.storages = {}
@@ -193,7 +193,7 @@ class Context:
     steps: int
 
     @staticmethod
-    def from_arg_params_with_bytecode(args, bytecode: str) -> "Context":
+    def from_arg_params_with_bytecode(args: argparse.Namespace, bytecode: str) -> "Context":
         self = Context()
         self.bytecode = Context.__hex_to_bytes(bytecode)
 
@@ -251,7 +251,7 @@ class Context:
         return self
 
     @staticmethod
-    def from_tx_hash(args) -> "Context":
+    def from_tx_hash(args: argparse.Namespace) -> "Context":
         assert args.rpc_url, "RPC URL must be specified"
 
         w3 = Web3(HTTPProvider(args.rpc_url))
@@ -305,7 +305,7 @@ class Context:
         return self
 
     @staticmethod
-    def from_contract_address(args) -> "Context":
+    def from_contract_address(args: argparse.Namespace) -> "Context":
         self = Context()
         assert args.rpc_url, "RPC URL must be specified"
 

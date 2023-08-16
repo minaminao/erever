@@ -1,7 +1,7 @@
 import string
 
+from eth_typing import ChecksumAddress
 from web3 import Web3
-from web3.types import ChecksumAddress
 
 from .colors import Colors
 

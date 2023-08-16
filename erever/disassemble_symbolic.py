@@ -10,6 +10,8 @@ from .opcodes import OPCODES
 from .symbolic_stack import SymbolicStack
 from .utils import TAB_SIZE, UINT256_MAX, pad
 
+Gadget = tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]
+
 
 def disassemble_symbolic(
     context: Context,
@@ -21,7 +23,7 @@ def disassemble_symbolic(
     show_opcodes: bool = False,
     silent: bool = False,
     return_gadget_list: bool = False,
-) -> list | None:
+) -> list[Gadget] | None:
     class State:
         context: Context
         stack: SymbolicStack
@@ -52,7 +54,7 @@ def disassemble_symbolic(
     queue: deque[State] = deque()
     queue.append(initial_state)
     hashes = set()
-    gadget_list: list[tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]] = []
+    gadget_list: list[Gadget] = []
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 

@@ -1,1 +1,2 @@
+AddressInt = int
 Gas = int

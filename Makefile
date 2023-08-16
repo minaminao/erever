@@ -1,4 +1,4 @@
-all: fmt lint type-check
+all: fmt lint type-check-strict
 
 fmt:
 	isort erever/*.py
