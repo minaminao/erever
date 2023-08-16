@@ -292,9 +292,9 @@ class Context:
         self.number = current_block_number
         self.difficulty = args.difficulty
         self.gaslimit = tx["gas"]
-        self.chainid = tx["chainId"]
+        self.chainid = tx.get("chainId", args.chainid)
         self.selfbalance = args.selfbalance
-        self.basefee = current_block["baseFeePerGas"]
+        self.basefee = current_block.get("baseFeePerGas", args.basefee)
         self.gas = tx["gas"]
         # self.blockchash
 

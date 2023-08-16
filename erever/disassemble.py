@@ -515,6 +515,18 @@ def disassemble(
                     case "CREATE2":
                         assert False, "CREATE2 is not supported"
                     case "REVERT":
+                        offset, size = input
+                        return_data = memory.get_as_bytes(offset, size)
+                        return_data_hex = memory.get_as_hex(offset, size)
+                        if not silent:
+                            instruction_message += f"\n{'revert'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{return_data_hex}"
+                            if return_data_hex.startswith("08c379a0"):
+                                # Error(strings)
+                                arg_data = return_data[0x04:]
+                                strings_offset = int(arg_data[:0x20].hex(), 16)
+                                strings_size = int(arg_data[strings_offset : strings_offset + 0x20].hex(), 16)
+                                strings = arg_data[strings_offset + 0x20 : strings_offset + 0x20 + strings_size]
+                                instruction_message += f"\n{' ' * (TAB_SIZE * 3)}Error(string): {strings.decode()}"
                         break_flag = True
                         success = False
                     case "INVALID":
