@@ -201,10 +201,10 @@ def disassemble_symbolic(
                 )
                 break
             if mnemonic == "JUMP" and input[0].type == "uint256":
-                assert type(input[0].value) is int
+                assert isinstance(input[0].value, int)
                 next_pc = input[0].value
             if mnemonic == "JUMPI" and input[0].type == "uint256":
-                assert type(input[0].value) is int
+                assert isinstance(input[0].value, int)
                 state.steps += 1
                 state_not_jumped = deepcopy(state)
                 state_not_jumped.pc = next_pc

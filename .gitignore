@@ -9,3 +9,4 @@ samples
 .ruff_cache
 
 poetry.lock
+venv

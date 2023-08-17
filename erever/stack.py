@@ -43,7 +43,7 @@ class Stack:
         for i in range(n):
             if i != 0:
                 ret += ", "
-            if type(self.stack[n - 1 - i]) == int:
+            if isinstance(self.stack[n - 1 - i], int):
                 x = pad_even(hex(self.stack[n - 1 - i]))
             else:
                 x = str(self.stack[n - 1 - i])
@@ -59,7 +59,7 @@ class Stack:
         for i in range(n):
             if i != 0:
                 ret += ", "
-            if type(self.stack[n - 1 - i]) == int:
+            if isinstance(self.stack[n - 1 - i], int):
                 x = decode_printable_with_color(pad_even(hex(self.stack[n - 1 - i]))[2:])
             else:
                 x = str(self.stack[n - 1 - i])

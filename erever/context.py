@@ -344,9 +344,9 @@ class Context:
 
     @staticmethod
     def __hex_to_bytes(x: str | int) -> bytes:
-        if type(x) is int:
+        if isinstance(x, int):
             h = hex(x)
-        elif type(x) is str:
+        elif isinstance(x, str):
             h = x
         h = h.replace(" ", "").replace("\n", "")
         if h.startswith("0x"):

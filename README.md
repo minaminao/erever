@@ -148,4 +148,4 @@ START --> 0x00
 ```
 
 ### Tips
-- It is useful in combination with commands such as `less -R` and `less -R -S`.
+- It is useful in combination with commands such as `less -R`.

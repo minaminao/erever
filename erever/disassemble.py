@@ -37,6 +37,11 @@ class TraceLog:
         return log_dict
 
 
+DisassembleResultDict = dict[
+    str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]] | list[int] | str
+]  # TODO
+
+
 @dataclass
 class DisassembleResult:
     last_jump_to_address: int | None
@@ -44,12 +49,18 @@ class DisassembleResult:
     trace_logs: list[TraceLog]
     success: bool
     return_data: bytes
+    stack_after_execution: Stack
+    memory_after_execution: Memory
 
-    def to_dict(self) -> dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]]]:
-        result_dict: dict[str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]]] = {}
+    def to_dict(
+        self,
+    ) -> DisassembleResultDict:
+        result_dict: DisassembleResultDict = {}
         result_dict["last_jump_to_address"] = self.last_jump_to_address
         result_dict["disassemble_code"] = self.disassemble_code
         result_dict["trace_logs"] = [log.to_dict() for log in self.trace_logs]
+        result_dict["stack_after_execution"] = self.stack_after_execution.stack
+        result_dict["memory_after_execution"] = bytes(self.memory_after_execution.memory).hex()
         return result_dict
 
 
@@ -402,12 +413,12 @@ def disassemble(
                         context.gas -= gas
                     case "JUMP":
                         assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
-                        assert type(input[0]) is int
+                        assert isinstance(input[0], int)
                         next_pc = input[0]
                         last_jump_to_address = input[0]
                     case "JUMPI":
                         assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
-                        assert type(input[0]) is int
+                        assert isinstance(input[0], int)
                         if input[1] != 0:
                             next_pc = input[0]
                         last_jump_to_address = input[0]
@@ -584,7 +595,13 @@ def disassemble(
             print(warning_messages + Colors.ENDC)
 
     disassemble_result = DisassembleResult(
-        last_jump_to_address, disassembled_code, trace_logs if trace and return_trace_logs else [], success, return_data
+        last_jump_to_address,
+        disassembled_code,
+        trace_logs if trace and return_trace_logs else [],
+        success,
+        return_data,
+        stack,
+        memory,
     )
 
     return disassemble_result

@@ -1,4 +1,4 @@
-all: fmt lint type-check-strict
+all: fmt lint type-check-strict test
 
 fmt:
 	isort erever/*.py
@@ -15,3 +15,6 @@ type-check:
 
 type-check-strict:
 	mypy . --strict
+
+test:
+	pytest

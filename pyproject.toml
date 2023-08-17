@@ -12,9 +12,17 @@ pycryptodome = "^3.18.0"
 # web3 = "^6.8.0"
 web3 = { git = "https://github.com/minaminao/web3.py.git", branch = "develop" }
 
-
 [tool.poetry.scripts]
 erever = "erever.__main__:main"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.12.0"
+black = "^23.7.0"
+ruff = "^0.0.284"
+mypy = "^1.5.1"
 
 [build-system]
 requires = ["poetry-core"]

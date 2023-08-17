@@ -125,11 +125,11 @@ def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int
                 next_block_id = pad(hex(end_address), LOCATION_PAD_N)
                 graph += f"{block_id}({block}) --> {next_block_id}\n"
             case ControlType.JUMP:
-                assert type(last_jump_to_address) is int
+                assert isinstance(last_jump_to_address, int)
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
                 graph += f"{block_id}({block}) --jump--> {next_block_id}\n"
             case ControlType.JUMPI:
-                assert type(last_jump_to_address) is int
+                assert isinstance(last_jump_to_address, int)
                 next_block_id = pad(hex(last_jump_to_address), LOCATION_PAD_N)
                 graph += f"{block_id}({block}) --jump--> {next_block_id}\n"
                 next_block_id = pad(hex(end_address + 1), LOCATION_PAD_N)
