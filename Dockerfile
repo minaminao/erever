@@ -1,16 +1,14 @@
 # docker build . -t erever
 # docker run -it erever
-FROM ubuntu:22.04
+FROM python:3.11-alpine
 
-ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt update -y
-RUN apt install -y \
-    python3 \
-    python-is-python3 \
-    python3-pip \
-    vim
+RUN apk update && apk add \
+    vim \
+    py3-pip \
+    git \
+    bash
 
 COPY . /erever
 WORKDIR /erever
 RUN pip install .
+
