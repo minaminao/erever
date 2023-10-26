@@ -9,6 +9,7 @@ from .disassemble import disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
+from .transpile import transpile
 from .utils import UINT256_MAX
 
 
@@ -74,6 +75,10 @@ def command_gadget(args: argparse.Namespace, context: Context) -> None:
     find_gadgets(context, args.max_steps)
 
 
+def command_transpile(args: argparse.Namespace) -> None:
+    transpile(args)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="EVM Reversing Tools",
@@ -99,7 +104,10 @@ def main() -> None:
     parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
     parser_gadget.set_defaults(handler=command_gadget)
 
-    def add_common_arguments(parser: argparse.ArgumentParser) -> None:
+    parser_transpile = subparsers.add_parser("transpile", help="Transpile the given menmonics to the bytecode")
+    parser_transpile.set_defaults(handler=command_transpile)
+
+    def add_common_arguments_for_construct_context(parser: argparse.ArgumentParser) -> None:
         parser.add_argument("-b", "--bytecode")
         parser.add_argument("-f", "--filename")
 
@@ -131,11 +139,11 @@ def main() -> None:
         parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
         parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
 
-    add_common_arguments(parser_disassemble)
-    add_common_arguments(parser_trace)
-    add_common_arguments(parser_symbolic_trace)
-    add_common_arguments(parser_mermaid)
-    add_common_arguments(parser_gadget)
+    add_common_arguments_for_construct_context(parser_disassemble)
+    add_common_arguments_for_construct_context(parser_trace)
+    add_common_arguments_for_construct_context(parser_symbolic_trace)
+    add_common_arguments_for_construct_context(parser_mermaid)
+    add_common_arguments_for_construct_context(parser_gadget)
 
     parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
@@ -145,49 +153,53 @@ def main() -> None:
     parser_trace.add_argument("--silent", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
+    parser_transpile.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to transpile")
 
     args = parser.parse_args()
 
-    args.entrypoint = parse_arg_param_to_int(args.entrypoint)
-    args.max_steps = parse_arg_param_to_int(args.max_steps)
-    args.address = parse_arg_param_to_int(args.address)
-    args.balance = parse_arg_param_to_int(args.balance)
-    args.origin = parse_arg_param_to_int(args.origin)
-    args.caller = parse_arg_param_to_int(args.caller)
-    args.callvalue = parse_arg_param_to_int(args.callvalue)
-    args.gasprice = parse_arg_param_to_int(args.gasprice)
-    args.coinbase = parse_arg_param_to_int(args.coinbase)
-    args.timestamp = parse_arg_param_to_int(args.timestamp)
-    args.number = parse_arg_param_to_int(args.number)
-    args.difficulty = parse_arg_param_to_int(args.difficulty)
-    args.gaslimit = parse_arg_param_to_int(args.gaslimit)
-    args.chainid = parse_arg_param_to_int(args.chainid)
-    args.selfbalance = parse_arg_param_to_int(args.selfbalance)
-    args.basefee = parse_arg_param_to_int(args.basefee)
-    args.gas = parse_arg_param_to_int(args.gas)
-
-    if args.bytecode:
-        context = Context.from_arg_params_with_bytecode(args, args.bytecode)
-    elif args.filename:
-        if args.filename.split(".")[-1] == "toml":
-            parsed_toml = tomllib.load(open(args.filename, "rb"))
-            context = Context.from_dict(parsed_toml)
-        else:
-            bytecode = open(args.filename).read()
-            context = Context.from_arg_params_with_bytecode(args, bytecode)
-    elif args.tx:
-        context = Context.from_tx_hash(args)
-    elif args.contract_address:
-        context = Context.from_contract_address(args)
-    else:
-        parser.print_help(sys.stderr)
-        exit(1)
-
-    if hasattr(args, "handler"):
-        args.handler(args, context)
-    else:
+    if not hasattr(args, "handler"):
         parser.print_help()
         exit(1)
+
+    if args.handler == command_transpile:
+        args.handler(args)
+    else:
+        args.entrypoint = parse_arg_param_to_int(args.entrypoint)
+        args.max_steps = parse_arg_param_to_int(args.max_steps)
+        args.address = parse_arg_param_to_int(args.address)
+        args.balance = parse_arg_param_to_int(args.balance)
+        args.origin = parse_arg_param_to_int(args.origin)
+        args.caller = parse_arg_param_to_int(args.caller)
+        args.callvalue = parse_arg_param_to_int(args.callvalue)
+        args.gasprice = parse_arg_param_to_int(args.gasprice)
+        args.coinbase = parse_arg_param_to_int(args.coinbase)
+        args.timestamp = parse_arg_param_to_int(args.timestamp)
+        args.number = parse_arg_param_to_int(args.number)
+        args.difficulty = parse_arg_param_to_int(args.difficulty)
+        args.gaslimit = parse_arg_param_to_int(args.gaslimit)
+        args.chainid = parse_arg_param_to_int(args.chainid)
+        args.selfbalance = parse_arg_param_to_int(args.selfbalance)
+        args.basefee = parse_arg_param_to_int(args.basefee)
+        args.gas = parse_arg_param_to_int(args.gas)
+
+        if args.bytecode:
+            context = Context.from_arg_params_with_bytecode(args, args.bytecode)
+        elif args.filename:
+            if args.filename.split(".")[-1] == "toml":
+                parsed_toml = tomllib.load(open(args.filename, "rb"))
+                context = Context.from_dict(parsed_toml)
+            else:
+                bytecode = open(args.filename).read()
+                context = Context.from_arg_params_with_bytecode(args, bytecode)
+        elif args.tx:
+            context = Context.from_tx_hash(args)
+        elif args.contract_address:
+            context = Context.from_contract_address(args)
+        else:
+            parser.print_help(sys.stderr)
+            exit(1)
+
+        args.handler(args, context)
 
 
 def parse_arg_param_to_int(param: str) -> int:

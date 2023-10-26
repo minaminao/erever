@@ -27,13 +27,13 @@ class Node:
 
     def __repr__(self) -> str:
         if self.type == "uint256":
-            assert type(self.value) is int, f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(self.value, int), f"{self.type} {type(self.value)} {self.value}"
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
-            assert type(self.value) is str, f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(self.value, str), f"{self.type} {type(self.value)} {self.value}"
             return self.value
         else:
-            assert type(self.value) is list, f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(self.value, list), f"{self.type} {type(self.value)} {self.value}"
             match self.type:
                 # case "STOP":
                 case "ADD":
@@ -103,7 +103,7 @@ class Node:
                 # case "COINBASE":
                 # case "TIMESTAMP":
                 # case "NUMBER":
-                # case "DIFFICULTY":
+                # case "PREVRANDAO":
                 # case "GASLIMIT":
                 # case "CHAINID":
                 # case "SELFBALANCE":
@@ -131,14 +131,14 @@ class Node:
                         return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value[0]})"
                 case "DUP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
-                    assert type(self.mnemonic_num) is int
+                    assert isinstance(self.mnemonic_num, int)
                     if self.mnemonic_num >= 2:
                         ret += "..., "
                     ret += f"{str(self.value[-1])}"
                     return ret
                 case "SWAP":
                     ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
-                    assert type(self.mnemonic_num) is int
+                    assert isinstance(self.mnemonic_num, int)
                     if self.mnemonic_num >= 2:
                         ret += f"{str(self.value[0])}, ..., {str(self.value[-1])}"
                     else:

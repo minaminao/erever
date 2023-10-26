@@ -386,7 +386,7 @@ def disassemble(
                         stack.push(context.timestamp)
                     case "NUMBER":
                         stack.push(context.number)
-                    case "DIFFICULTY":
+                    case "PREVRANDAO":  # TODO
                         stack.push(context.difficulty)
                     case "GASLIMIT":
                         stack.push(context.gaslimit)
