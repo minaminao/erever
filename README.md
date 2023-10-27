@@ -13,6 +13,8 @@ Currently, erever is mostly for me to solve challenges and is not intended to be
   - [Trace](#trace)
   - [Symbolic Trace](#symbolic-trace)
   - [Generate Mermaid Diagram](#generate-mermaid-diagram)
+  - [Find JOP Gadgets](#find-jop-gadgets)
+  - [Transpile](#transpile)
   - [Tips](#tips)
 
 ## Writeups with erever
@@ -35,7 +37,7 @@ Only supports Python >= 3.12.
 ### Disassemble
 
 ```
-$ erever disassemble <OPTIONS>
+erever disassemble <OPTIONS>
 ```
 
 **Example**:
@@ -61,7 +63,7 @@ $ erever disassemble -b "70806011526000526070600e536023600ef38060115260005260706
 ### Trace 
 
 ```
-$ erever trace <OPTIONS>
+erever trace <OPTIONS>
 ```
 
 **Example**:
@@ -71,7 +73,7 @@ $ erever trace <OPTIONS>
 ### Symbolic Trace
 
 ```
-$ erever symbolic-trace <OPTIONS>
+erever symbolic-trace <OPTIONS>
 ```
 
 **Example**:
@@ -133,7 +135,7 @@ $ erever symbolic-trace -b 0x6080604052600436106100385760003560e01c80634b64e4921
 ### Generate Mermaid Diagram
 
 ```
-$ erever mermaid <OPTIONS>
+erever mermaid <OPTIONS>
 ```
 
 **Example Output**:
@@ -145,6 +147,19 @@ START --> 0x00
 0x00 --> 0x0c
 0x0c(0x0c: PUSH1  0x00\n0x0e: DUP1\n0x0f: REVERT) --> END
 0x10(0x10: JUMPDEST\n0x11: POP\n0x12: PUSH1  0xf7\n0x14: DUP1\n0x15: PUSH2  0x001f\n0x18: PUSH1  0x00\n0x1a: CODECOPY\n0x1b: PUSH1  0x00\n0x1d: RETURN) --> END
+```
+
+### Find JOP Gadgets
+
+```
+erever gadget -b <BYTECODE>
+```
+
+### Transpile
+
+```
+$ erever transpile "PUSH0 PUSH1 0x10"
+5f6010
 ```
 
 ### Tips

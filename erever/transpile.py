@@ -22,6 +22,7 @@ def transpile(args: argparse.Namespace) -> None:
                     arg = arg[2:]
                 else:
                     arg = hex(int(arg))[2:].zfill(mnemonic_num * 2)
+                assert len(arg) == mnemonic_num * 2, "Invalid PUSH argument"
                 bytecode += arg
 
         i += 1
