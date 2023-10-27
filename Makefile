@@ -1,4 +1,4 @@
-all: fmt lint type-check-strict test
+all: fmt lint type-check-strict test docker-test
 
 fmt:
 	isort erever/*.py
@@ -18,3 +18,6 @@ type-check-strict:
 
 test:
 	pytest
+
+docker-test:
+	docker build . -t erever

@@ -28,7 +28,7 @@ Currently, erever is mostly for me to solve challenges and is not intended to be
 pip install git+https://github.com/minaminao/erever.git
 ```
 
-Only supports Python >= 3.11.
+Only supports Python >= 3.12.
 
 ## Usage
 

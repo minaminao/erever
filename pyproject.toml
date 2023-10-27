@@ -7,10 +7,11 @@ readme = "README.md"
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-pycryptodome = "^3.18.0"
-# web3 = "^6.8.0"
-web3 = { git = "https://github.com/minaminao/web3.py.git", branch = "develop" }
+python = "^3.12"
+pycryptodome = "^3.19.0"
+web3 = "^6.11.1"
+aiohttp = "3.9.0b0"
+setuptools = "^68.2.2" # for eth-keyfile
 
 [tool.poetry.scripts]
 erever = "erever.__main__:main"

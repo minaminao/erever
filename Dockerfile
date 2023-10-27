@@ -1,12 +1,13 @@
 # docker build . -t erever
 # docker run -it erever
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 
 RUN apk update && apk add \
-    vim \
+    build-base \
     py3-pip \
     git \
-    bash
+    bash \
+    vim
 
 COPY . /erever
 WORKDIR /erever

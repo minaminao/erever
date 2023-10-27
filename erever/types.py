@@ -1,2 +1,2 @@
-AddressInt = int
-Gas = int
+type AddressInt = int
+type Gas = int

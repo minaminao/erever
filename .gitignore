@@ -1,5 +1,3 @@
-.vscode
-
 build/
 __pycache__/
 
@@ -7,6 +5,7 @@ samples
 
 .mypy_cache
 .ruff_cache
+.pytest_cache
 
 poetry.lock
 venv
