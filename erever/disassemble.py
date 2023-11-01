@@ -19,7 +19,7 @@ from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, is_invocation_mnemo
 class TraceLog:
     mnemonic_raw: str
     mnemonic: str
-    input: list[int]
+    input: list[int] | int
     stack_before_execution: Stack
     memory_before_execution: Memory
     gas: int
@@ -37,15 +37,16 @@ class TraceLog:
         return log_dict
 
 
-DisassembleResultDict = dict[
-    str, int | None | list[tuple[int, str | int]] | list[dict[str, str | int | list[int]]] | list[int] | str
+type DisassembleCode = list[tuple[int, str, int | None]]
+type DisassembleResultDict = dict[
+    str, int | None | DisassembleCode | list[dict[str, str | int | list[int]]] | list[int] | str
 ]  # TODO
 
 
 @dataclass
 class DisassembleResult:
     last_jump_to_address: int | None
-    disassemble_code: list[tuple[int, str | int]]
+    disassemble_code: DisassembleCode
     trace_logs: list[TraceLog]
     success: bool
     return_data: bytes
@@ -80,10 +81,9 @@ def disassemble(
     show_opcodes: bool = False,
     hide_memory: bool = False,
     invocation_only: bool = False,
-    rpc_url: str | None = None,
     return_trace_logs: bool = False,
 ) -> DisassembleResult:
-    disassembled_code: list[tuple[int, str | int]] = []  # (pc, mnemonic)
+    disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     success = True
@@ -136,7 +136,9 @@ def disassemble(
             mnemonic_raw = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
             _stack_output_count = 0
+            base_gas = 0
             _description = None
+            stack_input_names = ()
 
             warning_messages += f"The mnemonic for 0x{value:02x} in {pad(hex(pc), LOCATION_PAD_N)} is not found.\n"
 
@@ -152,8 +154,6 @@ def disassemble(
             else:
                 instruction_message += f"{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
 
-        disassembled_code.append((pc, mnemonic_raw))
-
         # separate instruction names from numerical values
         mnemonic = ""
         if mnemonic_raw.startswith("PUSH"):
@@ -163,7 +163,6 @@ def disassemble(
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic_raw[:4]
-            disassembled_code.append((pc + 1, push_v))
         elif mnemonic_raw.startswith("DUP"):
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
@@ -177,6 +176,11 @@ def disassemble(
             mnemonic_num = 0
             mnemonic = mnemonic_raw
         assert mnemonic != ""
+
+        if mnemonic == "PUSH":
+            disassembled_code.append((pc, mnemonic_raw, push_v))
+        else:
+            disassembled_code.append((pc, mnemonic_raw, None))
 
         break_flag = False
 
@@ -194,7 +198,7 @@ def disassemble(
                     TraceLog(
                         mnemonic_raw,
                         mnemonic,
-                        copy.deepcopy(input),
+                        copy.deepcopy(input) if mnemonic != "PUSH" else push_v,
                         copied_stack,
                         copied_memory,
                         context.gas,
@@ -492,7 +496,6 @@ def disassemble(
                             show_opcodes=show_opcodes,
                             hide_memory=hide_memory,
                             invocation_only=invocation_only,
-                            rpc_url=rpc_url,
                             return_trace_logs=return_trace_logs,
                         )
 

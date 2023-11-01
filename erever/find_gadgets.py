@@ -12,7 +12,7 @@ def find_gadgets(
     disassembled_code = disassemble(context, silent=True).disassemble_code
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
-    for pc, mnemonic in disassembled_code:
+    for pc, mnemonic, _push_v in disassembled_code:
         if mnemonic != "JUMPDEST":
             continue
 

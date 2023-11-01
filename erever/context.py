@@ -7,7 +7,7 @@ from web3.types import BlockData, TxData
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .storage import Storage
 from .types import AddressInt, Gas
-from .utils import int_to_check_sum_address
+from .utils import UINT256_MAX, int_to_check_sum_address
 
 
 class State:
@@ -166,7 +166,7 @@ class Context:
     DEFAULT_CHAINID = 1
     DEFAULT_SELFBALANCE = 0
     DEFAULT_BASEFEE = 0
-    DEFAULT_GAS = 0
+    DEFAULT_GAS = UINT256_MAX
 
     state: State
     bytecode: bytes
@@ -214,7 +214,7 @@ class Context:
         self.basefee = args.basefee
         self.gas = args.gas
 
-        self.state = State(self.number)
+        self.state = State(self.number, args.rpc_url)
         self.static = False
         self.return_data = b""
         self.depth = 1
@@ -222,7 +222,7 @@ class Context:
         return self
 
     @staticmethod
-    def from_dict(d: dict[str, int]) -> "Context":
+    def from_dict(d: dict) -> "Context":
         self = Context()
         self.bytecode = Context.__hex_to_bytes(d["bytecode"])
 
@@ -243,7 +243,7 @@ class Context:
         self.basefee = d.get("basefee", Context.DEFAULT_BASEFEE)
         self.gas = d.get("gas", Context.DEFAULT_GAS)
 
-        self.state = State(self.number)
+        self.state = State(self.number, d.get("rpc_url", None))
         self.static = False
         self.return_data = b""
         self.depth = 1
@@ -310,6 +310,11 @@ class Context:
         assert args.rpc_url, "RPC URL must be specified"
 
         w3 = Web3(HTTPProvider(args.rpc_url))
+        if args.number == 0:
+            args.number = w3.eth.block_number
+        if args.timestamp == 0:
+            args.timestamp = w3.eth.get_block(args.number)["timestamp"]
+
         code = w3.eth.get_code(args.contract_address, args.number)
         balance = w3.eth.get_balance(args.contract_address, args.number)
 

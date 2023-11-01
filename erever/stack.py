@@ -34,6 +34,14 @@ class Stack:
                 raise Exception("Stack underflow")
         return self.stack.pop()
 
+    def __getitem__(self, i: int) -> int:
+        if i >= len(self.stack):
+            if self.ignore_stack_underflow:
+                return 0
+            else:
+                raise Exception("Stack underflow")
+        return self.stack[i]
+
     def clear(self) -> None:
         self.stack = []
 

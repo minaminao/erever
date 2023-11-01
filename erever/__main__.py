@@ -48,7 +48,6 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         hide_memory=args.hide_memory,
         invocation_only=args.invocation_only,
         silent=args.silent,
-        rpc_url=args.rpc_url,
         return_trace_logs=args.return_trace_logs,
     )
     if args.output_json:
