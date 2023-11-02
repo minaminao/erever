@@ -1,10 +1,8 @@
-import argparse
-
 from .opcodes import OPCODES
 
 
-def transpile(args: argparse.Namespace) -> None:
-    mnemonics: list[str] = args.mnemonics.split(" ")
+def assemble(mnemonics: str) -> bytes:
+    mnemonics: list[str] = mnemonics.split(" ")
     i = 0
     bytecode = ""
     mnemonic_to_opcode = {v[0]: opcode for opcode, v in OPCODES.items()}
@@ -27,4 +25,4 @@ def transpile(args: argparse.Namespace) -> None:
 
         i += 1
 
-    print(bytecode)
+    return bytes.fromhex(bytecode)

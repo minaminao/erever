@@ -9,7 +9,7 @@ from .disassemble import disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
-from .transpile import transpile
+from .assemble import assemble
 from .utils import UINT256_MAX
 
 
@@ -74,8 +74,9 @@ def command_gadget(args: argparse.Namespace, context: Context) -> None:
     find_gadgets(context, args.max_steps)
 
 
-def command_transpile(args: argparse.Namespace) -> None:
-    transpile(args)
+def command_assemble(args: argparse.Namespace) -> None:
+    bytecode = assemble(args.mnemonics)
+    print(bytecode.hex())
 
 
 def main() -> None:
@@ -103,8 +104,8 @@ def main() -> None:
     parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
     parser_gadget.set_defaults(handler=command_gadget)
 
-    parser_transpile = subparsers.add_parser("transpile", help="Transpile the given menmonics to the bytecode")
-    parser_transpile.set_defaults(handler=command_transpile)
+    parser_assemble = subparsers.add_parser("assemble", help="Assemble the given mnemonics to the bytecode")
+    parser_assemble.set_defaults(handler=command_assemble)
 
     def add_common_arguments_for_construct_context(parser: argparse.ArgumentParser) -> None:
         parser.add_argument("-b", "--bytecode")
@@ -152,7 +153,7 @@ def main() -> None:
     parser_trace.add_argument("--silent", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
     parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
-    parser_transpile.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to transpile")
+    parser_assemble.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble")
 
     args = parser.parse_args()
 
@@ -160,7 +161,7 @@ def main() -> None:
         parser.print_help()
         exit(1)
 
-    if args.handler == command_transpile:
+    if args.handler == command_assemble:
         args.handler(args)
     else:
         args.entrypoint = parse_arg_param_to_int(args.entrypoint)

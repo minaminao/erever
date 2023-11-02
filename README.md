@@ -14,7 +14,7 @@ Currently, erever is mostly for me to solve challenges and is not intended to be
   - [Symbolic Trace](#symbolic-trace)
   - [Generate Mermaid Diagram](#generate-mermaid-diagram)
   - [Find JOP Gadgets](#find-jop-gadgets)
-  - [Transpile](#transpile)
+  - [Assemble](#assemble)
   - [Tips](#tips)
 
 ## Writeups with erever
@@ -155,10 +155,10 @@ START --> 0x00
 erever gadget -b <BYTECODE>
 ```
 
-### Transpile
+### Assemble
 
 ```
-$ erever transpile "PUSH0 PUSH1 0x10"
+$ erever assemble "PUSH0 PUSH1 0x10"
 5f6010
 ```
 
