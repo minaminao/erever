@@ -1,8 +1,8 @@
 from .opcodes import OPCODES
 
 
-def assemble(mnemonics: str) -> bytes:
-    mnemonics: list[str] = mnemonics.split(" ")
+def assemble(mnemonics_str: str) -> bytes:
+    mnemonics: list[str] = mnemonics_str.split(" ")
     i = 0
     bytecode = ""
     mnemonic_to_opcode = {v[0]: opcode for opcode, v in OPCODES.items()}
