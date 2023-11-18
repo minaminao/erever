@@ -12,7 +12,11 @@ class Node:
     input_count: int | None
 
     def __init__(
-        self, type_: str, value: NodeValue, mnemonic_num: int | None = None, input_count: int | None = None
+        self,
+        type_: str,
+        value: NodeValue,
+        mnemonic_num: int | None = None,
+        input_count: int | None = None,
     ) -> None:
         self.type = type_
         self.value = value
@@ -27,13 +31,19 @@ class Node:
 
     def __repr__(self) -> str:
         if self.type == "uint256":
-            assert isinstance(self.value, int), f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(
+                self.value, int
+            ), f"{self.type} {type(self.value)} {self.value}"
             return f"{pad_even(hex(self.value))}"
         elif self.type == "var":
-            assert isinstance(self.value, str), f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(
+                self.value, str
+            ), f"{self.type} {type(self.value)} {self.value}"
             return self.value
         else:
-            assert isinstance(self.value, list), f"{self.type} {type(self.value)} {self.value}"
+            assert isinstance(
+                self.value, list
+            ), f"{self.type} {type(self.value)} {self.value}"
             match self.type:
                 # case "STOP":
                 case "ADD":
@@ -126,18 +136,24 @@ class Node:
                     return f"{Colors.BLUE}{Colors.BOLD}{self.type}{Colors.ENDC}{Colors.BLUE}(){Colors.ENDC}"
                 case "PUSH":
                     if self.mnemonic_num == 0:
-                        return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}"
+                        return (
+                            f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}"
+                        )
                     else:
                         return f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}({self.value[0]})"
                 case "DUP":
-                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    ret = (
+                        f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    )
                     assert isinstance(self.mnemonic_num, int)
                     if self.mnemonic_num >= 2:
                         ret += "..., "
                     ret += f"{str(self.value[-1])}"
                     return ret
                 case "SWAP":
-                    ret = f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    ret = (
+                        f"{Colors.BOLD}{self.type}{self.mnemonic_num}{Colors.ENDC}() # "
+                    )
                     assert isinstance(self.mnemonic_num, int)
                     if self.mnemonic_num >= 2:
                         ret += f"{str(self.value[0])}, ..., {str(self.value[-1])}"

@@ -1,4 +1,4 @@
-from erever.secp256k1 import Fp, ECPoint, ECDSA, G, n
+from erever.secp256k1 import ECDSA, ECPoint, Fp, G, n
 
 
 def test_key_pair() -> None:

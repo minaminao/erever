@@ -66,7 +66,16 @@ def decode_printable_with_color(
 
 
 def is_invocation_mnemonic(mnemonic: str) -> bool:
-    return mnemonic in ["CALL", "CALLCODE", "DELEGATECALL", "STATICCALL", "CREATE", "CREATE2", "SELFDESTRUCT", "LOG"]
+    return mnemonic in [
+        "CALL",
+        "CALLCODE",
+        "DELEGATECALL",
+        "STATICCALL",
+        "CREATE",
+        "CREATE2",
+        "SELFDESTRUCT",
+        "LOG",
+    ]
 
 
 def int_to_check_sum_address(x: int) -> ChecksumAddress:

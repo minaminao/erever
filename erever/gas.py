@@ -13,7 +13,12 @@ class MessageCallGas:
 
 
 def calculate_message_call_gas(
-    value: int, gas: Gas, gas_left: Gas, memory_cost: Gas, extra_gas: Gas, call_stipend: Gas = GAS_CALL_STIPEND
+    value: int,
+    gas: Gas,
+    gas_left: Gas,
+    memory_cost: Gas,
+    extra_gas: Gas,
+    call_stipend: Gas = GAS_CALL_STIPEND,
 ) -> MessageCallGas:
     call_stipend = 0 if value == 0 else call_stipend
     if gas_left < extra_gas + memory_cost:

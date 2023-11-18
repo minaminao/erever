@@ -87,27 +87,41 @@ def main() -> None:
     )
     subparsers = parser.add_subparsers()
 
-    parser_disassemble = subparsers.add_parser("disassemble", aliases=["disas"], help="Disassemble the given bytecode")
+    parser_disassemble = subparsers.add_parser(
+        "disassemble", aliases=["disas"], help="Disassemble the given bytecode"
+    )
     parser_disassemble.set_defaults(handler=command_disassemble)
 
-    parser_trace = subparsers.add_parser("trace", help="Trace execution of the given bytecode")
+    parser_trace = subparsers.add_parser(
+        "trace", help="Trace execution of the given bytecode"
+    )
     parser_trace.set_defaults(handler=command_trace)
 
     parser_symbolic_trace = subparsers.add_parser(
-        "symbolic-trace", aliases=["symbolic"], help="Trace execution of the given bytecode symbolically"
+        "symbolic-trace",
+        aliases=["symbolic"],
+        help="Trace execution of the given bytecode symbolically",
     )
     parser_symbolic_trace.set_defaults(handler=command_symbolic_trace)
 
-    parser_mermaid = subparsers.add_parser("mermaid", help="Generate the mermaid diagram for the given bytecode")
+    parser_mermaid = subparsers.add_parser(
+        "mermaid", help="Generate the mermaid diagram for the given bytecode"
+    )
     parser_mermaid.set_defaults(handler=command_mermaid)
 
-    parser_gadget = subparsers.add_parser("gadget", help="Find JOP gadgets in the given bytecode")
+    parser_gadget = subparsers.add_parser(
+        "gadget", help="Find JOP gadgets in the given bytecode"
+    )
     parser_gadget.set_defaults(handler=command_gadget)
 
-    parser_assemble = subparsers.add_parser("assemble", help="Assemble the given mnemonics to the bytecode")
+    parser_assemble = subparsers.add_parser(
+        "assemble", help="Assemble the given mnemonics to the bytecode"
+    )
     parser_assemble.set_defaults(handler=command_assemble)
 
-    def add_common_arguments_for_constructing_context(parser: argparse.ArgumentParser) -> None:
+    def add_common_arguments_for_constructing_context(
+        parser: argparse.ArgumentParser
+    ) -> None:
         parser.add_argument("-b", "--bytecode")
         parser.add_argument("-f", "--filename")
 
@@ -126,16 +140,32 @@ def main() -> None:
         parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
         parser.add_argument("--origin", type=str, default=str(Context.DEFAULT_ORIGIN))
         parser.add_argument("--caller", type=str, default=str(Context.DEFAULT_CALLER))
-        parser.add_argument("--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE))
-        parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA.decode())
-        parser.add_argument("--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE))
-        parser.add_argument("--coinbase", type=str, default=str(Context.DEFAULT_COINBASE))
-        parser.add_argument("--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP))
+        parser.add_argument(
+            "--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE)
+        )
+        parser.add_argument(
+            "--calldata", type=str, default=Context.DEFAULT_CALLDATA.decode()
+        )
+        parser.add_argument(
+            "--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE)
+        )
+        parser.add_argument(
+            "--coinbase", type=str, default=str(Context.DEFAULT_COINBASE)
+        )
+        parser.add_argument(
+            "--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP)
+        )
         parser.add_argument("--number", type=str, default=str(Context.DEFAULT_NUMBER))
-        parser.add_argument("--difficulty", type=str, default=str(Context.DEFAULT_DIFFICULTY))
-        parser.add_argument("--gaslimit", type=str, default=str(Context.DEFAULT_GASLIMIT))
+        parser.add_argument(
+            "--difficulty", type=str, default=str(Context.DEFAULT_DIFFICULTY)
+        )
+        parser.add_argument(
+            "--gaslimit", type=str, default=str(Context.DEFAULT_GASLIMIT)
+        )
         parser.add_argument("--chainid", type=str, default=str(Context.DEFAULT_CHAINID))
-        parser.add_argument("--selfbalance", type=str, default=str(Context.DEFAULT_SELFBALANCE))
+        parser.add_argument(
+            "--selfbalance", type=str, default=str(Context.DEFAULT_SELFBALANCE)
+        )
         parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
         parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
 
@@ -145,15 +175,23 @@ def main() -> None:
     add_common_arguments_for_constructing_context(parser_mermaid)
     add_common_arguments_for_constructing_context(parser_gadget)
 
-    parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
+    parser_disassemble.add_argument(
+        "--decode-stack", action="store_true", default=False
+    )
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--invocation-only", action="store_true", default=False)
     parser_trace.add_argument("--output-json", action="store_true", default=False)
     parser_trace.add_argument("--return-trace-logs", action="store_true", default=False)
     parser_trace.add_argument("--silent", action="store_true", default=False)
-    parser_symbolic_trace.add_argument("--show-symbolic-stack", action="store_true", default=False)
-    parser_symbolic_trace.add_argument("--hide-instructions-with-no-stack-output", action="store_true", default=False)
-    parser_assemble.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble")
+    parser_symbolic_trace.add_argument(
+        "--show-symbolic-stack", action="store_true", default=False
+    )
+    parser_symbolic_trace.add_argument(
+        "--hide-instructions-with-no-stack-output", action="store_true", default=False
+    )
+    parser_assemble.add_argument(
+        "mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble"
+    )
 
     args = parser.parse_args()
 

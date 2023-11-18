@@ -12,7 +12,16 @@ from .memory import Memory
 from .opcodes import OPCODES
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .stack import Stack
-from .utils import SIGN_MASK, TAB_SIZE, UINT256_MAX, int256, is_invocation_mnemonic, pad, pad_even, uint256
+from .utils import (
+    SIGN_MASK,
+    TAB_SIZE,
+    UINT256_MAX,
+    int256,
+    is_invocation_mnemonic,
+    pad,
+    pad_even,
+    uint256,
+)
 
 
 @dataclass
@@ -31,7 +40,9 @@ class TraceLog:
         log_dict["mnemonic"] = self.mnemonic
         log_dict["input"] = self.input
         log_dict["stack_before_execution"] = self.stack_before_execution.stack
-        log_dict["memory_before_execution"] = bytes(self.memory_before_execution.memory).hex()
+        log_dict["memory_before_execution"] = bytes(
+            self.memory_before_execution.memory
+        ).hex()
         log_dict["gas"] = self.gas
         log_dict["depth"] = self.depth
         return log_dict
@@ -39,7 +50,13 @@ class TraceLog:
 
 DisassembleCode = list[tuple[int, str, int | None]]
 DisassembleResultDict = dict[
-    str, int | None | DisassembleCode | list[dict[str, str | int | list[int]]] | list[int] | str
+    str,
+    int
+    | None
+    | DisassembleCode
+    | list[dict[str, str | int | list[int]]]
+    | list[int]
+    | str,
 ]  # TODO
 
 
@@ -61,7 +78,9 @@ class DisassembleResult:
         result_dict["disassemble_code"] = self.disassemble_code
         result_dict["trace_logs"] = [log.to_dict() for log in self.trace_logs]
         result_dict["stack_after_execution"] = self.stack_after_execution.stack
-        result_dict["memory_after_execution"] = bytes(self.memory_after_execution.memory).hex()
+        result_dict["memory_after_execution"] = bytes(
+            self.memory_after_execution.memory
+        ).hex()
         return result_dict
 
 
@@ -98,7 +117,9 @@ def disassemble(
     trace_logs = []
 
     if context.chainid == 1 and context.address in PRECOMPILED_CONTRACTS:
-        precompiled_contract_name, precompiled_contract_gas = PRECOMPILED_CONTRACTS[context.address]
+        precompiled_contract_name, precompiled_contract_gas = PRECOMPILED_CONTRACTS[
+            context.address
+        ]
         context.gas -= precompiled_contract_gas
         data_word_size = (len(context.calldata) + 31) // 32
         match precompiled_contract_name:
@@ -129,9 +150,14 @@ def disassemble(
         next_pc = pc + 1
         value = context.bytecode[pc]
         if value in OPCODES:
-            mnemonic_raw, stack_input_count, _stack_output_count, base_gas, _description, stack_input_names = OPCODES[
-                value
-            ]
+            (
+                mnemonic_raw,
+                stack_input_count,
+                _stack_output_count,
+                base_gas,
+                _description,
+                stack_input_names,
+            ) = OPCODES[value]
         else:
             mnemonic_raw = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
@@ -146,11 +172,17 @@ def disassemble(
             if not hide_pc:
                 instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
-                instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
+                instruction_message += (
+                    f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
+                )
             if mnemonic_raw in ["JUMP", "JUMPI"]:
-                instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
+                instruction_message += (
+                    f"{Colors.CYAN}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
+                )
             elif mnemonic_raw == "JUMPDEST":
-                instruction_message += f"{Colors.BLUE}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
+                instruction_message += (
+                    f"{Colors.BLUE}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
+                )
             else:
                 instruction_message += f"{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
 
@@ -160,7 +192,9 @@ def disassemble(
             mnemonic_num = int(mnemonic_raw[4:])
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
             if not silent and mnemonic_num > 0 and not invocation_only:
-                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
+                instruction_message += (
+                    " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
+                )
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic_raw[:4]
         elif mnemonic_raw.startswith("DUP"):
@@ -219,7 +253,9 @@ def disassemble(
                         if mnemonic_num >= 2:
                             instruction_message += f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}"
                         else:
-                            instruction_message += f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}"
+                            instruction_message += (
+                                f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}"
+                            )
                     else:
                         for i, name in enumerate(stack_input_names):
                             if i > 0:
@@ -318,7 +354,9 @@ def disassemble(
                         k = keccak.new(digest_bits=256)
                         k.update(input_data)
                         GAS_KECCAK256_WORD = 6
-                        context.gas -= GAS_KECCAK256_WORD * ((len(input_data) + 31) // 32)
+                        context.gas -= GAS_KECCAK256_WORD * (
+                            (len(input_data) + 31) // 32
+                        )
                         stack.push(bytes_to_long(k.digest()))
                     case "ADDRESS":
                         stack.push(context.address)
@@ -338,7 +376,11 @@ def disassemble(
                         if len(context.calldata) < input[0]:
                             stack.push(0)
                         else:
-                            stack.push(bytes_to_long((context.calldata[input[0] :] + b"\x00" * 32)[:32]))
+                            stack.push(
+                                bytes_to_long(
+                                    (context.calldata[input[0] :] + b"\x00" * 32)[:32]
+                                )
+                            )
                     case "CALLDATASIZE":
                         stack.push(len(context.calldata))
                     case "CALLDATACOPY":
@@ -348,16 +390,22 @@ def disassemble(
                             context.gas -= memory.store(input[0], b"\x00" * size)
                         elif offset + size > len(context.calldata):
                             context.gas -= memory.store(
-                                input[0], context.calldata[offset:] + b"\x00" * (offset + size - len(context.calldata))
+                                input[0],
+                                context.calldata[offset:]
+                                + b"\x00" * (offset + size - len(context.calldata)),
                             )
                         else:
-                            context.gas -= memory.store(input[0], context.calldata[offset : offset + size])
+                            context.gas -= memory.store(
+                                input[0], context.calldata[offset : offset + size]
+                            )
                         context.gas -= 3 * ((size + 31) // 32)
                     case "CODESIZE":
                         stack.push(len(context.bytecode))
                     case "CODECOPY":
                         # TODO: bound
-                        memory.store(input[0], context.bytecode[input[1] : input[1] + input[2]])
+                        memory.store(
+                            input[0], context.bytecode[input[1] : input[1] + input[2]]
+                        )
                     case "GASPRICE":
                         stack.push(context.callvalue)
                     case "EXTCODESIZE":
@@ -377,7 +425,9 @@ def disassemble(
                         stack.push(len(context.return_data))
                     case "RETURNDATACOPY":
                         dest_offset, offset, size = input
-                        allocation_gas = memory.store(dest_offset, context.return_data[offset : offset + size])
+                        allocation_gas = memory.store(
+                            dest_offset, context.return_data[offset : offset + size]
+                        )
                         context.gas -= allocation_gas
                         context.gas -= 3 * ((size + 31) // 32)
                     case "EXTCODEHASH":
@@ -409,19 +459,27 @@ def disassemble(
                     case "MSTORE8":
                         memory.store8(input[0], input[1])
                     case "SLOAD":
-                        value, gas = context.state.get_storage_at(context.address, input[0])
+                        value, gas = context.state.get_storage_at(
+                            context.address, input[0]
+                        )
                         stack.push(value)
                         context.gas -= gas
                     case "SSTORE":
-                        gas = context.state.set_storage_at(context.address, input[0], input[1])[0]
+                        gas = context.state.set_storage_at(
+                            context.address, input[0], input[1]
+                        )[0]
                         context.gas -= gas
                     case "JUMP":
-                        assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
+                        assert (
+                            OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                        ), "Invalid jump destination"
                         assert isinstance(input[0], int)
                         next_pc = input[0]
                         last_jump_to_address = input[0]
                     case "JUMPI":
-                        assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
+                        assert (
+                            OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST"
+                        ), "Invalid jump destination"
                         assert isinstance(input[0], int)
                         if input[1] != 0:
                             next_pc = input[0]
@@ -452,12 +510,27 @@ def disassemble(
                         assert False, "CREATE is not supported"
                     case "CALL" | "STATICCALL":
                         if mnemonic == "CALL":
-                            gas, address, value, args_offset, args_size, ret_offset, ret_size = input
+                            (
+                                gas,
+                                address,
+                                value,
+                                args_offset,
+                                args_size,
+                                ret_offset,
+                                ret_size,
+                            ) = input
                             if context.static and value > 0:
                                 raise StaticCallError
                         elif mnemonic == "STATICCALL":
                             value = 0
-                            gas, address, args_offset, args_size, ret_offset, ret_size = input
+                            (
+                                gas,
+                                address,
+                                args_offset,
+                                args_size,
+                                ret_offset,
+                                ret_size,
+                            ) = input
 
                         memory_cost = memory.extend(ret_offset + ret_size)
                         if value > 0:
@@ -470,7 +543,9 @@ def disassemble(
                             context.gas -= GAS_CODE_WARM_COLD_DIFF
                             context.state.address_access_set.add(address)
                         code = context.state.get_code(address)
-                        call_gas_cost = calculate_message_call_gas(value, gas, context.gas, memory_cost, extra_gas).cost
+                        call_gas_cost = calculate_message_call_gas(
+                            value, gas, context.gas, memory_cost, extra_gas
+                        ).cost
                         context.gas -= call_gas_cost
                         child_context = copy.deepcopy(context)
                         child_context.bytecode = code
@@ -478,7 +553,9 @@ def disassemble(
                         child_context.address = address
                         child_context.caller = context.address
                         child_context.callvalue = value
-                        child_context.calldata = memory.get_as_bytes(args_offset, args_size)
+                        child_context.calldata = memory.get_as_bytes(
+                            args_offset, args_size
+                        )
                         child_context.return_data = b""
                         child_context.depth += 1
                         if mnemonic == "STATICCALL":
@@ -502,13 +579,15 @@ def disassemble(
                         if result.success:
                             context.gas += child_context.gas
                             context.state = child_context.state
-                            result_return_data = result.return_data[:ret_size] + b"\x00" * max(
-                                0, ret_size - len(result.return_data)
-                            )
+                            result_return_data = result.return_data[
+                                :ret_size
+                            ] + b"\x00" * max(0, ret_size - len(result.return_data))
                             memory.store(ret_offset, result_return_data)
                             context.return_data = result.return_data
                         else:
-                            context.state.original_storages = child_context.state.original_storages
+                            context.state.original_storages = (
+                                child_context.state.original_storages
+                            )
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 
@@ -519,9 +598,7 @@ def disassemble(
                     case "RETURN":
                         offset, size = input
                         if not silent:
-                            instruction_message += (
-                                f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(offset, size)}"
-                            )
+                            instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(offset, size)}"
                         return_data = memory.get_as_bytes(offset, size)
                         break_flag = True
                     case "DELEGATECALL":
@@ -538,8 +615,17 @@ def disassemble(
                                 # Error(strings)
                                 arg_data = return_data[0x04:]
                                 strings_offset = int(arg_data[:0x20].hex(), 16)
-                                strings_size = int(arg_data[strings_offset : strings_offset + 0x20].hex(), 16)
-                                strings = arg_data[strings_offset + 0x20 : strings_offset + 0x20 + strings_size]
+                                strings_size = int(
+                                    arg_data[
+                                        strings_offset : strings_offset + 0x20
+                                    ].hex(),
+                                    16,
+                                )
+                                strings = arg_data[
+                                    strings_offset + 0x20 : strings_offset
+                                    + 0x20
+                                    + strings_size
+                                ]
                                 instruction_message += f"\n{' ' * (TAB_SIZE * 3)}Error(string): {strings.decode()}"
                         break_flag = True
                         success = False
@@ -564,15 +650,21 @@ def disassemble(
                 success = False
 
         if trace and not silent:
-            instruction_message += f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
+            instruction_message += (
+                f"\n{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
+            )
             if decode_stack:
-                instruction_message += f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}"
+                instruction_message += (
+                    f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}"
+                )
 
             if not hide_memory:
                 lines = memory.to_string()
                 for pc, line in enumerate(lines):
                     if pc == 0:
-                        instruction_message += f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}"
+                        instruction_message += (
+                            f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}"
+                        )
                     else:
                         instruction_message += f"\n{' ' * (TAB_SIZE * 3)}"
                     instruction_message += f"{line}"

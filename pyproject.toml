@@ -21,15 +21,9 @@ pytest = "^7.4.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
-black = "^23.7.0"
 ruff = "^0.0.284"
 mypy = "^1.5.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff]
-ignore = [
-    "E501", # Line too long
-]

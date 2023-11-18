@@ -1,6 +1,6 @@
-import sys
-import re
 import json
+import re
+import sys
 from pathlib import Path
 
 """
@@ -40,7 +40,10 @@ with cast_output_file.open() as f:
         gas = int(result.group(4))
         mnemonic_raw = result.group(5).replace("SHA3", "KECCAK256")
         refund = int(result.group(8))
-        stack = [int(x.replace("_U256", ""), 16) for x in (result.group(9).split(",") if result.group(9) != "" else [])]
+        stack = [
+            int(x.replace("_U256", ""), 16)
+            for x in (result.group(9).split(",") if result.group(9) != "" else [])
+        ]
         data_size = int(result.group(10))
         data = result.group(11)
         trace_log = trace_logs[trace_log_i]
@@ -58,7 +61,9 @@ with cast_output_file.open() as f:
             trace_log["mnemonic_raw"],
             erever_stack[::-1],
         )
-        print("cast  ", f"depth:{depth}", len(data) // 2, gas, mnemonic_raw, stack[::-1])
+        print(
+            "cast  ", f"depth:{depth}", len(data) // 2, gas, mnemonic_raw, stack[::-1]
+        )
         # print(line)
         print()
 

@@ -10,7 +10,9 @@ from .opcodes import OPCODES
 from .symbolic_stack import SymbolicStack
 from .utils import TAB_SIZE, UINT256_MAX, pad
 
-Gadget = tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]
+Gadget = tuple[
+    int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]
+]
 
 
 def disassemble_symbolic(
@@ -67,12 +69,19 @@ def disassemble_symbolic(
         stack = state.stack
 
         if not silent:
-            print(f"\n{Colors.BOLD}{pad(hex(state.pc), LOCATION_PAD_N)}{Colors.ENDC}", end="")
+            print(
+                f"\n{Colors.BOLD}{pad(hex(state.pc), LOCATION_PAD_N)}{Colors.ENDC}",
+                end="",
+            )
             if state.jumped_from is not None:
                 if state.jumped:
-                    print(f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
+                    print(
+                        f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})"
+                    )
                 else:
-                    print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
+                    print(
+                        f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})"
+                    )
                 for condition, pc, is_met in state.conditions:
                     if is_met:
                         print(
@@ -128,8 +137,23 @@ def disassemble_symbolic(
                 # スタックの操作はここに。操作しないものはNodeの__repr__に。
                 case "STOP":
                     end = True
-                case "CALLDATACOPY" | "CODECOPY" | "EXTCODECOPY" | "RETURNDATACOPY" | "MSTORE" | "MSTORE8" | "SSTORE" | "CALL" | "CREATE" | "CALLCODE" | "DELEGATECALL" | "CREATE2":
-                    state.data_changes.append(Node(mnemonic, input, mnemonic_num, stack_input_count))
+                case (
+                    "CALLDATACOPY"
+                    | "CODECOPY"
+                    | "EXTCODECOPY"
+                    | "RETURNDATACOPY"
+                    | "MSTORE"
+                    | "MSTORE8"
+                    | "SSTORE"
+                    | "CALL"
+                    | "CREATE"
+                    | "CALLCODE"
+                    | "DELEGATECALL"
+                    | "CREATE2"
+                ):
+                    state.data_changes.append(
+                        Node(mnemonic, input, mnemonic_num, stack_input_count)
+                    )
                 case "PUSH":
                     stack.push(Node("uint256", push_v))
                 case "DUP":
@@ -152,7 +176,10 @@ def disassemble_symbolic(
                 if not hide_pc:
                     print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
                 if show_opcodes:
-                    print(f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ", end="")
+                    print(
+                        f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ",
+                        end="",
+                    )
 
                 if mnemonic == "PUSH":
                     print(
@@ -174,10 +201,21 @@ def disassemble_symbolic(
                 print()
 
                 if show_symbolic_stack:
-                    print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
+                    print(
+                        f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
+                    )
 
             if mnemonic == "JUMP" and input[0].type != "uint256":
-                gadget_list.append((pc, input[0], state.stack.var_n, state.stack, state.data_changes, state.conditions))
+                gadget_list.append(
+                    (
+                        pc,
+                        input[0],
+                        state.stack.var_n,
+                        state.stack,
+                        state.data_changes,
+                        state.conditions,
+                    )
+                )
                 break
             if mnemonic == "JUMPI" and input[0].type != "uint256":
                 state.steps += 1
@@ -220,7 +258,16 @@ def disassemble_symbolic(
                 queue.append(state_not_jumped)
                 break
             if mnemonic == "STOP" or mnemonic == "RETURN":
-                gadget_list.append((pc, None, state.stack.var_n, state.stack, state.data_changes, state.conditions))
+                gadget_list.append(
+                    (
+                        pc,
+                        None,
+                        state.stack.var_n,
+                        state.stack,
+                        state.data_changes,
+                        state.conditions,
+                    )
+                )
                 break
 
             state.steps += 1

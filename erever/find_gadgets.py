@@ -18,7 +18,12 @@ def find_gadgets(
 
         print(f"Checking {pad(hex(pc), LOCATION_PAD_N)}")
         gadget_list = disassemble_symbolic(
-            context, entrypoint=pc, show_symbolic_stack=True, max_steps=max_steps, silent=True, return_gadget_list=True
+            context,
+            entrypoint=pc,
+            show_symbolic_stack=True,
+            max_steps=max_steps,
+            silent=True,
+            return_gadget_list=True,
         )
         assert gadget_list is not None
         for gadget in gadget_list:

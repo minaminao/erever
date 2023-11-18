@@ -24,7 +24,9 @@ class Stack:
         assert max(x) <= UINT256_MAX
         self.stack.extend(x)
 
-        self.updated_indices_for_colorize = [len(self.stack) - 1 - i for i in range(len(x))]
+        self.updated_indices_for_colorize = [
+            len(self.stack) - 1 - i for i in range(len(x))
+        ]
 
     def pop(self) -> int:
         if len(self.stack) == 0:
@@ -68,7 +70,9 @@ class Stack:
             if i != 0:
                 ret += ", "
             if isinstance(self.stack[n - 1 - i], int):
-                x = decode_printable_with_color(pad_even(hex(self.stack[n - 1 - i]))[2:])
+                x = decode_printable_with_color(
+                    pad_even(hex(self.stack[n - 1 - i]))[2:]
+                )
             else:
                 x = str(self.stack[n - 1 - i])
             if n - 1 - i in self.updated_indices_for_colorize:

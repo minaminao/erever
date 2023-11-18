@@ -87,12 +87,18 @@ class Memory:
         decoded_lines = []
         for i, line in enumerate(ret):
             decoded_line = decode_printable_with_color(
-                line, i * line_length, self.mstore_l_for_colorize, self.mstore_r_for_colorize
+                line,
+                i * line_length,
+                self.mstore_l_for_colorize,
+                self.mstore_r_for_colorize,
             )
             decoded_lines.append(decoded_line)
 
         modified = (0, 0)
-        if self.mstore_l_for_colorize is not None and self.mstore_r_for_colorize is not None:
+        if (
+            self.mstore_l_for_colorize is not None
+            and self.mstore_r_for_colorize is not None
+        ):
             l_i = self.mstore_l_for_colorize // line_length
             l_j = 2 * (self.mstore_l_for_colorize % line_length)
             r_i = self.mstore_r_for_colorize // line_length
@@ -109,10 +115,20 @@ class Memory:
                     + zero_to_gray(ret[l_i][r_j:])
                 )
             else:
-                ret[l_i] = zero_to_gray(ret[l_i][:l_j]) + Colors.GREEN + ret[l_i][l_j:] + Colors.ENDC
+                ret[l_i] = (
+                    zero_to_gray(ret[l_i][:l_j])
+                    + Colors.GREEN
+                    + ret[l_i][l_j:]
+                    + Colors.ENDC
+                )
                 for i in range(l_i + 1, r_i):
                     ret[i] = Colors.GREEN + ret[i] + Colors.ENDC
-                ret[r_i] = Colors.GREEN + ret[r_i][:r_j] + Colors.ENDC + zero_to_gray(ret[r_i][r_j:])
+                ret[r_i] = (
+                    Colors.GREEN
+                    + ret[r_i][:r_j]
+                    + Colors.ENDC
+                    + zero_to_gray(ret[r_i][r_j:])
+                )
             modified = (l_i, r_i + 1)
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
@@ -126,7 +142,9 @@ class Memory:
         return ret
 
     def calculate_gas_extend_memory(self, size: int) -> Gas:
-        return Memory.calculate_memory_gas_cost(size) - Memory.calculate_memory_gas_cost(len(self.memory))
+        return Memory.calculate_memory_gas_cost(
+            size
+        ) - Memory.calculate_memory_gas_cost(len(self.memory))
 
     @staticmethod
     def calculate_memory_gas_cost(size: int) -> Gas:

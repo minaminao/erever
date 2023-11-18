@@ -32,7 +32,9 @@ class State:
         if address in self.balances:
             return self.balances[address]
         elif self.w3:
-            self.balances[address] = self.w3.eth.get_balance(int_to_check_sum_address(address), self.block_number)
+            self.balances[address] = self.w3.eth.get_balance(
+                int_to_check_sum_address(address), self.block_number
+            )
             return self.balances[address]
         else:
             return 0
@@ -45,7 +47,11 @@ class State:
             code = self.codes[address]
             return code
         elif self.w3:
-            code = bytes(self.w3.eth.get_code(int_to_check_sum_address(address), self.block_number))
+            code = bytes(
+                self.w3.eth.get_code(
+                    int_to_check_sum_address(address), self.block_number
+                )
+            )
             self.codes[address] = code
             return code
         else:
@@ -70,7 +76,9 @@ class State:
                 original_storage.store(
                     slot,
                     bytes_to_long(
-                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
+                        self.w3.eth.get_storage_at(
+                            int_to_check_sum_address(address), slot, self.block_number
+                        )
                     ),
                 )
             else:
@@ -84,7 +92,9 @@ class State:
 
         return (current_value, 0 if warm else GAS_WARM_COLD_DIFF)
 
-    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> tuple[Gas, Gas]:
+    def set_storage_at(
+        self, address: AddressInt, slot: int, value: int
+    ) -> tuple[Gas, Gas]:
         if address not in self.storages:
             self.storages[address] = Storage()
         if address not in self.original_storages:
@@ -98,7 +108,9 @@ class State:
                 original_storage.store(
                     slot,
                     bytes_to_long(
-                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
+                        self.w3.eth.get_storage_at(
+                            int_to_check_sum_address(address), slot, self.block_number
+                        )
                     ),
                 )
             else:
@@ -237,7 +249,9 @@ class Context:
         self.steps = 0
 
     @staticmethod
-    def from_arg_params_with_bytecode(args: argparse.Namespace, bytecode: str) -> "Context":
+    def from_arg_params_with_bytecode(
+        args: argparse.Namespace, bytecode: str
+    ) -> "Context":
         self = Context()
         self.bytecode = Context.__hex_to_bytes(bytecode)
 

@@ -2,7 +2,8 @@ all: fmt lint type-check-strict test docker-test
 
 fmt:
 	isort erever/*.py
-	black --line-length 120 .
+	isort tests/*.py
+	ruff format .
 
 lint:
 	ruff check .
