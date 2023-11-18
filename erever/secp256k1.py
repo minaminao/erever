@@ -1,3 +1,5 @@
+from Crypto.Random.random import randint
+
 # secp256k1
 
 # 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
@@ -31,9 +33,11 @@ class Fp:
         return Fp(-self.x)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Fp):
-            return False
+        assert isinstance(other, Fp)
         return self.x == other.x
+
+    def __int__(self) -> int:
+        return self.x
 
     def __str__(self) -> str:
         return str(self.x)
@@ -91,8 +95,7 @@ class ECPoint:
         return ECPoint(self.x, -self.y)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ECPoint):
-            return False
+        assert isinstance(other, ECPoint)
         return self.x == other.x and self.y == other.y
 
     def __str__(self) -> str:
@@ -102,3 +105,23 @@ class ECPoint:
 gx = Fp(0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798)
 gy = Fp(0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 G = ECPoint(gx, gy)
+n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+
+
+class ECDSA:
+    @staticmethod
+    def sign(m: int, d: int) -> tuple[int, int]:
+        assert m < n
+        k = randint(1, n - 1)
+        r = int((k * G).x)
+        s = (m + r * d) * pow(k, -1, n) % n
+        return (r, s)
+
+    @staticmethod
+    def verify(Q: ECPoint, m: int, r: int, s: int) -> bool:
+        if not (0 < r < n and 0 < s < n):
+            return False
+        w = pow(s, -1, n)
+        u = m * w % n
+        v = r * w % n
+        return int((u * G + v * Q).x) == r

@@ -1,4 +1,4 @@
-from erever.secp256k1 import Fp, ECPoint, G
+from erever.secp256k1 import Fp, ECPoint, ECDSA, G, n
 
 
 def test_key_pair() -> None:
@@ -9,3 +9,12 @@ def test_key_pair() -> None:
         Fp(0x5C5556D2225A89747AB2BF12808B24D7A663282CA7A32849C0D47BB9710AE979),
     )
     assert private_key * G == public_key
+
+    m = 0x1234
+    r, s = ECDSA.sign(m, private_key)
+    assert ECDSA.verify(public_key, m, r, s)
+
+
+def test_half_g_fun_fact() -> None:
+    half_G = G * pow(2, -1, n)
+    assert int(half_G.x) == 0x3B7_8CE563F89A0ED9414F5AA28AD0D96D6795F9C6_3  # 166 bits
