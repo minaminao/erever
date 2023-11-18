@@ -37,8 +37,8 @@ class TraceLog:
         return log_dict
 
 
-type DisassembleCode = list[tuple[int, str, int | None]]
-type DisassembleResultDict = dict[
+DisassembleCode = list[tuple[int, str, int | None]]
+DisassembleResultDict = dict[
     str, int | None | DisassembleCode | list[dict[str, str | int | list[int]]] | list[int] | str
 ]  # TODO
 

@@ -1,7 +1,7 @@
 from .colors import Colors
 from .utils import pad_even
 
-type NodeValue = str | int | list["Node"]
+NodeValue = str | int | list["Node"]
 
 
 class Node:

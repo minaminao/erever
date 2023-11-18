@@ -107,7 +107,7 @@ def main() -> None:
     parser_assemble = subparsers.add_parser("assemble", help="Assemble the given mnemonics to the bytecode")
     parser_assemble.set_defaults(handler=command_assemble)
 
-    def add_common_arguments_for_construct_context(parser: argparse.ArgumentParser) -> None:
+    def add_common_arguments_for_constructing_context(parser: argparse.ArgumentParser) -> None:
         parser.add_argument("-b", "--bytecode")
         parser.add_argument("-f", "--filename")
 
@@ -127,7 +127,7 @@ def main() -> None:
         parser.add_argument("--origin", type=str, default=str(Context.DEFAULT_ORIGIN))
         parser.add_argument("--caller", type=str, default=str(Context.DEFAULT_CALLER))
         parser.add_argument("--callvalue", type=str, default=str(Context.DEFAULT_CALLVALUE))
-        parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA_HEX)
+        parser.add_argument("--calldata", type=str, default=Context.DEFAULT_CALLDATA.decode())
         parser.add_argument("--gasprice", type=str, default=str(Context.DEFAULT_GASPRICE))
         parser.add_argument("--coinbase", type=str, default=str(Context.DEFAULT_COINBASE))
         parser.add_argument("--timestamp", type=str, default=str(Context.DEFAULT_TIMESTAMP))
@@ -139,11 +139,11 @@ def main() -> None:
         parser.add_argument("--basefee", type=str, default=str(Context.DEFAULT_BASEFEE))
         parser.add_argument("--gas", type=str, default=str(Context.DEFAULT_GAS))
 
-    add_common_arguments_for_construct_context(parser_disassemble)
-    add_common_arguments_for_construct_context(parser_trace)
-    add_common_arguments_for_construct_context(parser_symbolic_trace)
-    add_common_arguments_for_construct_context(parser_mermaid)
-    add_common_arguments_for_construct_context(parser_gadget)
+    add_common_arguments_for_constructing_context(parser_disassemble)
+    add_common_arguments_for_constructing_context(parser_trace)
+    add_common_arguments_for_constructing_context(parser_symbolic_trace)
+    add_common_arguments_for_constructing_context(parser_mermaid)
+    add_common_arguments_for_constructing_context(parser_gadget)
 
     parser_disassemble.add_argument("--decode-stack", action="store_true", default=False)
     parser_trace.add_argument("--decode-stack", action="store_true", default=False)
@@ -187,7 +187,11 @@ def main() -> None:
         elif args.filename:
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
-                context = Context.from_dict(parsed_toml)
+                if "bytecode" in parsed_toml:
+                    parsed_toml["bytecode"] = bytes.fromhex(parsed_toml["bytecode"])
+                if "calldata" in parsed_toml:
+                    parsed_toml["calldata"] = bytes.fromhex(parsed_toml["calldata"])
+                context = Context(**parsed_toml)
             else:
                 bytecode = open(args.filename).read()
                 context = Context.from_arg_params_with_bytecode(args, bytecode)

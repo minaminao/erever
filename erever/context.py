@@ -150,13 +150,13 @@ class State:
 
 
 class Context:
+    DEFAULT_BYTECODE = b""
     DEFAULT_ADDRESS = 0xADD2E55
     DEFAULT_BALANCE = 0
     DEFAULT_ORIGIN = 0
     DEFAULT_CALLER = 0
     DEFAULT_CALLVALUE = 0
     DEFAULT_CALLDATA = b""
-    DEFAULT_CALLDATA_HEX = ""
     DEFAULT_GASPRICE = 0
     DEFAULT_COINBASE = 0
     DEFAULT_TIMESTAMP = 0
@@ -192,6 +192,50 @@ class Context:
     depth: int
     steps: int
 
+    def __init__(
+        self,
+        bytecode: bytes = DEFAULT_BYTECODE,
+        address: int = DEFAULT_ADDRESS,
+        balance: int = DEFAULT_BALANCE,
+        origin: int = DEFAULT_ORIGIN,
+        caller: int = DEFAULT_CALLER,
+        callvalue: int = DEFAULT_CALLVALUE,
+        calldata: bytes = DEFAULT_CALLDATA,
+        gasprice: int = DEFAULT_GASPRICE,
+        coinbase: int = DEFAULT_COINBASE,
+        timestamp: int = DEFAULT_TIMESTAMP,
+        number: int = DEFAULT_NUMBER,
+        difficulty: int = DEFAULT_DIFFICULTY,
+        gaslimit: int = DEFAULT_GASLIMIT,
+        chainid: int = DEFAULT_CHAINID,
+        selfbalance: int = DEFAULT_SELFBALANCE,
+        basefee: int = DEFAULT_BASEFEE,
+        gas: int = DEFAULT_GAS,
+        rpc_url: str | None = None,
+    ) -> None:
+        self.bytecode = bytecode
+        self.address = address
+        self.balance = balance
+        self.origin = origin
+        self.caller = caller
+        self.callvalue = callvalue
+        self.calldata = calldata
+        self.gasprice = gasprice
+        self.coinbase = coinbase
+        self.timestamp = timestamp
+        self.number = number
+        self.difficulty = difficulty
+        self.gaslimit = gaslimit
+        self.chainid = chainid
+        self.selfbalance = selfbalance
+        self.basefee = basefee
+        self.gas = gas
+        self.state = State(self.number, rpc_url)
+        self.static = False
+        self.return_data = b""
+        self.depth = 1
+        self.steps = 0
+
     @staticmethod
     def from_arg_params_with_bytecode(args: argparse.Namespace, bytecode: str) -> "Context":
         self = Context()
@@ -215,35 +259,6 @@ class Context:
         self.gas = args.gas
 
         self.state = State(self.number, args.rpc_url)
-        self.static = False
-        self.return_data = b""
-        self.depth = 1
-        self.steps = 0
-        return self
-
-    @staticmethod
-    def from_dict(d: dict) -> "Context":
-        self = Context()
-        self.bytecode = Context.__hex_to_bytes(d["bytecode"])
-
-        self.address = d.get("address", Context.DEFAULT_ADDRESS)
-        self.balance = d.get("balance", Context.DEFAULT_BALANCE)
-        self.origin = d.get("origin", Context.DEFAULT_ORIGIN)
-        self.caller = d.get("caller", Context.DEFAULT_CALLER)
-        self.callvalue = d.get("callvalue", Context.DEFAULT_CALLVALUE)
-        self.calldata = Context.__hex_to_bytes(d.get("calldata", Context.DEFAULT_CALLDATA_HEX))
-        self.gasprice = d.get("gasprice", Context.DEFAULT_GASPRICE)
-        self.coinbase = d.get("coinbase", Context.DEFAULT_COINBASE)
-        self.timestamp = d.get("timestamp", Context.DEFAULT_TIMESTAMP)
-        self.number = d.get("number", Context.DEFAULT_NUMBER)
-        self.difficulty = d.get("difficulty", Context.DEFAULT_DIFFICULTY)
-        self.gaslimit = d.get("gaslimit", Context.DEFAULT_GASLIMIT)
-        self.chainid = d.get("chainid", Context.DEFAULT_CHAINID)
-        self.selfbalance = d.get("selfbalance", Context.DEFAULT_SELFBALANCE)
-        self.basefee = d.get("basefee", Context.DEFAULT_BASEFEE)
-        self.gas = d.get("gas", Context.DEFAULT_GAS)
-
-        self.state = State(self.number, d.get("rpc_url", None))
         self.static = False
         self.return_data = b""
         self.depth = 1
