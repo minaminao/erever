@@ -8,7 +8,7 @@ import tomllib
 from .assemble import assemble
 from .cbor import inspect_cbor
 from .context import Context
-from .disassemble import disassemble
+from .disassemble import MemoryDisplay, disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
@@ -70,7 +70,12 @@ def main() -> None:
         parser.add_argument("--max-steps", type=str, default=str(UINT256_MAX))
 
         parser.add_argument("--hide-pc", action="store_true", default=False)
-        parser.add_argument("--hide-memory", action="store_true", default=False)
+        parser.add_argument(
+            "--memory-display",
+            type=MemoryDisplay,
+            choices=list(MemoryDisplay),
+            default=MemoryDisplay.ONCHANGE,
+        )
 
         parser.add_argument("--address", type=str, default=str(Context.DEFAULT_ADDRESS))
         parser.add_argument("--balance", type=str, default=str(Context.DEFAULT_BALANCE))
@@ -193,7 +198,7 @@ def command_disassemble(args: argparse.Namespace, context: Context) -> None:
         args.decode_stack,
         hide_pc=args.hide_pc,
         show_opcodes=args.show_opcodes,
-        hide_memory=args.hide_memory,
+        memory_display=args.memory_display,
     )
 
     inspect_cbor(context.bytecode)
@@ -218,7 +223,7 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         args.decode_stack,
         hide_pc=args.hide_pc,
         show_opcodes=args.show_opcodes,
-        hide_memory=args.hide_memory,
+        memory_display=args.memory_display,
         invocation_only=args.invocation_only,
         silent=args.silent,
         return_trace_logs=args.return_trace_logs,

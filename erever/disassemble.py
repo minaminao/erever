@@ -1,8 +1,9 @@
 import copy
 import sys
 from dataclasses import dataclass
+from enum import Enum
 
-from Crypto.Hash import keccak, SHA256
+from Crypto.Hash import SHA256, keccak
 from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
@@ -84,6 +85,15 @@ class DisassembleResult:
         return result_dict
 
 
+class MemoryDisplay(Enum):
+    ALWAYS = "always"
+    ONCHANGE = "onchange"
+    OFF = "off"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class StaticCallError(Exception):
     pass
 
@@ -98,7 +108,7 @@ def disassemble(
     silent: bool = False,
     hide_pc: bool = False,
     show_opcodes: bool = False,
-    hide_memory: bool = False,
+    memory_display: MemoryDisplay = MemoryDisplay.OFF,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
 ) -> DisassembleResult:
@@ -361,7 +371,11 @@ def disassemble(
                         context.gas -= GAS_KECCAK256_WORD * (
                             (len(input_data) + 31) // 32
                         )
-                        stack.push(bytes_to_long(keccak.new(digest_bits=256, data=input_data).digest()))
+                        stack.push(
+                            bytes_to_long(
+                                keccak.new(digest_bits=256, data=input_data).digest()
+                            )
+                        )
                     case "ADDRESS":
                         stack.push(context.address)
                     case "BALANCE":
@@ -575,7 +589,7 @@ def disassemble(
                             silent=silent,
                             hide_pc=hide_pc,
                             show_opcodes=show_opcodes,
-                            hide_memory=hide_memory,
+                            memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
                         )
@@ -662,25 +676,28 @@ def disassemble(
                     f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}"
                 )
 
-            # TODO: option
-            if not hide_memory and mnemonic in [
-                "MLOAD",
-                "MSTORE",
-                "MSTORE8",
-                "CALL",
-                "STATICCALL",
-                "CALLCODE",
-                "DELEGATECALL",
-                "CODECOPY",
-                "EXTCODECOPY",
-                "RETURNDATACOPY",
-                "CALLDATACOPY",
-                "LOG",
-                "CREATE",
-                "CREATE2",
-                "RETURN",
-                "REVERT",
-            ]:
+            if memory_display == MemoryDisplay.ALWAYS or (
+                memory_display == MemoryDisplay.ONCHANGE
+                and mnemonic
+                in [
+                    "MLOAD",
+                    "MSTORE",
+                    "MSTORE8",
+                    "CALL",
+                    "STATICCALL",
+                    "CALLCODE",
+                    "DELEGATECALL",
+                    "CODECOPY",
+                    "EXTCODECOPY",
+                    "RETURNDATACOPY",
+                    "CALLDATACOPY",
+                    "LOG",
+                    "CREATE",
+                    "CREATE2",
+                    "RETURN",
+                    "REVERT",
+                ]
+            ):
                 lines = memory.to_string()
                 for i, line in enumerate(lines):
                     if i == 0:

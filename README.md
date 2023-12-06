@@ -36,6 +36,10 @@ Only supports Python >= 3.12.
 
 ## Usage
 
+```
+erever -h
+```
+
 ### Disassemble
 
 ```
