@@ -43,10 +43,16 @@ class State:
         self.balances[address] = balance
 
     def get_code(self, address: AddressInt) -> bytes:
+        # TODO: add overwrite feature
+        # overwrite = {0: bytes.fromhex("00")}
+        # if address in overwrite:
+        #     return overwrite[address]
+
         if address in self.codes:
             code = self.codes[address]
             return code
-        elif self.w3:
+
+        if self.w3:
             code = bytes(
                 self.w3.eth.get_code(
                     int_to_check_sum_address(address), self.block_number
@@ -54,8 +60,8 @@ class State:
             )
             self.codes[address] = code
             return code
-        else:
-            return b""
+
+        return b""
 
     def set_code(self, address: AddressInt, code: bytes) -> None:
         self.codes[address] = code

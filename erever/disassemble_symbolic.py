@@ -154,6 +154,9 @@ def disassemble_symbolic(
                     state.data_changes.append(
                         Node(mnemonic, input, mnemonic_num, stack_input_count)
                     )
+                    assert stack_output_count <= 1
+                    if stack_output_count == 1:
+                        stack.push(Node(mnemonic, input))
                 case "PUSH":
                     stack.push(Node("uint256", push_v))
                 case "DUP":
@@ -244,18 +247,20 @@ def disassemble_symbolic(
             if mnemonic == "JUMPI" and input[0].type == "uint256":
                 assert isinstance(input[0].value, int)
                 state.steps += 1
-                state_not_jumped = deepcopy(state)
-                state_not_jumped.pc = next_pc
-                state_not_jumped.jumped_from = pc
-                state_not_jumped.jumped = False
-                state_not_jumped.conditions.append((input[1], pc, False))
-                state_jumped = state
-                state_jumped.pc = input[0].value
-                state_jumped.jumped_from = pc
-                state_jumped.jumped = True
-                state_jumped.conditions.append((input[1], pc, True))
-                queue.append(state_jumped)
-                queue.append(state_not_jumped)
+                if input[1].evaluate() != "false":
+                    state_jumped = deepcopy(state)
+                    state_jumped.pc = input[0].value
+                    state_jumped.jumped_from = pc
+                    state_jumped.jumped = True
+                    state_jumped.conditions.append((input[1], pc, True))
+                    queue.append(state_jumped)
+                if input[1].evaluate() != "true":
+                    state_not_jumped = state
+                    state_not_jumped.pc = next_pc
+                    state_not_jumped.jumped_from = pc
+                    state_not_jumped.jumped = False
+                    state_not_jumped.conditions.append((input[1], pc, False))
+                    queue.append(state_not_jumped)
                 break
             if mnemonic == "STOP" or mnemonic == "RETURN":
                 gadget_list.append(

@@ -25,6 +25,7 @@ Currently, erever is mostly for me to solve challenges and is not intended to be
 - [Numen Cyber CTF 2023: LittleMoney](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
 - [Numen Cyber CTF 2023: HEXP](https://github.com/minaminao/ctf-blockchain/tree/main/src/NumenCTF)
 - [Paradigm CTF 2023: Cosmic Radiation](https://github.com/minaminao/ctf-blockchain/tree/main/src/ParadigmCTF2023/CosmicRadiation)
+- [Curta: Lana](https://twitter.com/vinami/status/1728482477965213760)
 
 ## Install
 ```

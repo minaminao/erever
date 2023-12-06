@@ -2,7 +2,7 @@ import copy
 import sys
 from dataclasses import dataclass
 
-from Crypto.Hash import keccak
+from Crypto.Hash import keccak, SHA256
 from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
@@ -127,7 +127,7 @@ def disassemble(
                 assert False, "ecRecover is not supported"
             case "SHA2-256":
                 context.gas -= 12 * data_word_size
-                assert False, "SHA2-256 is not supported"
+                return_data = SHA256.new(data=context.calldata).digest()
             case "RIPEMD-160":
                 context.gas -= 120 * data_word_size
                 assert False, "RIPEMD-160 is not supported"
@@ -307,12 +307,18 @@ def disassemble(
                         exp_byte_size = (exp.bit_length() + 7) // 8
                         context.gas -= 50 * exp_byte_size
                     case "SIGNEXTEND":
-                        bits = (input[0] + 1) * 8
-                        mask = 1 << (bits - 1)
-                        if input[1] & mask:
-                            stack.push((1 << 256) - ((1 << bits) - input[1]))
-                        else:
+                        byte_num, value = input
+                        if byte_num > 31:
                             stack.push(input[1])
+                        else:
+                            bits = (byte_num + 1) * 8
+                            mask = (1 << bits) - 1
+                            value &= mask
+                            sign = value >> (bits - 1)
+                            if sign:
+                                stack.push((1 << 256) - ((1 << bits) - value))
+                            else:
+                                stack.push(value)
                     case "LT":
                         stack.push(int(input[0] < input[1]))
                     case "GT":
@@ -351,13 +357,11 @@ def disassemble(
                         input_data = memory.get_as_bytes(input[0], input[1])
                         if not silent:
                             instruction_message += f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{input_data.hex()}"
-                        k = keccak.new(digest_bits=256)
-                        k.update(input_data)
                         GAS_KECCAK256_WORD = 6
                         context.gas -= GAS_KECCAK256_WORD * (
                             (len(input_data) + 31) // 32
                         )
-                        stack.push(bytes_to_long(k.digest()))
+                        stack.push(bytes_to_long(keccak.new(digest_bits=256, data=input_data).digest()))
                     case "ADDRESS":
                         stack.push(context.address)
                     case "BALANCE":
@@ -658,10 +662,28 @@ def disassemble(
                     f"\n{' ' * (TAB_SIZE * 3)}{stack.to_string_with_decode()}"
                 )
 
-            if not hide_memory:
+            # TODO: option
+            if not hide_memory and mnemonic in [
+                "MLOAD",
+                "MSTORE",
+                "MSTORE8",
+                "CALL",
+                "STATICCALL",
+                "CALLCODE",
+                "DELEGATECALL",
+                "CODECOPY",
+                "EXTCODECOPY",
+                "RETURNDATACOPY",
+                "CALLDATACOPY",
+                "LOG",
+                "CREATE",
+                "CREATE2",
+                "RETURN",
+                "REVERT",
+            ]:
                 lines = memory.to_string()
-                for pc, line in enumerate(lines):
-                    if pc == 0:
+                for i, line in enumerate(lines):
+                    if i == 0:
                         instruction_message += (
                             f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}"
                         )

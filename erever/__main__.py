@@ -2,81 +2,17 @@ import argparse
 import json
 import os
 import sys
+
 import tomllib
 
 from .assemble import assemble
+from .cbor import inspect_cbor
 from .context import Context
 from .disassemble import disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
 from .utils import UINT256_MAX
-
-
-def command_disassemble(args: argparse.Namespace, context: Context) -> None:
-    disassemble(
-        context,
-        False,
-        args.entrypoint,
-        args.max_steps,
-        args.decode_stack,
-        hide_pc=args.hide_pc,
-        show_opcodes=args.show_opcodes,
-        hide_memory=args.hide_memory,
-    )
-
-
-def command_trace(args: argparse.Namespace, context: Context) -> None:
-    # tx gas
-    context.gas -= 21000
-
-    # tx data gas
-    for byte in context.calldata:
-        if byte == 0:
-            context.gas -= 4
-        else:
-            context.gas -= 16
-
-    result = disassemble(
-        context,
-        True,
-        args.entrypoint,
-        args.max_steps,
-        args.decode_stack,
-        hide_pc=args.hide_pc,
-        show_opcodes=args.show_opcodes,
-        hide_memory=args.hide_memory,
-        invocation_only=args.invocation_only,
-        silent=args.silent,
-        return_trace_logs=args.return_trace_logs,
-    )
-    if args.output_json:
-        print(json.dumps(result.to_dict()))
-
-
-def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
-    disassemble_symbolic(
-        context,
-        args.entrypoint,
-        args.show_symbolic_stack,
-        args.max_steps,
-        args.hide_pc,
-        hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
-        show_opcodes=args.show_opcodes,
-    )
-
-
-def command_mermaid(args: argparse.Namespace, context: Context) -> None:
-    disassemble_mermaid(context, args.entrypoint, args.max_steps)
-
-
-def command_gadget(args: argparse.Namespace, context: Context) -> None:
-    find_gadgets(context, args.max_steps)
-
-
-def command_assemble(args: argparse.Namespace) -> None:
-    bytecode = assemble(args.mnemonics)
-    print(bytecode.hex())
 
 
 def main() -> None:
@@ -226,9 +162,13 @@ def main() -> None:
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
                 if "bytecode" in parsed_toml:
-                    parsed_toml["bytecode"] = bytes.fromhex(parsed_toml["bytecode"])
+                    parsed_toml["bytecode"] = bytes.fromhex(
+                        parsed_toml["bytecode"].replace("0x", "").replace(" ", "")
+                    )
                 if "calldata" in parsed_toml:
-                    parsed_toml["calldata"] = bytes.fromhex(parsed_toml["calldata"])
+                    parsed_toml["calldata"] = bytes.fromhex(
+                        parsed_toml["calldata"].replace("0x", "").replace(" ", "")
+                    )
                 context = Context(**parsed_toml)
             else:
                 bytecode = open(args.filename).read()
@@ -242,6 +182,74 @@ def main() -> None:
             exit(1)
 
         args.handler(args, context)
+
+
+def command_disassemble(args: argparse.Namespace, context: Context) -> None:
+    disassemble(
+        context,
+        False,
+        args.entrypoint,
+        args.max_steps,
+        args.decode_stack,
+        hide_pc=args.hide_pc,
+        show_opcodes=args.show_opcodes,
+        hide_memory=args.hide_memory,
+    )
+
+    inspect_cbor(context.bytecode)
+
+
+def command_trace(args: argparse.Namespace, context: Context) -> None:
+    # tx gas
+    context.gas -= 21000
+
+    # tx data gas
+    for byte in context.calldata:
+        if byte == 0:
+            context.gas -= 4
+        else:
+            context.gas -= 16
+
+    result = disassemble(
+        context,
+        True,
+        args.entrypoint,
+        args.max_steps,
+        args.decode_stack,
+        hide_pc=args.hide_pc,
+        show_opcodes=args.show_opcodes,
+        hide_memory=args.hide_memory,
+        invocation_only=args.invocation_only,
+        silent=args.silent,
+        return_trace_logs=args.return_trace_logs,
+    )
+    if args.output_json:
+        print(json.dumps(result.to_dict()))
+
+
+def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
+    disassemble_symbolic(
+        context,
+        args.entrypoint,
+        args.show_symbolic_stack,
+        args.max_steps,
+        args.hide_pc,
+        hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
+        show_opcodes=args.show_opcodes,
+    )
+
+
+def command_mermaid(args: argparse.Namespace, context: Context) -> None:
+    disassemble_mermaid(context, args.entrypoint, args.max_steps)
+
+
+def command_gadget(args: argparse.Namespace, context: Context) -> None:
+    find_gadgets(context, args.max_steps)
+
+
+def command_assemble(args: argparse.Namespace) -> None:
+    bytecode = assemble(args.mnemonics)
+    print(bytecode.hex())
 
 
 def parse_arg_param_to_int(param: str) -> int:
