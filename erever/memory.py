@@ -70,7 +70,9 @@ class Memory:
         self.extend(offset + 32)
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
-    def to_string(self, line_length: int = 0x20) -> list[str]:
+    def to_string(
+        self, line_length: int = 0x20, memory_range: list[tuple[int, int]] | None = None
+    ) -> list[str]:
         s = bytes(self.memory).hex()
         ret = []
 
@@ -84,16 +86,23 @@ class Memory:
                     ret += b
             return ret
 
-        # TODO: command
-        show_lrs = [(0, len(s))]
+        if memory_range is None:
+            memory_range = [(0, len(s))]
         addrs = []
         hr_indices = []
         adding = False
         for i in range(0, len(s), 2 * line_length):
-            addr = i // 2
-            if any(left <= addr < right for left, right in show_lrs):
+            addr_l = i // 2
+            addr_r = i // 2 + line_length
+            if any(
+                (addr_l <= left < addr_r)
+                or (addr_l < right <= addr_r)
+                or (left <= addr_l < right)
+                or (left < addr_r <= right)
+                for left, right in memory_range
+            ):
                 ret.append(s[i : i + 2 * line_length])
-                addrs.append(hex(addr))
+                addrs.append(hex(addr_l))
                 adding = True
             else:
                 if adding:
@@ -118,7 +127,7 @@ class Memory:
             n_ignore_lines = 0
             prev_right = 0
             show_with_color = False
-            for left, right in show_lrs:
+            for left, right in memory_range:
                 n_ignore_lines += left - prev_right
                 prev_right = right
                 if (

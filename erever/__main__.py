@@ -124,6 +124,14 @@ def main() -> None:
     parser_trace.add_argument("--output-json", action="store_true", default=False)
     parser_trace.add_argument("--return-trace-logs", action="store_true", default=False)
     parser_trace.add_argument("--silent", action="store_true", default=False)
+    parser_trace.add_argument(
+        "--memory-range",
+        nargs=2,
+        action="append",
+        type=int,
+        metavar=("START", "END"),
+        help="Specify memory ranges [START, END). Not applicable to subcontexts. Use multiple times for multiple ranges.",
+    )
     parser_symbolic_trace.add_argument(
         "--show-symbolic-stack", action="store_true", default=False
     )
@@ -227,6 +235,7 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         invocation_only=args.invocation_only,
         silent=args.silent,
         return_trace_logs=args.return_trace_logs,
+        memory_range=args.memory_range,
     )
     if args.output_json:
         print(json.dumps(result.to_dict()))

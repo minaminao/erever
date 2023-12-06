@@ -109,6 +109,7 @@ def disassemble(
     hide_pc: bool = False,
     show_opcodes: bool = False,
     memory_display: MemoryDisplay = MemoryDisplay.OFF,
+    memory_range: list[tuple[int, int]] | None = None,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
 ) -> DisassembleResult:
@@ -698,7 +699,7 @@ def disassemble(
                     "REVERT",
                 ]
             ):
-                lines = memory.to_string()
+                lines = memory.to_string(memory_range=memory_range)
                 for i, line in enumerate(lines):
                     if i == 0:
                         instruction_message += (
