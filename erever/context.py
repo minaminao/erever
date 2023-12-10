@@ -9,6 +9,8 @@ from .storage import Storage
 from .types import AddressInt, Gas
 from .utils import UINT256_MAX, int_to_check_sum_address
 
+StateDict = dict[str, dict[str, str | int | dict[str, str]]]
+
 
 class State:
     w3: Web3 | None
@@ -19,7 +21,12 @@ class State:
     address_access_set: set[AddressInt]
     block_number: int
 
-    def __init__(self, block_number: int, rpc_url: str | None = None) -> None:
+    def __init__(
+        self,
+        block_number: int,
+        rpc_url: str | None = None,
+        state_dict: StateDict | None = None,
+    ) -> None:
         self.w3 = Web3(HTTPProvider(rpc_url)) if rpc_url else None
         self.block_number = block_number
         self.storages = {}
@@ -27,6 +34,37 @@ class State:
         self.codes = {address: b"" for address in PRECOMPILED_CONTRACTS}
         self.address_access_set = set([address for address in PRECOMPILED_CONTRACTS])
         self.balances = {}
+
+        if state_dict:
+            if "balance" in state_dict:
+                for address, balance in state_dict["balance"].items():
+                    address_int = int(address, 16)
+                    if isinstance(balance, str):
+                        balance_int = int(
+                            balance, 16 if balance.startswith("0x") else 10
+                        )
+                    elif isinstance(balance, int):
+                        balance_int = balance
+                    else:
+                        raise Exception("Invalid balance")
+                    assert 0 <= balance_int < UINT256_MAX
+                    self.balances[address_int] = balance_int
+            if "code" in state_dict:
+                for address, code in state_dict["code"].items():
+                    assert isinstance(code, str)
+                    self.codes[int(address, 16)] = bytes.fromhex(
+                        code.replace("0x", "").replace(" ", "")
+                    )
+            if "storage" in state_dict:
+                for address, d in state_dict["storage"].items():
+                    address_int = int(address, 16)
+                    self.storages[address_int] = Storage()
+                    assert isinstance(d, dict)
+                    for slot, value in d.items():
+                        assert isinstance(value, str)
+                        slot_int = int(slot, 16 if slot.startswith("0x") else 10)
+                        value_int = int(value, 16 if value.startswith("0x") else 10)
+                        self.storages[address_int].store(slot_int, value_int)
 
     def get_balance(self, address: AddressInt) -> int:
         if address in self.balances:
@@ -43,11 +81,6 @@ class State:
         self.balances[address] = balance
 
     def get_code(self, address: AddressInt) -> bytes:
-        # TODO: add overwrite feature
-        # overwrite = {0: bytes.fromhex("00")}
-        # if address in overwrite:
-        #     return overwrite[address]
-
         if address in self.codes:
             code = self.codes[address]
             return code
@@ -230,6 +263,7 @@ class Context:
         basefee: int = DEFAULT_BASEFEE,
         gas: int = DEFAULT_GAS,
         rpc_url: str | None = None,
+        state_dict: StateDict | None = None,
     ) -> None:
         self.bytecode = bytecode
         self.address = address
@@ -248,7 +282,7 @@ class Context:
         self.selfbalance = selfbalance
         self.basefee = basefee
         self.gas = gas
-        self.state = State(self.number, rpc_url)
+        self.state = State(self.number, rpc_url, state_dict)
         self.static = False
         self.return_data = b""
         self.depth = 1

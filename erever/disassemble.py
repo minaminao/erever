@@ -435,11 +435,17 @@ def disassemble(
                         code = context.state.get_code(address)
                         stack.push(len(code))
                     case "EXTCODECOPY":
-                        address = input[0]
+                        address, mem_offset, offset, size = input
                         if address not in context.state.address_access_set:
                             context.gas -= GAS_CODE_WARM_COLD_DIFF
                             context.state.address_access_set.add(address)
-                        assert False, "EXTCODECOPY is not supported"
+                        code = context.state.get_code(address)
+                        # TODO: bounds, gas
+                        context.gas -= memory.store(
+                            mem_offset,
+                            code[offset : offset + size]
+                            + b"\x00" * max(0, (offset + size - len(code))),
+                        )
                     case "RETURNDATASIZE":
                         stack.push(len(context.return_data))
                     case "RETURNDATACOPY":
@@ -450,7 +456,19 @@ def disassemble(
                         context.gas -= allocation_gas
                         context.gas -= 3 * ((size + 31) // 32)
                     case "EXTCODEHASH":
-                        assert False, "EXTCODEHASH is not supported"
+                        address = input[0]
+                        if address not in context.state.address_access_set:
+                            context.gas -= GAS_CODE_WARM_COLD_DIFF
+                            context.state.address_access_set.add(address)
+                        # TODO: empty account
+                        code = context.state.get_code(address)
+                        if len(code) == 0:
+                            codehash = 0
+                        else:
+                            codehash = bytes_to_long(
+                                keccak.new(digest_bits=256, data=code).digest()
+                            )
+                        stack.push(codehash)
                     case "BLOCKHASH":
                         assert False, "BLOCKHASH is not supported"
                     case "COINBASE":

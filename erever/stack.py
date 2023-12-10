@@ -15,13 +15,13 @@ class Stack:
         self.updated_indices_for_colorize = []
 
     def push(self, x: int) -> None:
-        assert x <= UINT256_MAX
+        assert 0 <= x <= UINT256_MAX
         self.stack.append(x)
 
         self.updated_indices_for_colorize = [len(self.stack) - 1]
 
     def extend(self, x: list[int]) -> None:
-        assert max(x) <= UINT256_MAX
+        assert 0 <= max(x) <= UINT256_MAX
         self.stack.extend(x)
 
         self.updated_indices_for_colorize = [

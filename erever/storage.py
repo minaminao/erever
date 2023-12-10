@@ -1,3 +1,6 @@
+from .utils import UINT256_MAX
+
+
 class Storage:
     storage: dict[int, int]
 
@@ -8,6 +11,7 @@ class Storage:
         return self.storage.get(key, 0)
 
     def store(self, key: int, value: int) -> None:
+        assert 0 <= value <= UINT256_MAX
         self.storage[key] = value
 
     def has(self, key: int) -> bool:

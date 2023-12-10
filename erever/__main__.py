@@ -182,6 +182,9 @@ def main() -> None:
                     parsed_toml["calldata"] = bytes.fromhex(
                         parsed_toml["calldata"].replace("0x", "").replace(" ", "")
                     )
+                if "state" in parsed_toml:
+                    parsed_toml["state_dict"] = parsed_toml["state"]
+                    del parsed_toml["state"]
                 context = Context(**parsed_toml)
             else:
                 bytecode = open(args.filename).read()
