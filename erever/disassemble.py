@@ -545,21 +545,21 @@ def disassemble(
                         context.gas -= 8 * size
                     case "CREATE":
                         assert False, "CREATE is not supported"
-                    case "CALL" | "STATICCALL":
+                    case "CALL" | "STATICCALL" | "DELEGATECALL":
                         if mnemonic == "CALL":
                             (
                                 gas,
                                 address,
-                                value,
+                                callvalue,
                                 args_offset,
                                 args_size,
                                 ret_offset,
                                 ret_size,
                             ) = input
-                            if context.static and value > 0:
+                            if context.static and callvalue > 0:
                                 raise StaticCallError
                         elif mnemonic == "STATICCALL":
-                            value = 0
+                            callvalue = 0
                             (
                                 gas,
                                 address,
@@ -568,9 +568,21 @@ def disassemble(
                                 ret_offset,
                                 ret_size,
                             ) = input
+                        elif mnemonic == "DELEGATECALL":
+                            callvalue = context.callvalue
+                            (
+                                gas,
+                                address,
+                                args_offset,
+                                args_size,
+                                ret_offset,
+                                ret_size,
+                            ) = input
+                            if context.static:
+                                raise StaticCallError
 
                         memory_cost = memory.extend(ret_offset + ret_size)
-                        if value > 0:
+                        if callvalue > 0:
                             extra_gas = 2300
                             context.gas -= 9000 - 2300  # TODO
                             # TODO: gas for empty account
@@ -581,15 +593,17 @@ def disassemble(
                             context.state.address_access_set.add(address)
                         code = context.state.get_code(address)
                         call_gas_cost = calculate_message_call_gas(
-                            value, gas, context.gas, memory_cost, extra_gas
+                            callvalue, gas, context.gas, memory_cost, extra_gas
                         ).cost
                         context.gas -= call_gas_cost
                         child_context = copy.deepcopy(context)
                         child_context.bytecode = code
                         child_context.gas = call_gas_cost
-                        child_context.address = address
+                        child_context.address = (
+                            address if mnemonic != "DELEGATECALL" else context.address
+                        )
                         child_context.caller = context.address
-                        child_context.callvalue = value
+                        child_context.callvalue = callvalue
                         child_context.calldata = memory.get_as_bytes(
                             args_offset, args_size
                         )
@@ -638,8 +652,6 @@ def disassemble(
                             instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(offset, size)}"
                         return_data = memory.get_as_bytes(offset, size)
                         break_flag = True
-                    case "DELEGATECALL":
-                        assert False, "DELEGATECALL is not supported"
                     case "CREATE2":
                         assert False, "CREATE2 is not supported"
                     case "REVERT":
