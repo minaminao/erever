@@ -203,7 +203,6 @@ class State:
 class Context:
     DEFAULT_BYTECODE = b""
     DEFAULT_ADDRESS = 0xADD2E55
-    DEFAULT_BALANCE = 0
     DEFAULT_ORIGIN = 0
     DEFAULT_CALLER = 0
     DEFAULT_CALLVALUE = 0
@@ -222,7 +221,6 @@ class Context:
     state: State
     bytecode: bytes
     address: int
-    balance: int
     origin: int
     caller: int
     callvalue: int
@@ -247,7 +245,6 @@ class Context:
         self,
         bytecode: bytes = DEFAULT_BYTECODE,
         address: int = DEFAULT_ADDRESS,
-        balance: int = DEFAULT_BALANCE,
         origin: int = DEFAULT_ORIGIN,
         caller: int = DEFAULT_CALLER,
         callvalue: int = DEFAULT_CALLVALUE,
@@ -267,7 +264,6 @@ class Context:
     ) -> None:
         self.bytecode = bytecode
         self.address = address
-        self.balance = balance
         self.origin = origin
         self.caller = caller
         self.callvalue = callvalue
@@ -283,50 +279,45 @@ class Context:
         self.basefee = basefee
         self.gas = gas
         self.state = State(self.number, rpc_url, state_dict)
+
         self.static = False
         self.return_data = b""
         self.depth = 1
         self.steps = 0
 
-    @staticmethod
+    @classmethod
     def from_arg_params_with_bytecode(
-        args: argparse.Namespace, bytecode: str
+        cls, args: argparse.Namespace, bytecode: str
     ) -> "Context":
-        self = Context()
-        self.bytecode = Context.__hex_to_bytes(bytecode)
+        return cls(
+            bytecode=Context.__hex_to_bytes(bytecode),
+            address=args.address,
+            origin=args.origin,
+            caller=args.caller,
+            callvalue=args.callvalue,
+            calldata=Context.__hex_to_bytes(args.calldata),
+            gasprice=args.gasprice,
+            coinbase=args.coinbase,
+            timestamp=args.timestamp,
+            number=args.number,
+            difficulty=args.difficulty,
+            gaslimit=args.gaslimit,
+            chainid=args.chainid,
+            selfbalance=args.selfbalance,
+            basefee=args.basefee,
+            gas=args.gas,
+            rpc_url=args.rpc_url,
+        )
 
-        self.address = args.address
-        self.balance = args.balance
-        self.origin = args.origin
-        self.caller = args.caller
-        self.callvalue = args.callvalue
-        self.calldata = Context.__hex_to_bytes(args.calldata)
-        self.gasprice = args.gasprice
-        self.coinbase = args.coinbase
-        self.timestamp = args.timestamp
-        self.number = args.number
-        self.difficulty = args.difficulty
-        self.gaslimit = args.gaslimit
-        self.chainid = args.chainid
-        self.selfbalance = args.selfbalance
-        self.basefee = args.basefee
-        self.gas = args.gas
-
-        self.state = State(self.number, args.rpc_url)
-        self.static = False
-        self.return_data = b""
-        self.depth = 1
-        self.steps = 0
-        return self
-
-    @staticmethod
-    def from_tx_hash(args: argparse.Namespace) -> "Context":
+    @classmethod
+    def from_tx_hash(cls, args: argparse.Namespace) -> "Context":
         assert args.rpc_url, "RPC URL must be specified"
 
         w3 = Web3(HTTPProvider(args.rpc_url))
         tx: TxData = w3.eth.get_transaction(args.tx)
+        tx_receipt = w3.eth.get_transaction_receipt(args.tx)
 
-        self = Context()
+        self = cls()
         previous_block_number = tx["blockNumber"] - 1  # not includes tx
         current_block_number = tx["blockNumber"]  # includes tx
         self.state = State(previous_block_number, args.rpc_url)
@@ -337,6 +328,7 @@ class Context:
         if "to" not in tx or tx["to"] is None:
             self.bytecode = bytes(tx["input"])
             self.calldata = b""
+            to_address = int(tx_receipt["contractAddress"], 16)
         else:
             to_address = int(tx["to"], 16)
             self.state.address_access_set.add(to_address)
@@ -350,8 +342,7 @@ class Context:
                 self.bytecode = bytes(tx["input"])
                 self.calldata = b""
 
-        self.address = int(tx["to"], 16)
-        self.balance = args.balance
+        self.address = to_address
         self.origin = int(tx["from"], 16)
         self.caller = int(tx["from"], 16)
         self.callvalue = tx["value"]
@@ -373,9 +364,9 @@ class Context:
         self.steps = 0
         return self
 
-    @staticmethod
-    def from_contract_address(args: argparse.Namespace) -> "Context":
-        self = Context()
+    @classmethod
+    def from_contract_address(cls, args: argparse.Namespace) -> "Context":
+        self = cls()
         assert args.rpc_url, "RPC URL must be specified"
 
         w3 = Web3(HTTPProvider(args.rpc_url))
@@ -385,13 +376,13 @@ class Context:
             args.timestamp = w3.eth.get_block(args.number)["timestamp"]
 
         code = w3.eth.get_code(args.contract_address, args.number)
-        balance = w3.eth.get_balance(args.contract_address, args.number)
 
         self.bytecode = bytes(code)
-        assert args.address == Context.DEFAULT_ADDRESS  # TODO: priority
+        assert args.address in [
+            None,
+            Context.DEFAULT_ADDRESS,
+        ], "address must not be specified"
         self.address = Context.__hex_to_int(args.contract_address)
-        assert args.balance == Context.DEFAULT_BALANCE
-        self.balance = balance
 
         self.origin = args.origin
         self.caller = args.caller
