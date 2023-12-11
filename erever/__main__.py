@@ -386,8 +386,8 @@ def main() -> None:
         )
         args.gas = parse_arg_param_to_int(args.gas) if hasattr(args, "gas") else None
         args.memory_range = (
-            [[parse_arg_param_to_int(x) for x in y] for y in args.memory_range]
-            if hasattr(args, "memory_range")
+            [tuple([parse_arg_param_to_int(x) for x in y]) for y in args.memory_range]
+            if hasattr(args, "memory_range") and args.memory_range is not None
             else None
         )
 

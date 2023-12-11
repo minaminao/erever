@@ -2,7 +2,7 @@ from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
 from .types import Gas
-from .utils import decode_printable_with_color
+from .utils import decode_printable_with_color, is_overlapping
 
 
 class Memory:
@@ -73,8 +73,10 @@ class Memory:
     def to_string(
         self, line_length: int = 0x20, memory_range: list[tuple[int, int]] | None = None
     ) -> list[str]:
-        s = bytes(self.memory).hex()
+        memory_length = len(self.memory)
+        memory_hex = bytes(self.memory).hex()
         ret = []
+        ret_lefts = []
 
         def zero_to_gray(s: str) -> str:
             ret = ""
@@ -87,21 +89,19 @@ class Memory:
             return ret
 
         if memory_range is None:
-            memory_range = [(0, len(s))]
+            memory_range = [(0, memory_length)]
         addrs = []
         hr_indices = []
         adding = False
-        for i in range(0, len(s), 2 * line_length):
-            addr_l = i // 2
-            addr_r = i // 2 + line_length
+        for i in range(0, memory_length, line_length):
+            addr_l = i
+            addr_r = i + line_length
             if any(
-                (addr_l <= left < addr_r)
-                or (addr_l < right <= addr_r)
-                or (left <= addr_l < right)
-                or (left < addr_r <= right)
+                is_overlapping(addr_l, addr_r, left, right)
                 for left, right in memory_range
             ):
-                ret.append(s[i : i + 2 * line_length])
+                ret.append(memory_hex[2 * i : 2 * (i + line_length)])
+                ret_lefts.append(i)
                 addrs.append(hex(addr_l))
                 adding = True
             else:
@@ -110,93 +110,104 @@ class Memory:
                 adding = False
 
         decoded_lines = []
-        for i, line in enumerate(ret):
-            decoded_line = decode_printable_with_color(
-                line,
-                i * line_length,
-                self.mstore_l_for_colorize,
-                self.mstore_r_for_colorize,
-            )
-            decoded_lines.append(decoded_line)
 
-        modified = (0, 0)
         if (
             self.mstore_l_for_colorize is not None
             and self.mstore_r_for_colorize is not None
+            and self.mstore_l_for_colorize != self.mstore_r_for_colorize
         ):
-            n_ignore_lines = 0
-            prev_right = 0
-            show_with_color = False
-            for left, right in memory_range:
-                n_ignore_lines += left - prev_right
-                prev_right = right
-                if (
-                    left <= self.mstore_l_for_colorize < right
-                    and left <= self.mstore_r_for_colorize < right
+            _l_i = self.mstore_l_for_colorize // line_length
+            l_j = 2 * (self.mstore_l_for_colorize % line_length)
+            r_i = self.mstore_r_for_colorize // line_length
+            r_j = 2 * (self.mstore_r_for_colorize % line_length)
+
+            if r_j == 0:
+                r_i -= 1
+                r_j = 2 * line_length
+
+            for ret_i in range(0, len(ret)):
+                line_left = ret_lefts[ret_i]
+                line_right = line_left + line_length
+
+                if not is_overlapping(
+                    line_left,
+                    line_right,
+                    self.mstore_l_for_colorize,
+                    self.mstore_r_for_colorize,
                 ):
-                    show_with_color = True
-                    break
-            if show_with_color:
-                l_i = (self.mstore_l_for_colorize - n_ignore_lines) // line_length
-                l_j = 2 * ((self.mstore_l_for_colorize - n_ignore_lines) % line_length)
-                r_i = (self.mstore_r_for_colorize - n_ignore_lines) // line_length
-                r_j = 2 * ((self.mstore_r_for_colorize - n_ignore_lines) % line_length)
-                if (l_i, l_j) != (r_i, r_j):
-                    assert (
-                        0 <= l_i < len(ret)
-                    ), f"{l_i,l_j=}, {len(ret)=}, {r_i,r_j=}, {self.mstore_l_for_colorize=}, {n_ignore_lines=}, {line_length=}"
-                    if r_j == 0:
-                        r_i -= 1
-                        r_j = 2 * line_length
-                    if l_i == r_i:
-                        ret[l_i] = (
-                            zero_to_gray(ret[l_i][:l_j])
-                            + Colors.GREEN
-                            + ret[l_i][l_j:r_j]
-                            + Colors.ENDC
-                            + zero_to_gray(ret[l_i][r_j:])
-                        )
-                    else:
-                        ret[l_i] = (
-                            zero_to_gray(ret[l_i][:l_j])
-                            + Colors.GREEN
-                            + ret[l_i][l_j:]
-                            + Colors.ENDC
-                        )
-                        for i in range(l_i + 1, r_i):
-                            ret[i] = Colors.GREEN + ret[i] + Colors.ENDC
-                        ret[r_i] = (
-                            Colors.GREEN
-                            + ret[r_i][:r_j]
-                            + Colors.ENDC
-                            + zero_to_gray(ret[r_i][r_j:])
-                        )
-                    modified = (l_i, r_i + 1)
-                    self.mstore_l_for_colorize = None
-                    self.mstore_r_for_colorize = None
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i]))
+                    ret[ret_i] = zero_to_gray(ret[ret_i])
+                    continue
+
+                if (
+                    self.mstore_l_for_colorize <= line_left
+                    and line_right <= self.mstore_r_for_colorize
+                ):
+                    decoded_lines.append(
+                        decode_printable_with_color(ret[ret_i], 0, line_length)
+                    )
+                    ret[ret_i] = Colors.GREEN + ret[ret_i] + Colors.ENDC
+                elif (
+                    line_left < self.mstore_l_for_colorize
+                    and self.mstore_r_for_colorize < line_right
+                ):
+                    decoded_lines.append(
+                        decode_printable_with_color(ret[ret_i], l_j // 2, r_j // 2)
+                    )
+                    ret[ret_i] = (
+                        zero_to_gray(ret[ret_i][:l_j])
+                        + Colors.GREEN
+                        + ret[ret_i][l_j:r_j]
+                        + Colors.ENDC
+                        + zero_to_gray(ret[ret_i][r_j:])
+                    )
+
+                elif (
+                    line_left <= self.mstore_l_for_colorize
+                    and line_right < self.mstore_r_for_colorize
+                ):
+                    decoded_lines.append(
+                        decode_printable_with_color(ret[ret_i], l_j // 2, line_length)
+                    )
+                    ret[ret_i] = (
+                        zero_to_gray(ret[ret_i][:l_j])
+                        + Colors.GREEN
+                        + ret[ret_i][l_j:]
+                        + Colors.ENDC
+                    )
+                elif (
+                    self.mstore_l_for_colorize <= line_left
+                    and self.mstore_r_for_colorize < line_right
+                ):
+                    decoded_lines.append(
+                        decode_printable_with_color(ret[ret_i], 0, r_j // 2)
+                    )
+                    ret[ret_i] = (
+                        Colors.GREEN
+                        + ret[ret_i][:r_j]
+                        + Colors.ENDC
+                        + zero_to_gray(ret[ret_i][r_j:])
+                    )
+                else:
+                    assert False, f"Unreachable {line_left} {line_right} {self.mstore_l_for_colorize} {self.mstore_r_for_colorize}"
+            self.mstore_l_for_colorize = None
+            self.mstore_r_for_colorize = None
+        else:
+            for i in range(0, len(ret)):
+                decoded_lines.append(decode_printable_with_color(ret[i]))
+                ret[i] = zero_to_gray(ret[i])
 
         # TODO: cleanup
         new_ret = []
         show_decode = True
+        assert len(ret) == len(decoded_lines), f"{len(ret)} != {len(decoded_lines)}"
         for i in range(0, len(ret)):
             if i in hr_indices:
                 new_ret.append("-" * 10)
-            if modified[0] <= i < modified[1]:
-                if show_decode:
-                    new_ret.append(ret[i] + " | " + decoded_lines[i] + " | " + addrs[i])
-                else:
-                    new_ret.append(ret[i] + " | " + addrs[i])
+            if show_decode:
+                new_ret.append(ret[i] + " | " + decoded_lines[i] + " | " + addrs[i])
             else:
-                if show_decode:
-                    new_ret.append(
-                        zero_to_gray(ret[i])
-                        + " | "
-                        + decoded_lines[i]
-                        + " | "
-                        + addrs[i]
-                    )
-                else:
-                    new_ret.append(zero_to_gray(ret[i]) + " | " + addrs[i])
+                new_ret.append(ret[i] + " | " + addrs[i])
         ret = new_ret
 
         return ret
