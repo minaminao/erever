@@ -1,9 +1,11 @@
 import string
 
+import rlp
 from eth_typing import ChecksumAddress
 from web3 import Web3
 
 from .colors import Colors
+from .types import AddressInt
 
 UINT256_MAX = (1 << 256) - 1
 SIGN_MASK = 1 << 255
@@ -83,3 +85,9 @@ def int_to_check_sum_address(x: int) -> ChecksumAddress:
 
 def is_overlapping(l1: int, r1: int, l2: int, r2: int) -> bool:
     return max(l1, l2) < min(r1, r2)
+
+
+def compute_contract_address(address: AddressInt, nonce: int) -> AddressInt:
+    return int.from_bytes(
+        Web3.keccak(rlp.encode([address.to_bytes(20, "big"), nonce]))[-20:], "big"
+    )

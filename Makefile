@@ -12,10 +12,10 @@ lint-fix:
 	ruff check . --fix
 
 type-check:
-	mypy .
+	mypy . --ignore-missing-imports
 
 type-check-strict:
-	mypy . --strict
+	mypy . --strict --ignore-missing-imports
 
 test:
 	pytest

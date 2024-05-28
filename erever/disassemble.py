@@ -17,6 +17,7 @@ from .utils import (
     SIGN_MASK,
     TAB_SIZE,
     UINT256_MAX,
+    compute_contract_address,
     int256,
     is_invocation_mnemonic,
     pad,
@@ -544,7 +545,57 @@ def disassemble(
                         context.gas -= memory.extend(offset + size)
                         context.gas -= 8 * size
                     case "CREATE":
-                        assert False, "CREATE is not supported"
+                        value, offset, size = input
+                        contract_address = compute_contract_address(
+                            context.address, 0
+                        )  # TODO: fix
+
+                        child_context = copy.deepcopy(context)
+                        child_context.bytecode = memory.get_as_bytes(offset, size)
+                        # child_context.gas = call_gas_cost # TODO
+                        child_context.address = contract_address
+                        child_context.caller = context.address
+                        child_context.callvalue = value
+                        # child_context.calldata = memory.get_as_bytes(
+                        #     args_offset, args_size
+                        # )
+                        child_context.calldata = b""
+                        child_context.return_data = b""
+                        child_context.depth += 1
+
+                        result = disassemble(
+                            context=child_context,
+                            trace=trace,
+                            entrypoint=0,
+                            max_steps=max_steps,
+                            decode_stack=decode_stack,
+                            ignore_stack_underflow=ignore_stack_underflow,
+                            silent=silent,
+                            hide_pc=hide_pc,
+                            show_opcodes=show_opcodes,
+                            memory_display=memory_display,
+                            invocation_only=invocation_only,
+                            return_trace_logs=return_trace_logs,
+                        )
+
+                        if result.success:
+                            context.gas += child_context.gas
+                            context.state = child_context.state
+                            # result_return_data = result.return_data[
+                            #     :ret_size
+                            # ] + b"\x00" * max(0, ret_size - len(result.return_data))
+                            # memory.store(ret_offset, result_return_data)
+                            # context.return_data = result.return_data
+                            context.state.set_code(contract_address, result.return_data)
+                        else:
+                            context.state.original_storages = (
+                                child_context.state.original_storages
+                            )
+                            context.state.codes = child_context.state.codes
+                        context.steps = child_context.steps
+
+                        stack.push(contract_address if result.success else 0)
+                        trace_logs.extend(result.trace_logs)
                     case "CALL" | "STATICCALL" | "DELEGATECALL":
                         if mnemonic == "CALL":
                             (

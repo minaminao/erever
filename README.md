@@ -345,3 +345,15 @@ $ erever assemble "PUSH0 PUSH1 0x10"
 
 ### Tips
 - It is useful in combination with commands such as `less -R`.
+
+## Development
+
+### Test
+
+The tests are written using pytest and can be found in the `tests` directory.
+
+To run the tests, execute the following command:
+
+```
+make test
+```
