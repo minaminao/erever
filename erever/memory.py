@@ -163,8 +163,8 @@ class Memory:
                     )
 
                 elif (
-                    line_left <= self.mstore_l_for_colorize
-                    and line_right < self.mstore_r_for_colorize
+                    line_left < self.mstore_l_for_colorize
+                    and line_right <= self.mstore_r_for_colorize
                 ):
                     decoded_lines.append(
                         decode_printable_with_color(ret[ret_i], l_j // 2, line_length)
