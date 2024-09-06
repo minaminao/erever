@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import sys
-
 import tomllib
 
 from .assemble import assemble
@@ -111,7 +110,7 @@ def main() -> None:
     parser_assemble.set_defaults(handler=command_assemble)
 
     def add_common_arguments_for_data(
-        parser: argparse.ArgumentParser
+        parser: argparse.ArgumentParser,
     ) -> argparse._ArgumentGroup:
         group = parser.add_argument_group("data options")
 
@@ -142,7 +141,7 @@ def main() -> None:
         return group
 
     def add_common_arguments_for_display(
-        parser: argparse.ArgumentParser
+        parser: argparse.ArgumentParser,
     ) -> argparse._ArgumentGroup:
         group = parser.add_argument_group("display options")
         group.add_argument(
@@ -154,7 +153,7 @@ def main() -> None:
         return group
 
     def add_common_arguments_for_constructing_context(
-        parser: argparse.ArgumentParser
+        parser: argparse.ArgumentParser,
     ) -> argparse._ArgumentGroup:
         group = parser.add_argument_group("context options")
 

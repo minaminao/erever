@@ -49,7 +49,7 @@ def disassemble_mermaid(
             start_addresses.append(i + 1)
 
     def disassemble_block(
-        start_address: int
+        start_address: int,
     ) -> tuple[bool, int, ControlType, list[str]]:
         """
         return is_valid_block, end_address, control_type, instructions

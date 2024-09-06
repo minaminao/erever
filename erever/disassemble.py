@@ -530,6 +530,9 @@ def disassemble(
                         stack.push(context.gas)
                     case "JUMPDEST":
                         pass
+                    case "MCOPY":
+                        # TODO: strict
+                        memory.store(input[0], memory.get_as_bytes(input[1], input[2]))
                     case "PUSH":
                         stack.push(push_v)
                     case "DUP":
@@ -765,6 +768,7 @@ def disassemble(
                     "MLOAD",
                     "MSTORE",
                     "MSTORE8",
+                    "MCOPY",
                     "CALL",
                     "STATICCALL",
                     "CALLCODE",
