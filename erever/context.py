@@ -40,9 +40,7 @@ class State:
                 for address, balance in state_dict["balance"].items():
                     address_int = int(address, 16)
                     if isinstance(balance, str):
-                        balance_int = int(
-                            balance, 16 if balance.startswith("0x") else 10
-                        )
+                        balance_int = int(balance, 16 if balance.startswith("0x") else 10)
                     elif isinstance(balance, int):
                         balance_int = balance
                     else:
@@ -52,9 +50,7 @@ class State:
             if "code" in state_dict:
                 for address, code in state_dict["code"].items():
                     assert isinstance(code, str)
-                    self.codes[int(address, 16)] = bytes.fromhex(
-                        code.replace("0x", "").replace(" ", "")
-                    )
+                    self.codes[int(address, 16)] = bytes.fromhex(code.replace("0x", "").replace(" ", ""))
             if "storage" in state_dict:
                 for address, d in state_dict["storage"].items():
                     address_int = int(address, 16)
@@ -70,9 +66,7 @@ class State:
         if address in self.balances:
             return self.balances[address]
         elif self.w3:
-            self.balances[address] = self.w3.eth.get_balance(
-                int_to_check_sum_address(address), self.block_number
-            )
+            self.balances[address] = self.w3.eth.get_balance(int_to_check_sum_address(address), self.block_number)
             return self.balances[address]
         else:
             return 0
@@ -86,11 +80,7 @@ class State:
             return code
 
         if self.w3:
-            code = bytes(
-                self.w3.eth.get_code(
-                    int_to_check_sum_address(address), self.block_number
-                )
-            )
+            code = bytes(self.w3.eth.get_code(int_to_check_sum_address(address), self.block_number))
             self.codes[address] = code
             return code
 
@@ -115,9 +105,7 @@ class State:
                 original_storage.store(
                     slot,
                     bytes_to_long(
-                        self.w3.eth.get_storage_at(
-                            int_to_check_sum_address(address), slot, self.block_number
-                        )
+                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
                     ),
                 )
             else:
@@ -131,9 +119,7 @@ class State:
 
         return (current_value, 0 if warm else GAS_WARM_COLD_DIFF)
 
-    def set_storage_at(
-        self, address: AddressInt, slot: int, value: int
-    ) -> tuple[Gas, Gas]:
+    def set_storage_at(self, address: AddressInt, slot: int, value: int) -> tuple[Gas, Gas]:
         if address not in self.storages:
             self.storages[address] = Storage()
         if address not in self.original_storages:
@@ -147,9 +133,7 @@ class State:
                 original_storage.store(
                     slot,
                     bytes_to_long(
-                        self.w3.eth.get_storage_at(
-                            int_to_check_sum_address(address), slot, self.block_number
-                        )
+                        self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
                     ),
                 )
             else:
@@ -286,9 +270,7 @@ class Context:
         self.steps = 0
 
     @classmethod
-    def from_arg_params_with_bytecode(
-        cls, args: argparse.Namespace, bytecode: str
-    ) -> "Context":
+    def from_arg_params_with_bytecode(cls, args: argparse.Namespace, bytecode: str) -> "Context":
         return cls(
             bytecode=Context.__hex_to_bytes(bytecode),
             address=args.address,

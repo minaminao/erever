@@ -10,9 +10,7 @@ from .opcodes import OPCODES
 from .symbolic_stack import SymbolicStack
 from .utils import TAB_SIZE, UINT256_MAX, pad
 
-Gadget = tuple[
-    int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]
-]
+Gadget = tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]
 
 
 def disassemble_symbolic(
@@ -75,13 +73,9 @@ def disassemble_symbolic(
             )
             if state.jumped_from is not None:
                 if state.jumped:
-                    print(
-                        f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})"
-                    )
+                    print(f" ({Colors.GREEN}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
                 else:
-                    print(
-                        f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})"
-                    )
+                    print(f" ({Colors.RED}<- {pad(hex(state.jumped_from), LOCATION_PAD_N)}{Colors.ENDC})")
                 for condition, pc, is_met in state.conditions:
                     if is_met:
                         print(
@@ -151,9 +145,7 @@ def disassemble_symbolic(
                     | "DELEGATECALL"
                     | "CREATE2"
                 ):
-                    state.data_changes.append(
-                        Node(mnemonic, input, mnemonic_num, stack_input_count)
-                    )
+                    state.data_changes.append(Node(mnemonic, input, mnemonic_num, stack_input_count))
                     assert stack_output_count <= 1
                     if stack_output_count == 1:
                         stack.push(Node(mnemonic, input))
@@ -204,9 +196,7 @@ def disassemble_symbolic(
                 print()
 
                 if show_symbolic_stack:
-                    print(
-                        f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}"
-                    )
+                    print(f"{'stack'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{stack.to_string()}")
 
             if mnemonic == "JUMP" and input[0].type != "uint256":
                 gadget_list.append(

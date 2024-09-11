@@ -54,11 +54,7 @@ def decode_printable_with_color(
         printable = c in PRINTABLE
         if not printable:
             c = "."
-        if (
-            l_for_colorize is not None
-            and r_for_colorize is not None
-            and l_for_colorize <= i // 2 < r_for_colorize
-        ):
+        if l_for_colorize is not None and r_for_colorize is not None and l_for_colorize <= i // 2 < r_for_colorize:
             c = Colors.GREEN + c + Colors.ENDC
         elif not printable:
             c = Colors.GRAY + "." + Colors.ENDC
@@ -88,6 +84,4 @@ def is_overlapping(l1: int, r1: int, l2: int, r2: int) -> bool:
 
 
 def compute_contract_address(address: AddressInt, nonce: int) -> AddressInt:
-    return int.from_bytes(
-        Web3.keccak(rlp.encode([address.to_bytes(20, "big"), nonce]))[-20:], "big"
-    )
+    return int.from_bytes(Web3.keccak(rlp.encode([address.to_bytes(20, "big"), nonce]))[-20:], "big")

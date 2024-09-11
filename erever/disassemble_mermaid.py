@@ -14,9 +14,7 @@ class ControlType(Enum):
     BAD = -1
 
 
-def disassemble_mermaid(
-    context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX
-) -> None:
+def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int = UINT256_MAX) -> None:
     """
     ブロックの開始
     - 0x00
@@ -106,9 +104,7 @@ def disassemble_mermaid(
 
     graph = ""
     for start_address in start_addresses:
-        is_valid_block, end_address, control_type, instructions = disassemble_block(
-            start_address
-        )
+        is_valid_block, end_address, control_type, instructions = disassemble_block(start_address)
         if not is_valid_block:
             continue
         block = "\\n".join(instructions)
@@ -127,11 +123,7 @@ def disassemble_mermaid(
         except Exception:
             error = True
 
-        block_id = (
-            pad(hex(start_address), LOCATION_PAD_N)
-            if start_address != entrypoint
-            else "START"
-        )
+        block_id = pad(hex(start_address), LOCATION_PAD_N) if start_address != entrypoint else "START"
         if error:
             graph += f"{block_id}({block}) --> ERROR\n"
             continue

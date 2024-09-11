@@ -70,9 +70,7 @@ class Memory:
         self.extend(offset + 32)
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
-    def to_string(
-        self, line_length: int = 0x20, memory_range: list[tuple[int, int]] | None = None
-    ) -> list[str]:
+    def to_string(self, line_length: int = 0x20, memory_range: list[tuple[int, int]] | None = None) -> list[str]:
         memory_length = len(self.memory)
         memory_hex = bytes(self.memory).hex()
         ret = []
@@ -96,10 +94,7 @@ class Memory:
         for i in range(0, memory_length, line_length):
             addr_l = i
             addr_r = i + line_length
-            if any(
-                is_overlapping(addr_l, addr_r, left, right)
-                for left, right in memory_range
-            ):
+            if any(is_overlapping(addr_l, addr_r, left, right) for left, right in memory_range):
                 ret.append(memory_hex[2 * i : 2 * (i + line_length)])
                 ret_lefts.append(i)
                 addrs.append(hex(addr_l))
@@ -139,21 +134,11 @@ class Memory:
                     ret[ret_i] = zero_to_gray(ret[ret_i])
                     continue
 
-                if (
-                    self.mstore_l_for_colorize <= line_left
-                    and line_right <= self.mstore_r_for_colorize
-                ):
-                    decoded_lines.append(
-                        decode_printable_with_color(ret[ret_i], 0, line_length)
-                    )
+                if self.mstore_l_for_colorize <= line_left and line_right <= self.mstore_r_for_colorize:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, line_length))
                     ret[ret_i] = Colors.GREEN + ret[ret_i] + Colors.ENDC
-                elif (
-                    line_left < self.mstore_l_for_colorize
-                    and self.mstore_r_for_colorize < line_right
-                ):
-                    decoded_lines.append(
-                        decode_printable_with_color(ret[ret_i], l_j // 2, r_j // 2)
-                    )
+                elif line_left < self.mstore_l_for_colorize and self.mstore_r_for_colorize < line_right:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, r_j // 2))
                     ret[ret_i] = (
                         zero_to_gray(ret[ret_i][:l_j])
                         + Colors.GREEN
@@ -162,34 +147,16 @@ class Memory:
                         + zero_to_gray(ret[ret_i][r_j:])
                     )
 
-                elif (
-                    line_left < self.mstore_l_for_colorize
-                    and line_right <= self.mstore_r_for_colorize
-                ):
-                    decoded_lines.append(
-                        decode_printable_with_color(ret[ret_i], l_j // 2, line_length)
-                    )
-                    ret[ret_i] = (
-                        zero_to_gray(ret[ret_i][:l_j])
-                        + Colors.GREEN
-                        + ret[ret_i][l_j:]
-                        + Colors.ENDC
-                    )
-                elif (
-                    self.mstore_l_for_colorize <= line_left
-                    and self.mstore_r_for_colorize < line_right
-                ):
-                    decoded_lines.append(
-                        decode_printable_with_color(ret[ret_i], 0, r_j // 2)
-                    )
-                    ret[ret_i] = (
-                        Colors.GREEN
-                        + ret[ret_i][:r_j]
-                        + Colors.ENDC
-                        + zero_to_gray(ret[ret_i][r_j:])
-                    )
+                elif line_left < self.mstore_l_for_colorize and line_right <= self.mstore_r_for_colorize:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, line_length))
+                    ret[ret_i] = zero_to_gray(ret[ret_i][:l_j]) + Colors.GREEN + ret[ret_i][l_j:] + Colors.ENDC
+                elif self.mstore_l_for_colorize <= line_left and self.mstore_r_for_colorize < line_right:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, r_j // 2))
+                    ret[ret_i] = Colors.GREEN + ret[ret_i][:r_j] + Colors.ENDC + zero_to_gray(ret[ret_i][r_j:])
                 else:
-                    assert False, f"Unreachable {line_left} {line_right} {self.mstore_l_for_colorize} {self.mstore_r_for_colorize}"
+                    assert (
+                        False
+                    ), f"Unreachable {line_left} {line_right} {self.mstore_l_for_colorize} {self.mstore_r_for_colorize}"
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
         else:
@@ -213,9 +180,7 @@ class Memory:
         return ret
 
     def calculate_gas_extend_memory(self, size: int) -> Gas:
-        return Memory.calculate_memory_gas_cost(
-            size
-        ) - Memory.calculate_memory_gas_cost(len(self.memory))
+        return Memory.calculate_memory_gas_cost(size) - Memory.calculate_memory_gas_cost(len(self.memory))
 
     @staticmethod
     def calculate_memory_gas_cost(size: int) -> Gas:

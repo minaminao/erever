@@ -41,3 +41,6 @@ fmt = "rye fmt"
 "type-check" = "rye run mypy ."
 "type-check-strict" = "rye run mypy . --strict"
 precommit = { chain = ["fix", "type-check-strict"] }
+
+[tool.ruff]
+line-length = 120

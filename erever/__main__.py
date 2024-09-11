@@ -144,12 +144,8 @@ def main() -> None:
         parser: argparse.ArgumentParser,
     ) -> argparse._ArgumentGroup:
         group = parser.add_argument_group("display options")
-        group.add_argument(
-            "--show-opcodes", action="store_true", default=False, help="Show opcodes"
-        )
-        group.add_argument(
-            "--hide-pc", action="store_true", default=False, help="Hide PC"
-        )
+        group.add_argument("--show-opcodes", action="store_true", default=False, help="Show opcodes")
+        group.add_argument("--hide-pc", action="store_true", default=False, help="Hide PC")
         return group
 
     def add_common_arguments_for_constructing_context(
@@ -256,9 +252,7 @@ def main() -> None:
     add_common_arguments_for_data(parser_gadget)
     add_common_arguments_for_display(parser_disassemble)
     trace_display_group = add_common_arguments_for_display(parser_trace)
-    symbolic_trace_display_group = add_common_arguments_for_display(
-        parser_symbolic_trace
-    )
+    symbolic_trace_display_group = add_common_arguments_for_display(parser_symbolic_trace)
     add_common_arguments_for_display(parser_mermaid)
     add_common_arguments_for_display(parser_gadget)
     add_common_arguments_for_constructing_context(parser_trace)
@@ -266,27 +260,21 @@ def main() -> None:
     add_common_arguments_for_constructing_context(parser_mermaid)
     add_common_arguments_for_constructing_context(parser_gadget)
 
-    trace_display_group.add_argument(
-        "--decode-stack", action="store_true", default=False, help="Decode stack items"
-    )
+    trace_display_group.add_argument("--decode-stack", action="store_true", default=False, help="Decode stack items")
     trace_display_group.add_argument(
         "--invocation-only",
         action="store_true",
         default=False,
         help="Display only invocation",
     )
-    trace_display_group.add_argument(
-        "--output-json", action="store_true", default=False, help="Output trace as JSON"
-    )
+    trace_display_group.add_argument("--output-json", action="store_true", default=False, help="Output trace as JSON")
     trace_display_group.add_argument(
         "--return-trace-logs",
         action="store_true",
         default=False,
         help="Return trace logs",
     )
-    trace_display_group.add_argument(
-        "--silent", action="store_true", default=False, help="Don't print anything"
-    )
+    trace_display_group.add_argument("--silent", action="store_true", default=False, help="Don't print anything")
     trace_display_group.add_argument(
         "--memory-display",
         type=MemoryDisplay,
@@ -314,9 +302,7 @@ def main() -> None:
         default=False,
         help="Hide instructions which do not output to the stack",
     )
-    parser_assemble.add_argument(
-        "mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble"
-    )
+    parser_assemble.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble")
 
     args = parser.parse_args()
 
@@ -333,56 +319,20 @@ def main() -> None:
         args.max_steps = parse_arg_param_to_int(args.max_steps)
 
         args.calldata = args.calldata if hasattr(args, "calldata") else ""
-        args.address = (
-            parse_arg_param_to_int(args.address) if hasattr(args, "address") else None
-        )
-        args.balance = (
-            parse_arg_param_to_int(args.balance) if hasattr(args, "balance") else None
-        )
-        args.origin = (
-            parse_arg_param_to_int(args.origin) if hasattr(args, "origin") else None
-        )
-        args.caller = (
-            parse_arg_param_to_int(args.caller) if hasattr(args, "caller") else None
-        )
-        args.callvalue = (
-            parse_arg_param_to_int(args.callvalue)
-            if hasattr(args, "callvalue")
-            else None
-        )
-        args.gasprice = (
-            parse_arg_param_to_int(args.gasprice) if hasattr(args, "gasprice") else None
-        )
-        args.coinbase = (
-            parse_arg_param_to_int(args.coinbase) if hasattr(args, "coinbase") else None
-        )
-        args.timestamp = (
-            parse_arg_param_to_int(args.timestamp)
-            if hasattr(args, "timestamp")
-            else None
-        )
-        args.number = (
-            parse_arg_param_to_int(args.number) if hasattr(args, "number") else None
-        )
-        args.difficulty = (
-            parse_arg_param_to_int(args.difficulty)
-            if hasattr(args, "difficulty")
-            else None
-        )
-        args.gaslimit = (
-            parse_arg_param_to_int(args.gaslimit) if hasattr(args, "gaslimit") else None
-        )
-        args.chainid = (
-            parse_arg_param_to_int(args.chainid) if hasattr(args, "chainid") else None
-        )
-        args.selfbalance = (
-            parse_arg_param_to_int(args.selfbalance)
-            if hasattr(args, "selfbalance")
-            else None
-        )
-        args.basefee = (
-            parse_arg_param_to_int(args.basefee) if hasattr(args, "basefee") else None
-        )
+        args.address = parse_arg_param_to_int(args.address) if hasattr(args, "address") else None
+        args.balance = parse_arg_param_to_int(args.balance) if hasattr(args, "balance") else None
+        args.origin = parse_arg_param_to_int(args.origin) if hasattr(args, "origin") else None
+        args.caller = parse_arg_param_to_int(args.caller) if hasattr(args, "caller") else None
+        args.callvalue = parse_arg_param_to_int(args.callvalue) if hasattr(args, "callvalue") else None
+        args.gasprice = parse_arg_param_to_int(args.gasprice) if hasattr(args, "gasprice") else None
+        args.coinbase = parse_arg_param_to_int(args.coinbase) if hasattr(args, "coinbase") else None
+        args.timestamp = parse_arg_param_to_int(args.timestamp) if hasattr(args, "timestamp") else None
+        args.number = parse_arg_param_to_int(args.number) if hasattr(args, "number") else None
+        args.difficulty = parse_arg_param_to_int(args.difficulty) if hasattr(args, "difficulty") else None
+        args.gaslimit = parse_arg_param_to_int(args.gaslimit) if hasattr(args, "gaslimit") else None
+        args.chainid = parse_arg_param_to_int(args.chainid) if hasattr(args, "chainid") else None
+        args.selfbalance = parse_arg_param_to_int(args.selfbalance) if hasattr(args, "selfbalance") else None
+        args.basefee = parse_arg_param_to_int(args.basefee) if hasattr(args, "basefee") else None
         args.gas = parse_arg_param_to_int(args.gas) if hasattr(args, "gas") else None
         args.memory_range = (
             [tuple([parse_arg_param_to_int(x) for x in y]) for y in args.memory_range]
@@ -396,13 +346,9 @@ def main() -> None:
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
                 if "bytecode" in parsed_toml:
-                    parsed_toml["bytecode"] = bytes.fromhex(
-                        parsed_toml["bytecode"].replace("0x", "").replace(" ", "")
-                    )
+                    parsed_toml["bytecode"] = bytes.fromhex(parsed_toml["bytecode"].replace("0x", "").replace(" ", ""))
                 if "calldata" in parsed_toml:
-                    parsed_toml["calldata"] = bytes.fromhex(
-                        parsed_toml["calldata"].replace("0x", "").replace(" ", "")
-                    )
+                    parsed_toml["calldata"] = bytes.fromhex(parsed_toml["calldata"].replace("0x", "").replace(" ", ""))
                 if "state" in parsed_toml:
                     parsed_toml["state_dict"] = parsed_toml["state"]
                     del parsed_toml["state"]
