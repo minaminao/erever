@@ -85,13 +85,12 @@ $ erever disassemble -b "70806011526000526070600e536023600ef38060115260005260706
 0x1e: PUSH1 0x23
 0x20: PUSH1 0x0e
 0x22: RETURN
-
-CBOR: Not found
 ```
 
 The `-b` option specifies the byte code.
 At the beginning of each line, the offset of the bytecode is displayed.
 
+<!-- 
 Additionally, as metadata, CBOR decoding is also performed.
 In this bytecode, since CBOR does not exist, `CBOR: Not found` will be displayed.
 For more information about CBOR, refer to [Contract Metadata](https://docs.soliditylang.org/en/v0.8.23/metadata.html) in the Solidity documentation.
@@ -111,7 +110,7 @@ CBOR: solc = 0.8.23
 ```
 
 In addition to decoding CBOR data, if IPFS data is included in the metadata, its content is automatically fetched and displayed.
-If the content is lengthy, it will be abbreviated with `...`.
+If the content is lengthy, it will be abbreviated with `...`. -->
 
 You can also use RPC to disassemble a bytecode on the blockchain.
 For example, if you want to disassemble the bytecode of [Beacon Deposit Contract](https://etherscan.io/address/0x00000000219ab540356cbb839cbe05303d7705fa) on the Ethereum mainnet, you can use the following command:

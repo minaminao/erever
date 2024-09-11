@@ -5,7 +5,6 @@ import sys
 import tomllib
 
 from .assemble import assemble
-from .cbor import inspect_cbor
 from .colors import Colors
 from .context import Context
 from .disassemble import MemoryDisplay, disassemble
@@ -377,7 +376,8 @@ def command_disassemble(args: argparse.Namespace, context: Context) -> None:
         show_opcodes=args.show_opcodes,
     )
 
-    inspect_cbor(context.bytecode)
+    # TODO: enable
+    # inspect_cbor(context.bytecode)
 
 
 def command_trace(args: argparse.Namespace, context: Context) -> None:
