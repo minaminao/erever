@@ -7,5 +7,5 @@ samples
 .ruff_cache
 .pytest_cache
 
-poetry.lock
+*.lock
 venv
