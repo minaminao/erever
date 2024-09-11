@@ -7,5 +7,4 @@ samples
 .ruff_cache
 .pytest_cache
 
-*.lock
 venv
