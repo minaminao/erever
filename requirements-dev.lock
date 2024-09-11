@@ -105,7 +105,7 @@ regex==2024.9.11
     # via parsimonious
 requests==2.32.3
     # via web3
-rlp==4.0.1
+rlp @ git+https://github.com/minaminao/pyrlp.git@ee241a9ca554c87e3b38df9f441fa5eea595d994
     # via erever
     # via eth-account
     # via eth-rlp

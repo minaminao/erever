@@ -310,7 +310,8 @@ class Context:
         if "to" not in tx or tx["to"] is None:
             self.bytecode = bytes(tx["input"])
             self.calldata = b""
-            to_address = int(tx_receipt["contractAddress"], 16)
+            assert tx_receipt["contractAddress"] is not None
+            to_address = int(str(tx_receipt["contractAddress"]), 16)
         else:
             to_address = int(tx["to"], 16)
             self.state.address_access_set.add(to_address)

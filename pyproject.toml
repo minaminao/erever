@@ -6,33 +6,29 @@ authors = [{ name = "minaminao", email = "minaminaoy@gmail.com" }]
 readme = "README.md"
 license = "Apache-2.0"
 dependencies = [
-    "pycryptodome>=3.19.0",
-    "web3>=6.11.4",
+    "pycryptodome>=3.20.0",
+    "web3>=7.2.0",
     "aiohttp>=3.9.1",
-    "setuptools>68.2.2",
+    "setuptools>=74.1.2",
     "cbor2>=5.5.1",
     "base58>=2.1.1",
-    "rlp>=3.0.0",
+    "rlp @ git+https://github.com/minaminao/pyrlp.git@typed",
 ]
 requires-python = ">=3.12"
 
 [project.scripts]
 erever = "erever.__main__:main"
 
-# [tool.poetry.group.test.dependencies]
-# pytest = "^7.4.0"
-
-# [tool.poetry.group.dev.dependencies]
-# isort = "^5.12.0"
-# ruff = "^0.0.284"
-# mypy = "^1.7.1"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.rye]
-dev-dependencies = ["pytest>=8.3.3", "mypy>=1.11.2", "isort>=5.13.2"]
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "mypy>=1.11.2",
+    "isort>=5.13.2",
+]
 
 [tool.rye.scripts]
 fix = { chain = ["fmt", "lint:fix"] }
@@ -41,6 +37,9 @@ fmt = "rye fmt"
 "type-check" = "rye run mypy ."
 "type-check-strict" = "rye run mypy . --strict"
 precommit = { chain = ["fix", "type-check-strict"] }
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 line-length = 120
