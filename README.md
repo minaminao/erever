@@ -17,6 +17,8 @@ If you encounter any issues or have suggestions for improvements while using ere
   - [Find JOP Gadgets](#find-jop-gadgets)
   - [Assemble](#assemble)
   - [Tips](#tips)
+- [Development](#development)
+  - [Test](#test)
 
 ## Writeups with erever
 - [Paradigm CTF 2022: SOURCECODE](https://github.com/minaminao/ctf-blockchain/tree/main/src/ParadigmCTF2022#sourcecode)
