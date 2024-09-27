@@ -1,7 +1,7 @@
 [project]
 name = "erever"
 version = "0.1.0"
-description = ""
+description = "A CLI tool for reversing EVM bytecodes, optimized for solving CTF challenges. Currently experimental and developed for personal use."
 authors = [{ name = "minaminao", email = "minaminaoy@gmail.com" }]
 readme = "README.md"
 license = "Apache-2.0"

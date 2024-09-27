@@ -12,4 +12,3 @@ RUN apk update && apk add \
 COPY . /erever
 WORKDIR /erever
 RUN pip install .
-
