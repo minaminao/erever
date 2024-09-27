@@ -354,5 +354,5 @@ The tests are written using pytest and can be found in the `tests` directory.
 To run the tests, execute the following command:
 
 ```
-make test
+rye test
 ```
