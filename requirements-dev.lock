@@ -48,7 +48,7 @@ pytest==8.3.3
 pyunormalize==15.1.0
 regex==2024.9.11
 requests==2.32.3
-rlp @ git+https://github.com/minaminao/pyrlp.git@ee241a9ca554c87e3b38df9f441fa5eea595d994
+rlp==4.0.1
 setuptools==74.1.2
 toolz==0.12.1
 types-requests==2.32.0.20240907

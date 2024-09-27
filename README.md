@@ -35,7 +35,7 @@ If you encounter any issues or have suggestions for improvements while using ere
 To install erever, simply run the following command:
 
 ```
-pip install git+https://github.com/minaminao/erever.git
+pip install erever
 ```
 
 Note: Only supports Python >= 3.12.

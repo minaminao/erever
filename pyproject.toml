@@ -12,7 +12,7 @@ dependencies = [
     "setuptools>=74.1.2",
     "cbor2>=5.5.1",
     "base58>=2.1.1",
-    "rlp @ git+https://github.com/minaminao/pyrlp.git@typed",
+    "rlp>=3.0.0",
 ]
 requires-python = ">=3.12"
 
