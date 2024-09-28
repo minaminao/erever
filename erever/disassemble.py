@@ -105,22 +105,8 @@ def disassemble(
     memory_range: list[tuple[int, int]] | None = None,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
-    eof: bool = False,
 ) -> DisassembleResult:
-    disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
-    stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
-    memory = Memory()
-    success = True
     return_data = b""
-    opcodes = OPCODES_EOF if eof else OPCODES
-
-    LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
-
-    warning_messages: str = ""
-
-    pc = entrypoint
-    last_jump_to_address = None
-    trace_logs = []
 
     if context.chainid == 1 and context.address in PRECOMPILED_CONTRACTS:
         precompiled_contract_name, precompiled_contract_gas = PRECOMPILED_CONTRACTS[context.address]
@@ -149,10 +135,97 @@ def disassemble(
             case "blake2f":
                 assert False, "blake2f is not supported"
 
-    if eof:
+        disassemble_result = DisassembleResult(
+            None,
+            [],
+            [],
+            True,
+            return_data,
+            Stack(),
+            Memory(),
+        )
+    elif context.eof and context.bytecode[0:2] == b"\xef\x00":
         header, p = parse_eof_header(context.bytecode)
-        pc = p
+        eof, p = parse_eof_body(context.bytecode, header, p)
 
+        for i, code in enumerate(eof.code):
+            print(f"Code {i}:")
+            context.bytecode = code.code
+            disassemble_code(
+                context,
+                trace,
+                0,
+                max_steps,
+                decode_stack,
+                ignore_stack_underflow,
+                silent,
+                hide_pc,
+                show_opcodes,
+                memory_display,
+                memory_range,
+                invocation_only,
+                return_trace_logs,
+            )
+
+        disassemble_result = DisassembleResult(
+            None,
+            [],
+            [],
+            True,
+            b"",
+            Stack(),
+            Memory(),
+        )
+    else:
+        disassemble_result = disassemble_code(
+            context=context,
+            trace=trace,
+            entrypoint=entrypoint,
+            max_steps=max_steps,
+            decode_stack=decode_stack,
+            ignore_stack_underflow=ignore_stack_underflow,
+            silent=silent,
+            hide_pc=hide_pc,
+            show_opcodes=show_opcodes,
+            memory_display=memory_display,
+            memory_range=memory_range,
+            invocation_only=invocation_only,
+            return_trace_logs=return_trace_logs,
+        )
+
+    return disassemble_result
+
+
+def disassemble_code(
+    context: Context,
+    trace: bool = False,
+    entrypoint: int = 0x00,
+    max_steps: int = UINT256_MAX,
+    decode_stack: bool = False,
+    ignore_stack_underflow: bool = False,
+    silent: bool = False,
+    hide_pc: bool = False,
+    show_opcodes: bool = False,
+    memory_display: MemoryDisplay = MemoryDisplay.OFF,
+    memory_range: list[tuple[int, int]] | None = None,
+    invocation_only: bool = False,
+    return_trace_logs: bool = False,
+) -> DisassembleResult:
+    disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
+    stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
+    memory = Memory()
+    success = True
+    return_data = b""
+    opcodes = OPCODES_EOF if context.eof else OPCODES
+
+    LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
+
+    warning_messages: str = ""
+
+    last_jump_to_address = None
+    trace_logs = []
+
+    pc = entrypoint
     while pc < len(context.bytecode):
         instruction_message = ""
         next_pc = pc + 1
@@ -776,13 +849,13 @@ def disassemble(
 class EOFHeader:
     def __init__(
         self,
-        version: bytes,
-        types_size: bytes,
-        num_code_sections: bytes,
-        code_sizes: list[bytes],
-        num_container_sections: bytes | None,
-        container_sizes: list[bytes],
-        data_size: bytes,
+        version: int,
+        types_size: int,
+        num_code_sections: int,
+        code_sizes: list[int],
+        num_container_sections: int | None,
+        container_sizes: list[int],
+        data_size: int,
     ) -> None:
         self.version = version
         self.types_size = types_size
@@ -803,9 +876,9 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     print(f"  Magic: {magic.hex()}")
     p += 2
 
-    version = bytecode[p : p + 1]
-    assert version == b"\x01", "Invalid version"
-    print(f"  Version: {version.hex()}")
+    version = bytes_to_long(bytecode[p : p + 1])
+    assert version == 1, "Invalid version"
+    print(f"  Version: {version}")
     p += 1
 
     kind_types = bytecode[p : p + 1]
@@ -813,9 +886,9 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     print(f"  Kind types: {kind_types.hex()}")
     p += 1
 
-    types_size = bytecode[p : p + 2]
-    assert 0x0004 <= bytes_to_long(types_size) <= 0x1000, "Invalid types_size"
-    print(f"  Types size: {types_size.hex()}")
+    types_size = bytes_to_long(bytecode[p : p + 2])
+    assert 0x0004 <= types_size <= 0x1000 and types_size % 4 == 0, "Invalid types_size"
+    print(f"  Types size: {types_size}")
     p += 2
 
     kind_code = bytecode[p : p + 1]
@@ -823,16 +896,16 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     print(f"  Kind code: {kind_code.hex()}")
     p += 1
 
-    num_code_sections = bytecode[p : p + 2]
-    assert 0x0001 <= bytes_to_long(num_code_sections) <= 0x0400, "Invalid num_code_sections"
-    print(f"  Num code sections: {num_code_sections.hex()}")
+    num_code_sections = bytes_to_long(bytecode[p : p + 2])
+    assert 0x0001 <= num_code_sections <= 0x0400 and types_size // 4 == num_code_sections, "Invalid num_code_sections"
+    print(f"  Num code sections: {num_code_sections}")
     p += 2
 
     code_sizes = []
-    for _ in range(bytes_to_long(num_code_sections)):
-        code_size = bytecode[p : p + 2]
-        assert 0x0001 <= bytes_to_long(code_size) <= 0xFFFF, "Invalid code_size"
-        print(f"  Code size: {code_size.hex()}")
+    for _ in range(num_code_sections):
+        code_size = bytes_to_long(bytecode[p : p + 2])
+        assert 0x0001 <= code_size <= 0xFFFF, "Invalid code_size"
+        print(f"  Code size: {code_size}")
         p += 2
         code_sizes.append(code_size)
 
@@ -843,15 +916,15 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
         print(f"  Kind container: {kind_container.hex()}")
         p += 1
 
-        num_container_sections = bytecode[p : p + 2]
-        assert 0x0001 <= bytes_to_long(num_container_sections) <= 0x0100, "Invalid num_container_sections"
-        print(f"  Num container sections: {num_container_sections.hex()}")
+        num_container_sections = bytes_to_long(bytecode[p : p + 2])
+        assert 0x0001 <= num_container_sections <= 0x0100, "Invalid num_container_sections"
+        print(f"  Num container sections: {num_container_sections}")
         p += 2
 
-        for _ in range(bytes_to_long(num_container_sections)):
-            container_size = bytecode[p : p + 2]
-            assert 0x0001 <= bytes_to_long(container_size) <= 0xFFFF, "Invalid container_size"
-            print(f"  Container size: {container_size.hex()}")
+        for _ in range(num_container_sections):
+            container_size = bytes_to_long(bytecode[p : p + 2])
+            assert 0x0001 <= container_size <= 0xFFFF, "Invalid container_size"
+            print(f"  Container size: {container_size}")
             p += 2
             container_sizes.append(container_size)
 
@@ -860,9 +933,9 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     print(f"  Kind data: {kind_data.hex()}")
     p += 1
 
-    data_size = bytecode[p : p + 2]
-    assert 0x0000 <= bytes_to_long(data_size) <= 0xFFFF, "Invalid data_size"
-    print(f"  Data size: {data_size.hex()}")
+    data_size = bytes_to_long(bytecode[p : p + 2])
+    assert 0x0000 <= data_size <= 0xFFFF, "Invalid data_size"
+    print(f"  Data size: {data_size}")
     p += 2
 
     terminator = bytecode[p : p + 1]
@@ -882,3 +955,90 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     print()
     return header, p
+
+
+class EOFCode:
+    def __init__(
+        self,
+        inputs: int,
+        outputs: int,
+        max_stack_height: int,
+        code: bytes,
+    ) -> None:
+        self.inputs = inputs
+        self.outputs = outputs
+        self.max_stack_height = max_stack_height
+        self.code = code
+
+
+class EOFContainer:
+    def __init__(
+        self,
+        container: bytes,
+    ) -> None:
+        self.container = container
+
+
+class EOFData:
+    def __init__(
+        self,
+        data: bytes,
+    ) -> None:
+        self.data = data
+
+
+class EOF:
+    def __init__(
+        self,
+        header: EOFHeader,
+        code: list[EOFCode],
+        containers: list[EOFContainer],
+        data: EOFData,
+    ) -> None:
+        self.header = header
+        self.code = code
+        self.containers = containers
+        self.data = data
+
+
+def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int]:
+    print("Body:")
+
+    types = []
+
+    for _ in range(header.types_size // 4):
+        inputs = bytes_to_long(bytecode[p : p + 1])
+        assert 0x00 <= inputs <= 0x7F, "Invalid inputs"
+        print(f"  Inputs: {inputs}")
+        p += 1
+        outputs = bytes_to_long(bytecode[p : p + 1])
+        assert 0x00 <= outputs <= 0x80, "Invalid outputs"
+        print(f"  Outputs: {outputs}")
+        p += 1
+        max_stack_height = bytes_to_long(bytecode[p : p + 2])
+        assert 0x0000 <= max_stack_height <= 0x03FF, "Invalid max_stack_height"
+        print(f"  Max stack height: {max_stack_height}")
+        p += 2
+        types.append((inputs, outputs, max_stack_height))
+
+    code = []
+    for i, code_size in enumerate(header.code_sizes):
+        inputs, outputs, max_stack_height = types[i]
+        code_bytes = bytecode[p : p + code_size]
+        print(f"  Code: {code_bytes.hex()}")
+        p += code_size
+        code.append(EOFCode(inputs, outputs, max_stack_height, code_bytes))
+
+    containers = []
+    if header.num_container_sections is not None:
+        for container_size in header.container_sizes:
+            container = bytecode[p : p + container_size]
+            print(f"  Container: {container.hex()}")
+            p += container_size
+            containers.append(EOFContainer(container))
+
+    data = bytecode[p : p + header.data_size]
+
+    eof = EOF(header, code, containers, EOFData(data))
+    print()
+    return eof, p

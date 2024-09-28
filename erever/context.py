@@ -225,6 +225,8 @@ class Context:
     depth: int
     steps: int
 
+    eof: bool
+
     def __init__(
         self,
         bytecode: bytes = DEFAULT_BYTECODE,
@@ -245,6 +247,7 @@ class Context:
         gas: int = DEFAULT_GAS,
         rpc_url: str | None = None,
         state_dict: StateDict | None = None,
+        eof: bool = False,
     ) -> None:
         self.bytecode = bytecode
         self.address = address
@@ -268,6 +271,7 @@ class Context:
         self.return_data = b""
         self.depth = 1
         self.steps = 0
+        self.eof = eof
 
     @classmethod
     def from_arg_params_with_bytecode(cls, args: argparse.Namespace, bytecode: str) -> "Context":
@@ -289,6 +293,7 @@ class Context:
             basefee=args.basefee,
             gas=args.gas,
             rpc_url=args.rpc_url,
+            eof=args.eof,
         )
 
     @classmethod
@@ -345,6 +350,8 @@ class Context:
         self.return_data = b""
         self.depth = 1
         self.steps = 0
+
+        self.eof = args.eof
         return self
 
     @classmethod
@@ -388,6 +395,8 @@ class Context:
         self.return_data = b""
         self.depth = 1
         self.steps = 0
+
+        self.eof = args.eof
         return self
 
     @staticmethod
