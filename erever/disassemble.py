@@ -279,6 +279,13 @@ def disassemble_code(
         elif mnemonic_raw.startswith("LOG"):
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
+        elif mnemonic_raw == "RJUMP":
+            rjump_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 2])
+            next_pc = pc + 1 + 2
+            if not silent and not invocation_only:
+                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 2].hex()
+            mnemonic_num = 0
+            mnemonic = mnemonic_raw
         else:
             mnemonic_num = 0
             mnemonic = mnemonic_raw
@@ -286,6 +293,8 @@ def disassemble_code(
 
         if mnemonic == "PUSH":
             disassembled_code.append((pc, mnemonic_raw, push_v))
+        elif mnemonic == "RJUMP":
+            disassembled_code.append((pc, mnemonic_raw, rjump_v))
         else:
             disassembled_code.append((pc, mnemonic_raw, None))
 
@@ -563,7 +572,7 @@ def disassemble_code(
                         stack.push(len(memory.memory))
                     case "GAS":
                         stack.push(context.gas)
-                    case "JUMPDEST":
+                    case "JUMPDEST" | "NOP":
                         pass
                     case "TLOAD":
                         assert False, "TLOAD is not supported"
