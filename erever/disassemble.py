@@ -11,6 +11,7 @@ from .context import Context
 from .gas import GAS_CODE_WARM_COLD_DIFF, calculate_message_call_gas
 from .memory import Memory
 from .opcodes import OPCODES
+from .opcodes_eof import OPCODES_EOF
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .stack import Stack
 from .utils import (
@@ -104,12 +105,14 @@ def disassemble(
     memory_range: list[tuple[int, int]] | None = None,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
+    eof: bool = False,
 ) -> DisassembleResult:
     disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
     memory = Memory()
     success = True
     return_data = b""
+    opcodes = OPCODES_EOF if eof else OPCODES
 
     LOCATION_PAD_N = len(hex(len(context.bytecode))[2:])
 
@@ -146,11 +149,15 @@ def disassemble(
             case "blake2f":
                 assert False, "blake2f is not supported"
 
+    if eof:
+        header, p = parse_eof_header(context.bytecode)
+        pc = p
+
     while pc < len(context.bytecode):
         instruction_message = ""
         next_pc = pc + 1
         value = context.bytecode[pc]
-        if value in OPCODES:
+        if value in opcodes:
             (
                 mnemonic_raw,
                 stack_input_count,
@@ -158,7 +165,7 @@ def disassemble(
                 base_gas,
                 _description,
                 stack_input_names,
-            ) = OPCODES[value]
+            ) = opcodes[value]
         else:
             mnemonic_raw = Colors.YELLOW + f"0x{value:02x} (?)" + Colors.ENDC
             stack_input_count = 0
@@ -467,12 +474,12 @@ def disassemble(
                         gas = context.state.set_storage_at(context.address, input[0], input[1])[0]
                         context.gas -= gas
                     case "JUMP":
-                        assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
+                        assert opcodes[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
                         assert isinstance(input[0], int)
                         next_pc = input[0]
                         last_jump_to_address = input[0]
                     case "JUMPI":
-                        assert OPCODES[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
+                        assert opcodes[context.bytecode[input[0]]][0] == "JUMPDEST", "Invalid jump destination"
                         assert isinstance(input[0], int)
                         if input[1] != 0:
                             next_pc = input[0]
@@ -764,3 +771,114 @@ def disassemble(
     )
 
     return disassemble_result
+
+
+class EOFHeader:
+    def __init__(
+        self,
+        version: bytes,
+        types_size: bytes,
+        num_code_sections: bytes,
+        code_sizes: list[bytes],
+        num_container_sections: bytes | None,
+        container_sizes: list[bytes],
+        data_size: bytes,
+    ) -> None:
+        self.version = version
+        self.types_size = types_size
+        self.num_code_sections = num_code_sections
+        self.code_sizes = code_sizes
+        self.num_container_sections = num_container_sections
+        self.container_sizes = container_sizes
+        self.data_size = data_size
+
+
+def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
+    p = 0
+
+    print("Header:")
+
+    magic = bytecode[p : p + 2]
+    assert magic == b"\xef\x00", "Invalid magic"
+    print(f"  Magic: {magic.hex()}")
+    p += 2
+
+    version = bytecode[p : p + 1]
+    assert version == b"\x01", "Invalid version"
+    print(f"  Version: {version.hex()}")
+    p += 1
+
+    kind_types = bytecode[p : p + 1]
+    assert kind_types == b"\x01", "Invalid kind_types"
+    print(f"  Kind types: {kind_types.hex()}")
+    p += 1
+
+    types_size = bytecode[p : p + 2]
+    assert 0x0004 <= bytes_to_long(types_size) <= 0x1000, "Invalid types_size"
+    print(f"  Types size: {types_size.hex()}")
+    p += 2
+
+    kind_code = bytecode[p : p + 1]
+    assert kind_code == b"\x02", "Invalid kind_code"
+    print(f"  Kind code: {kind_code.hex()}")
+    p += 1
+
+    num_code_sections = bytecode[p : p + 2]
+    assert 0x0001 <= bytes_to_long(num_code_sections) <= 0x0400, "Invalid num_code_sections"
+    print(f"  Num code sections: {num_code_sections.hex()}")
+    p += 2
+
+    code_sizes = []
+    for _ in range(bytes_to_long(num_code_sections)):
+        code_size = bytecode[p : p + 2]
+        assert 0x0001 <= bytes_to_long(code_size) <= 0xFFFF, "Invalid code_size"
+        print(f"  Code size: {code_size.hex()}")
+        p += 2
+        code_sizes.append(code_size)
+
+    kind_container = bytecode[p : p + 1]
+    container_sizes = []
+    num_container_sections = None
+    if kind_container == b"\x03":
+        print(f"  Kind container: {kind_container.hex()}")
+        p += 1
+
+        num_container_sections = bytecode[p : p + 2]
+        assert 0x0001 <= bytes_to_long(num_container_sections) <= 0x0100, "Invalid num_container_sections"
+        print(f"  Num container sections: {num_container_sections.hex()}")
+        p += 2
+
+        for _ in range(bytes_to_long(num_container_sections)):
+            container_size = bytecode[p : p + 2]
+            assert 0x0001 <= bytes_to_long(container_size) <= 0xFFFF, "Invalid container_size"
+            print(f"  Container size: {container_size.hex()}")
+            p += 2
+            container_sizes.append(container_size)
+
+    kind_data = bytecode[p : p + 1]
+    assert kind_data == b"\x04", "Invalid kind_data"
+    print(f"  Kind data: {kind_data.hex()}")
+    p += 1
+
+    data_size = bytecode[p : p + 2]
+    assert 0x0000 <= bytes_to_long(data_size) <= 0xFFFF, "Invalid data_size"
+    print(f"  Data size: {data_size.hex()}")
+    p += 2
+
+    terminator = bytecode[p : p + 1]
+    assert terminator == b"\x00", "Invalid terminator"
+    print(f"  Terminator: {terminator.hex()}")
+    p += 1
+
+    header = EOFHeader(
+        version=version,
+        types_size=types_size,
+        num_code_sections=num_code_sections,
+        code_sizes=code_sizes,
+        num_container_sections=num_container_sections,
+        container_sizes=container_sizes,
+        data_size=data_size,
+    )
+
+    print()
+    return header, p

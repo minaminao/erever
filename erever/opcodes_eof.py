@@ -170,7 +170,7 @@ OPCODES_EOF: dict[int, tuple[str, int, int, int, str, tuple[str, ...]]] = {
         "Get the amount of available gas, including the corresponding reduction for the cost of this instruction.",
         (),
     ),
-    0x5B: ("JUMPDEST", 0, 0, 1, "Mark a valid destination for jumps.", ()),
+    0x5B: ("NOP", 0, 0, 1, "NOP", ()),
     0x5C: ("TLOAD", 1, 1, 100, "Load word from transient storage", ("key",)),
     0x5D: ("TSTORE", 2, 0, 100, "Save word to transient storage", ("key", "value")),
     0x5E: (
