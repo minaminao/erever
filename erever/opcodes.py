@@ -136,6 +136,8 @@ OPCODES: dict[int, tuple[str, int, int, int, str, tuple[str, ...]]] = {
     0x46: ("CHAINID", 0, 1, 2, "Get the chain ID.", ()),
     0x47: ("SELFBALANCE", 0, 1, 5, "Get balance of currently executing account.", ()),
     0x48: ("BASEFEE", 0, 1, 2, "Get the base fee.", ()),
+    0x49: ("BLOBHASH", 1, 1, 3, "Get versioned hashes", ("index",)),
+    0x4A: ("BLOBBASEFEE", 0, 1, 2, "Returns the value of the blob base-fee of the current block", ()),
     0x50: ("POP", 1, 0, 2, "Remove item from stack.", ("x",)),
     0x51: ("MLOAD", 1, 1, 3, "Load word from memory.", ("offset",)),
     0x52: ("MSTORE", 2, 0, 3, "Save word to memory.", ("offset", "x")),
@@ -169,6 +171,8 @@ OPCODES: dict[int, tuple[str, int, int, int, str, tuple[str, ...]]] = {
         (),
     ),
     0x5B: ("JUMPDEST", 0, 0, 1, "Mark a valid destination for jumps.", ()),
+    0x5C: ("TLOAD", 1, 1, 100, "Load word from transient storage", ("key",)),
+    0x5D: ("TSTORE", 2, 0, 100, "Save word to transient storage", ("key", "value")),
     0x5E: (
         "MCOPY",
         3,

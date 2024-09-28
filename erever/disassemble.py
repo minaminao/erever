@@ -447,6 +447,10 @@ def disassemble(
                         stack.push(context.selfbalance)
                     case "BASEFEE":
                         stack.push(context.basefee)
+                    case "BLOBHASH":
+                        assert False, "BLOBHASH is not supported"
+                    case "BLOBBASEFEE":
+                        assert False, "BLOBBASEFEE is not supported"
                     case "POP":
                         pass
                     case "MLOAD":
@@ -481,6 +485,10 @@ def disassemble(
                         stack.push(context.gas)
                     case "JUMPDEST":
                         pass
+                    case "TLOAD":
+                        assert False, "TLOAD is not supported"
+                    case "TSTORE":
+                        assert False, "TSTORE is not supported"
                     case "MCOPY":
                         # TODO: strict
                         memory.store(input[0], memory.get_as_bytes(input[1], input[2]))
