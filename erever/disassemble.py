@@ -279,8 +279,15 @@ def disassemble_code(
         elif mnemonic_raw.startswith("LOG"):
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
+        elif mnemonic_raw in ["EOFCREATE"]:
+            v_1byte = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 1])
+            next_pc = pc + 1 + 1
+            if not silent and not invocation_only:
+                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 1].hex()
+            mnemonic_num = 0
+            mnemonic = mnemonic_raw
         elif mnemonic_raw in ["RJUMP", "CALLF"]:
-            rjump_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 2])
+            v_2bytes = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 2])
             next_pc = pc + 1 + 2
             if not silent and not invocation_only:
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 2].hex()
@@ -293,8 +300,10 @@ def disassemble_code(
 
         if mnemonic == "PUSH":
             disassembled_code.append((pc, mnemonic_raw, push_v))
+        elif mnemonic in ["EOFCREATE"]:
+            disassembled_code.append((pc, mnemonic_raw, v_1byte))
         elif mnemonic in ["RJUMP", "CALLF"]:
-            disassembled_code.append((pc, mnemonic_raw, rjump_v))
+            disassembled_code.append((pc, mnemonic_raw, v_2bytes))
         else:
             disassembled_code.append((pc, mnemonic_raw, None))
 
