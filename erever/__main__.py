@@ -242,7 +242,10 @@ def main() -> None:
             default=str(Context.DEFAULT_GAS),
             help="Gas of the transaction",
         )
+        return group
 
+    def add_common_arguments_for_eof(parser: argparse.ArgumentParser) -> argparse._ArgumentGroup:
+        group = parser.add_argument_group("context options")
         group.add_argument(
             "--eof",
             action="store_true",
@@ -265,6 +268,11 @@ def main() -> None:
     add_common_arguments_for_constructing_context(parser_symbolic_trace)
     add_common_arguments_for_constructing_context(parser_mermaid)
     add_common_arguments_for_constructing_context(parser_gadget)
+    add_common_arguments_for_eof(parser_disassemble)
+    add_common_arguments_for_eof(parser_trace)
+    add_common_arguments_for_eof(parser_symbolic_trace)
+    add_common_arguments_for_eof(parser_mermaid)
+    add_common_arguments_for_eof(parser_gadget)
 
     trace_display_group.add_argument("--decode-stack", action="store_true", default=False, help="Decode stack items")
     trace_display_group.add_argument(

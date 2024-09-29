@@ -270,23 +270,23 @@ def disassemble_code(
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic_raw[:4]
-        elif mnemonic_raw.startswith("DUP"):
+        elif mnemonic_raw.startswith("DUP") and mnemonic_raw != "DUPN":
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
-        elif mnemonic_raw.startswith("SWAP"):
+        elif mnemonic_raw.startswith("SWAP") and mnemonic_raw != "SWAPN":
             mnemonic_num = int(mnemonic_raw[4:])
             mnemonic = mnemonic_raw[:4]
         elif mnemonic_raw.startswith("LOG"):
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
-        elif mnemonic_raw in ["EOFCREATE"]:
+        elif mnemonic_raw in ["DUPN", "SWAPN", "EXCHANGE", "EOFCREATE", "RETURNCONTRACT"]:
             v_1byte = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 1])
             next_pc = pc + 1 + 1
             if not silent and not invocation_only:
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 1].hex()
             mnemonic_num = 0
             mnemonic = mnemonic_raw
-        elif mnemonic_raw in ["RJUMP", "CALLF"]:
+        elif mnemonic_raw in ["DATALOADN", "RJUMP", "RJUMPI", "CALLF", "JUMPF"]:
             v_2bytes = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 2])
             next_pc = pc + 1 + 2
             if not silent and not invocation_only:
@@ -300,9 +300,9 @@ def disassemble_code(
 
         if mnemonic == "PUSH":
             disassembled_code.append((pc, mnemonic_raw, push_v))
-        elif mnemonic in ["EOFCREATE"]:
+        elif mnemonic in ["DUPN", "SWAPN", "EXCHANGE", "EOFCREATE", "RETURNCONTRACT"]:
             disassembled_code.append((pc, mnemonic_raw, v_1byte))
-        elif mnemonic in ["RJUMP", "CALLF"]:
+        elif mnemonic in ["DATALOADN", "RJUMP", "RJUMPI", "CALLF", "JUMPF"]:
             disassembled_code.append((pc, mnemonic_raw, v_2bytes))
         else:
             disassembled_code.append((pc, mnemonic_raw, None))
