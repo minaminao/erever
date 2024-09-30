@@ -1,8 +1,8 @@
 from Crypto.Util.number import bytes_to_long
 
-from .colors import Colors
-from .types import Gas
-from .utils import decode_printable_with_color, is_overlapping
+from ..types import Gas
+from ..utils.colors import Colors
+from ..utils.general import decode_printable_with_color, is_overlapping
 
 
 class Memory:

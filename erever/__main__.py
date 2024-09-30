@@ -5,13 +5,13 @@ import sys
 import tomllib
 
 from .assemble import assemble
-from .colors import Colors
-from .context import Context
+from .data_structure.context import Context
 from .disassemble import MemoryDisplay, disassemble
 from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
-from .utils import UINT256_MAX
+from .utils.colors import Colors
+from .utils.general import UINT256_MAX
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):

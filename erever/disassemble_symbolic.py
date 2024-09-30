@@ -3,12 +3,12 @@ from copy import deepcopy
 
 from Crypto.Util.number import bytes_to_long
 
-from .colors import Colors
-from .context import Context
-from .node import Node
-from .opcodes import OPCODES
-from .symbolic_stack import SymbolicStack
-from .utils import TAB_SIZE, UINT256_MAX, pad
+from .data_structure.context import Context
+from .data_structure.node import Node
+from .data_structure.symbolic_stack import SymbolicStack
+from .opcodes.cancun import OPCODES
+from .utils.colors import Colors
+from .utils.general import TAB_SIZE, UINT256_MAX, pad
 
 Gadget = tuple[int, Node | None, int, SymbolicStack, list[Node], list[tuple[Node, int, bool]]]
 

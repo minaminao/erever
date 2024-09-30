@@ -1,8 +1,8 @@
-from .colors import Colors
-from .context import Context
+from .data_structure.context import Context
 from .disassemble import disassemble
 from .disassemble_symbolic import disassemble_symbolic
-from .utils import pad
+from .utils.colors import Colors
+from .utils.general import pad
 
 
 def find_gadgets(

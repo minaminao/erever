@@ -1,9 +1,9 @@
 from enum import Enum
 
-from .context import Context
+from .data_structure.context import Context
 from .disassemble import disassemble
-from .opcodes import OPCODES
-from .utils import UINT256_MAX, pad
+from .opcodes.cancun import OPCODES
+from .utils.general import UINT256_MAX, pad
 
 
 class ControlType(Enum):

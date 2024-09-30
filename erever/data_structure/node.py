@@ -1,5 +1,5 @@
-from .colors import Colors
-from .utils import pad_even
+from ..utils.colors import Colors
+from ..utils.general import pad_even
 
 NodeValue = str | int | list["Node"]
 

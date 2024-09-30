@@ -1,4 +1,4 @@
-from erever.context import Context
+from erever.data_structure.context import Context
 from erever.disassemble import disassemble
 
 

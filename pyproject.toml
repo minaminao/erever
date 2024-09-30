@@ -17,7 +17,7 @@ dependencies = [
 requires-python = ">=3.12"
 
 [project.scripts]
-erever = "erever.__main__:main"
+erever = "__main__:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -40,6 +40,9 @@ precommit = { chain = ["fix", "type-check-strict"] }
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["erever"]
 
 [tool.ruff]
 line-length = 120

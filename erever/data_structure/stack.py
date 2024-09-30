@@ -1,5 +1,5 @@
-from .colors import Colors
-from .utils import UINT256_MAX, decode_printable_with_color, pad_even
+from ..utils.colors import Colors
+from ..utils.general import UINT256_MAX, decode_printable_with_color, pad_even
 
 
 class Stack:

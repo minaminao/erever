@@ -6,26 +6,16 @@ from enum import Enum
 from Crypto.Hash import SHA256, keccak
 from Crypto.Util.number import bytes_to_long
 
-from .colors import Colors
-from .context import Context
+from .data_structure.context import Context
+from .data_structure.memory import Memory
+from .data_structure.stack import Stack
 from .eof import EOF, parse_eof_body, parse_eof_header
 from .gas import GAS_CODE_WARM_COLD_DIFF, calculate_message_call_gas
-from .memory import Memory
-from .opcodes import OPCODES
-from .opcodes_eof import OPCODES_EOF
-from .precompiled_contracts import PRECOMPILED_CONTRACTS
-from .stack import Stack
-from .utils import (
-    SIGN_MASK,
-    TAB_SIZE,
-    UINT256_MAX,
-    compute_contract_address,
-    int256,
-    is_invocation_mnemonic,
-    pad,
-    pad_even,
-    uint256,
-)
+from .opcodes.cancun import OPCODES
+from .opcodes.eof import OPCODES_EOF
+from .precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
+from .utils.colors import Colors
+from .utils.general import SIGN_MASK, TAB_SIZE, UINT256_MAX, compute_contract_address, int256, is_invocation_mnemonic, pad, pad_even, uint256
 
 
 @dataclass

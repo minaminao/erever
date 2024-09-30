@@ -1,4 +1,4 @@
-from .opcodes import OPCODES
+from .opcodes.cancun import OPCODES
 
 
 def assemble(mnemonics_str: str) -> bytes:

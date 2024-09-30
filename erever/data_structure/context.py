@@ -4,11 +4,11 @@ from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 from web3.types import BlockData, TxData
 
-from .eof import EOF
-from .precompiled_contracts import PRECOMPILED_CONTRACTS
+from ..eof import EOF
+from ..precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
+from ..types import AddressInt, Gas
+from ..utils.general import UINT256_MAX, int_to_check_sum_address
 from .storage import Storage
-from .types import AddressInt, Gas
-from .utils import UINT256_MAX, int_to_check_sum_address
 
 StateDict = dict[str, dict[str, str | int | dict[str, str]]]
 

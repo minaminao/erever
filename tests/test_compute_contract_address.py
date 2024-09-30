@@ -1,4 +1,4 @@
-from erever.utils import compute_contract_address
+from erever.utils.general import compute_contract_address
 
 
 def test() -> None:

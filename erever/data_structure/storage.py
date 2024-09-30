@@ -1,4 +1,4 @@
-from .utils import UINT256_MAX
+from ..utils.general import UINT256_MAX
 
 
 class Storage:

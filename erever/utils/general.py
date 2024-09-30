@@ -4,8 +4,8 @@ import rlp
 from eth_typing import ChecksumAddress
 from web3 import Web3
 
+from ..types import AddressInt
 from .colors import Colors
-from .types import AddressInt
 
 UINT256_MAX = (1 << 256) - 1
 SIGN_MASK = 1 << 255
