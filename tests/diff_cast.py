@@ -12,7 +12,7 @@ $ python test/diff_cast.py ~/tmp/erever.json ~/tmp/cast.txt
 
 if len(sys.argv) != 3:
     print("Usage: python diff_cast.py <erever output> <cast output>")
-    exit()
+    sys.exit()
 
 erever_output_file = Path(sys.argv[1])
 cast_output_file = Path(sys.argv[2])
@@ -28,8 +28,8 @@ with cast_output_file.open() as f:
         r"depth:(\d+), PC:(\d+), gas:(0x[0-9a-f]+)\((\d+)\), OPCODE: \"([A-Z0-9]+)\"\((\d+)\)  refund:(0x[0-9a-f]+)\((\d+)\) Stack:\[(.*)\], Data size:(\d+), Data: 0x([0-9a-f]*)"
     )
     trace_log_i = 0
-    for line in f:
-        line = line.strip()
+    for raw_line in f:
+        line = raw_line.strip()
         if line.startswith("SM CALL:"):
             print(line)
             continue

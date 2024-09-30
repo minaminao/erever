@@ -22,15 +22,13 @@ def int256(x: int) -> int:
     x &= UINT256_MAX
     if x & SIGN_MASK:
         return -((1 << 256) - x)
-    else:
-        return x
+    return x
 
 
 def pad(hex_number: str, n: int) -> str:
     if hex_number[:2] == "0x":
         hex_number = hex_number[2:]
-    hex_number = "0x" + "0" * (n - len(hex_number)) + hex_number
-    return hex_number
+    return "0x" + "0" * (n - len(hex_number)) + hex_number
 
 
 def pad_even(hex_number: str) -> str:

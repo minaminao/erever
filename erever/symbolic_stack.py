@@ -20,8 +20,7 @@ class SymbolicStack:
             ret = Node("var", f"var_{self.var_n}")
             self.var_n += 1
             return ret
-        else:
-            return self.stack.pop()
+        return self.stack.pop()
 
     def __len__(self) -> int:
         return len(self.stack)

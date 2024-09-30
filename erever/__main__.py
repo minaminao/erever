@@ -29,31 +29,29 @@ class CustomHelpFormatter(argparse.HelpFormatter):
             default = self._get_default_metavar_for_positional(action)
             (metavar,) = self._metavar_formatter(action, default)(1)
             return Colors.BOLD + metavar + Colors.ENDC
+        elif action.nargs != 0:
+            return (
+                Colors.BOLD
+                + ", ".join(action.option_strings)
+                + Colors.ENDC
+                + " "
+                + self._format_args(action, action.dest.upper())
+            )
         else:
-            if action.nargs != 0:
-                return (
-                    Colors.BOLD
-                    + ", ".join(action.option_strings)
-                    + Colors.ENDC
-                    + " "
-                    + self._format_args(action, action.dest.upper())
-                )
-            else:
-                return Colors.BOLD + ", ".join(action.option_strings) + Colors.ENDC
+            return Colors.BOLD + ", ".join(action.option_strings) + Colors.ENDC
 
     def _get_help_string(self, action: argparse.Action) -> str:
         help = action.help
         if help is None:
             help = ""
 
-        if "%(default)" not in help:
-            if action.default is not argparse.SUPPRESS:
-                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    if action.default == str(UINT256_MAX):
-                        help += " (default: (1 << 256) - 1)"
-                    else:
-                        help += " (default: %(default)s)"
+        if "%(default)" not in help and action.default is not argparse.SUPPRESS:
+            defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+            if action.option_strings or action.nargs in defaulting_nargs:
+                if action.default == str(UINT256_MAX):
+                    help += " (default: (1 << 256) - 1)"
+                else:
+                    help += " (default: %(default)s)"
         return help
 
 
@@ -322,7 +320,7 @@ def main() -> None:
 
     if not hasattr(args, "handler"):
         parser.print_help()
-        exit(1)
+        sys.exit(1)
 
     if args.handler == command_assemble:
         args.handler(args)
@@ -380,7 +378,7 @@ def main() -> None:
             context = Context.from_contract_address(args)
         else:
             parser.print_help(sys.stderr)
-            exit(1)
+            sys.exit(1)
 
         args.handler(args, context)
 

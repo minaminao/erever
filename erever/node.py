@@ -30,11 +30,10 @@ class Node:
         return s[1:-1] if s[0] == "(" and s[-1] == ")" else s
 
     def evaluate(self) -> str:
-        if self.type != "uint256" and self.type != "var":
-            if self.type == "EQ":
-                assert isinstance(self.value, list)
-                if self.value[0].type == "uint256" and self.value[1].type == "uint256":
-                    return str(self.value[0].value == self.value[1].value).lower()
+        if self.type == "EQ":
+            assert isinstance(self.value, list)
+            if self.value[0].type == "uint256" and self.value[1].type == "uint256":
+                return str(self.value[0].value == self.value[1].value).lower()
         return ""
 
     def __repr__(self) -> str:

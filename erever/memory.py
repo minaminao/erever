@@ -19,7 +19,8 @@ class Memory:
 
     def extend(self, size: int) -> Gas:
         if size > Memory.MAX_MEMORY_INDEX:
-            raise Exception(f"Memory size too large: {size}")
+            msg = f"Memory size too large: {size}"
+            raise Exception(msg)
         if size % 0x20 > 0:
             size += 0x20 - size % 0x20
         if len(self.memory) >= size:
@@ -120,7 +121,7 @@ class Memory:
                 r_i -= 1
                 r_j = 2 * line_length
 
-            for ret_i in range(0, len(ret)):
+            for ret_i in range(len(ret)):
                 line_left = ret_lefts[ret_i]
                 line_right = line_left + line_length
 
@@ -160,7 +161,7 @@ class Memory:
             self.mstore_l_for_colorize = None
             self.mstore_r_for_colorize = None
         else:
-            for i in range(0, len(ret)):
+            for i in range(len(ret)):
                 decoded_lines.append(decode_printable_with_color(ret[i]))
                 ret[i] = zero_to_gray(ret[i])
 
@@ -168,7 +169,7 @@ class Memory:
         new_ret = []
         show_decode = True
         assert len(ret) == len(decoded_lines), f"{len(ret)} != {len(decoded_lines)}"
-        for i in range(0, len(ret)):
+        for i in range(len(ret)):
             if i in hr_indices:
                 new_ret.append("-" * 10)
             if show_decode:

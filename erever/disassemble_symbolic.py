@@ -31,7 +31,7 @@ def disassemble_symbolic(
 
         steps: int
         conditions: list[tuple[Node, int, bool]]
-        data_changes: list[Node] = []
+        data_changes: list[Node]
         jumped_from: int | None
         jumped: bool | None
 
@@ -252,7 +252,7 @@ def disassemble_symbolic(
                     state_not_jumped.conditions.append((input[1], pc, False))
                     queue.append(state_not_jumped)
                 break
-            if mnemonic == "STOP" or mnemonic == "RETURN":
+            if mnemonic in ("STOP", "RETURN"):
                 gadget_list.append(
                     (
                         pc,

@@ -4,11 +4,11 @@ from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 from web3.types import BlockData, TxData
 
+from .eof import EOF
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .storage import Storage
 from .types import AddressInt, Gas
 from .utils import UINT256_MAX, int_to_check_sum_address
-from .eof import EOF
 
 StateDict = dict[str, dict[str, str | int | dict[str, str]]]
 
@@ -33,7 +33,7 @@ class State:
         self.storages = {}
         self.original_storages = {}
         self.codes = {address: b"" for address in PRECOMPILED_CONTRACTS}
-        self.address_access_set = set([address for address in PRECOMPILED_CONTRACTS])
+        self.address_access_set = set(PRECOMPILED_CONTRACTS)
         self.balances = {}
 
         if state_dict:
@@ -171,11 +171,10 @@ class State:
                 if value == original_value:
                     if original_value == 0:
                         gas_refunds += 19900
+                    elif warm:
+                        gas_refunds += 5000 - 2100 - 100
                     else:
-                        if warm:
-                            gas_refunds += 5000 - 2100 - 100
-                        else:
-                            gas_refunds += 4900
+                        gas_refunds += 4900
         storage.store(slot, value)
 
         # print(address, slot, " ", base_dynamic_gas, gas_refunds, value, current_value, original_value, warm, file=sys.stderr)

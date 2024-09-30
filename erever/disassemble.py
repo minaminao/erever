@@ -8,12 +8,12 @@ from Crypto.Util.number import bytes_to_long
 
 from .colors import Colors
 from .context import Context
+from .eof import EOF, parse_eof_body, parse_eof_header
 from .gas import GAS_CODE_WARM_COLD_DIFF, calculate_message_call_gas
 from .memory import Memory
 from .opcodes import OPCODES
 from .opcodes_eof import OPCODES_EOF
 from .precompiled_contracts import PRECOMPILED_CONTRACTS
-from .eof import EOF, parse_eof_header, parse_eof_body
 from .stack import Stack
 from .utils import (
     SIGN_MASK,
@@ -354,26 +354,25 @@ def disassemble_code(
 
             context.gas -= base_gas
 
-            if not silent:
-                if len(stack_input_names) > 0:
-                    instruction_message += "("
-                    if mnemonic == "DUP":
-                        if mnemonic_num >= 2:
-                            instruction_message += "..., "
-                        instruction_message += f"{pad_even(hex(input[-1]))}"
-                    elif mnemonic == "SWAP":
-                        if mnemonic_num >= 2:
-                            instruction_message += f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}"
-                        else:
-                            instruction_message += f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}"
+            if not silent and len(stack_input_names) > 0:
+                instruction_message += "("
+                if mnemonic == "DUP":
+                    if mnemonic_num >= 2:
+                        instruction_message += "..., "
+                    instruction_message += f"{pad_even(hex(input[-1]))}"
+                elif mnemonic == "SWAP":
+                    if mnemonic_num >= 2:
+                        instruction_message += f"{pad_even(hex(input[0]))}, ..., {pad_even(hex(input[-1]))}"
                     else:
-                        for i, name in enumerate(stack_input_names):
-                            if i > 0:
-                                instruction_message += ", "
-                            if name != "":
-                                instruction_message += f"{name}:"
-                            instruction_message += f"{pad_even(hex(input[i]))}"
-                    instruction_message += ")"
+                        instruction_message += f"{pad_even(hex(input[0]))}, {pad_even(hex(input[-1]))}"
+                else:
+                    for i, name in enumerate(stack_input_names):
+                        if i > 0:
+                            instruction_message += ", "
+                        if name != "":
+                            instruction_message += f"{name}:"
+                        instruction_message += f"{pad_even(hex(input[i]))}"
+                instruction_message += ")"
 
             try:
                 if context.static and mnemonic in [
@@ -460,7 +459,7 @@ def disassemble_code(
                         stack.push(input[1] >> input[0])
                     case "SAR":
                         if input[1] & SIGN_MASK:
-                            stack.push(((1 << 256) + (int256(input[1]) >> input[0])))
+                            stack.push((1 << 256) + (int256(input[1]) >> input[0]))
                         else:
                             stack.push(input[1] >> input[0])
                     case "KECCAK256":

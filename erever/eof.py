@@ -42,7 +42,8 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     p += 1
 
     types_size = bytes_to_long(bytecode[p : p + 2])
-    assert 0x0004 <= types_size <= 0x1000 and types_size % 4 == 0, "Invalid types_size"
+    assert 0x0004 <= types_size <= 0x1000, f"types_size {types_size:#x} is out of valid range (0x0004 - 0x1000)"
+    assert types_size % 4 == 0, f"types_size {types_size:#x} is not a multiple of 4"
     print(f"  Types size: {types_size}")
     p += 2
 
@@ -52,7 +53,12 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     p += 1
 
     num_code_sections = bytes_to_long(bytecode[p : p + 2])
-    assert 0x0001 <= num_code_sections <= 0x0400 and types_size // 4 == num_code_sections, "Invalid num_code_sections"
+    assert (
+        0x0001 <= num_code_sections <= 0x0400
+    ), f"num_code_sections {num_code_sections:#x} is out of valid range (0x0001 - 0x0400)"
+    assert (
+        types_size // 4 == num_code_sections
+    ), f"Mismatch: types_size // 4 ({types_size // 4}) does not equal num_code_sections ({num_code_sections})"
     print(f"  Num code sections: {num_code_sections}")
     p += 2
 
@@ -149,13 +155,13 @@ class EOF:
         codes: list[EOFCode],
         containers: list[EOFContainer],
         data: EOFData,
-        return_stack: list[tuple[int, int]] = [],
+        return_stack: list[tuple[int, int]] | None = None,
     ) -> None:
         self.header = header
         self.codes = codes
         self.containers = containers
         self.data = data
-        self.return_stack = return_stack
+        self.return_stack = return_stack if return_stack is not None else []
 
 
 def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int]:

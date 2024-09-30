@@ -153,7 +153,7 @@ def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int
     <body>"""
         + f"""<pre class="mermaid">
 
-flowchart TB 
+flowchart TB
 {graph}
     </pre>"""
         + """<script type="module">
