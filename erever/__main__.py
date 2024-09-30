@@ -357,12 +357,16 @@ def main() -> None:
         if args.bytecode:
             context = Context.from_arg_params_with_bytecode(args, args.bytecode)
         elif args.filename:
+
+            def parse_bytecode(raw_bytecode: str) -> bytes:
+                return bytes.fromhex(raw_bytecode.replace("0x", "").replace(" ", ""))
+
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
                 if "bytecode" in parsed_toml:
-                    parsed_toml["bytecode"] = bytes.fromhex(parsed_toml["bytecode"].replace("0x", "").replace(" ", ""))
+                    parsed_toml["bytecode"] = parse_bytecode(parsed_toml["bytecode"])
                 if "calldata" in parsed_toml:
-                    parsed_toml["calldata"] = bytes.fromhex(parsed_toml["calldata"].replace("0x", "").replace(" ", ""))
+                    parsed_toml["calldata"] = parse_bytecode(parsed_toml["calldata"])
                 if "state" in parsed_toml:
                     parsed_toml["state_dict"] = parsed_toml["state"]
                     del parsed_toml["state"]

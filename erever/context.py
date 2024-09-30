@@ -8,6 +8,7 @@ from .precompiled_contracts import PRECOMPILED_CONTRACTS
 from .storage import Storage
 from .types import AddressInt, Gas
 from .utils import UINT256_MAX, int_to_check_sum_address
+from .eof import EOF
 
 StateDict = dict[str, dict[str, str | int | dict[str, str]]]
 
@@ -225,7 +226,7 @@ class Context:
     depth: int
     steps: int
 
-    eof: bool
+    eof: bool | EOF
 
     def __init__(
         self,
