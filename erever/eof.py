@@ -174,18 +174,19 @@ def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int
 
     types = []
 
-    for _ in range(header.types_size // 4):
+    for i in range(header.types_size // 4):
+        print(f"  Type {i}:")
         inputs = bytes_to_long(bytecode[p : p + 1])
         assert 0x00 <= inputs <= 0x7F, "Invalid inputs"
-        print(f"  Inputs: {inputs}")
+        print(f"    Inputs: {inputs}")
         p += 1
         outputs = bytes_to_long(bytecode[p : p + 1])
         assert 0x00 <= outputs <= 0x80, "Invalid outputs"
-        print("  Outputs: " + "-" if outputs == 0x80 else str(outputs))
+        print("    Outputs: " + ("-" if outputs == 0x80 else str(outputs)))
         p += 1
         max_stack_height = bytes_to_long(bytecode[p : p + 2])
         assert 0x0000 <= max_stack_height <= 0x03FF, "Invalid max_stack_height"
-        print(f"  Max stack height: {max_stack_height}")
+        print(f"    Max stack height: {max_stack_height}")
         p += 2
         types.append((inputs, outputs, max_stack_height))
 
@@ -193,7 +194,7 @@ def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int
     for i, code_size in enumerate(header.code_sizes):
         inputs, outputs, max_stack_height = types[i]
         code_bytes = bytecode[p : p + code_size]
-        print(f"  Code: {code_bytes.hex()}")
+        print(f"  Code {i}: {code_bytes.hex()}")
         p += code_size
         code.append(EOFCode(inputs, outputs, max_stack_height, code_bytes))
 

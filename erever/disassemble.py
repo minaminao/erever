@@ -678,12 +678,15 @@ def disassemble_code(
                         assert False, "EOFCREATE is not supported"
                         value, salt, input_offset, input_size = input
                     case "RETURNCONTRACT":
-                        assert False, "RETURNCONTRACT is not supported"
                         deploy_container_index = v_1byte
                         aux_data_offset, aux_data_size = input
+                        return_data = context.eof.containers[
+                            deploy_container_index
+                        ].container + context.eof.data.get_as_bytes(aux_data_offset, aux_data_size)
                         if not silent:
-                            instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(aux_data_offset, aux_data_size)}"
-                        return_data = memory.get_as_bytes(aux_data_offset, aux_data_size)
+                            instruction_message += (
+                                f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{return_data.hex()}"
+                            )
                         break_flag = True
                     case "CREATE":
                         value, offset, size = input
