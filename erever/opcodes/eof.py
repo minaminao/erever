@@ -260,8 +260,8 @@ OPCODES_EOF: dict[int, tuple[str, int, int, int, str, tuple[str, ...]]] = {
     0xE3: ("CALLF", 0, 0, 5, "Call into a function", ()),
     0xE4: ("RETF", 0, 0, 3, "Return from a function", ()),
     0xE5: ("JUMPF", 0, 0, 5, "Chaining function calls without adding a new return stack frame", ()),
-    0xE6: ("DUPN", 0, 0, 3, "Duplicate the stack item at the top of the stack", ()),
-    0xE7: ("SWAPN", 0, 0, 3, "Swap the stack item with the top stack item", ()),
+    0xE6: ("DUPN", 0, 0, 3, "Duplicate the stack item at the top of the stack", ("x",)),
+    0xE7: ("SWAPN", 0, 0, 3, "Swap the stack item with the top stack item", ("a", "b")),
     0xE8: ("EXCHANGE", 0, 0, 3, "Swap between the first and second nibbles of the stack item", ()),
     0xEC: (
         "EOFCREATE",

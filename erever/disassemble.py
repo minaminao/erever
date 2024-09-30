@@ -295,13 +295,27 @@ def disassemble_code(
         elif mnemonic_raw.startswith("DUP") and mnemonic_raw != "DUPN":
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
+        elif mnemonic_raw == "DUPN":
+            mnemonic_num = context.bytecode[pc + 1] + 1
+            mnemonic = mnemonic_raw[:3]
+            next_pc = pc + 1 + 1
+            stack_input_count = mnemonic_num
+            if not silent and not invocation_only:
+                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 1].hex()
         elif mnemonic_raw.startswith("SWAP") and mnemonic_raw != "SWAPN":
             mnemonic_num = int(mnemonic_raw[4:])
             mnemonic = mnemonic_raw[:4]
+        elif mnemonic_raw == "SWAPN":
+            mnemonic_num = context.bytecode[pc + 1] + 1
+            mnemonic = mnemonic_raw[:4]
+            next_pc = pc + 1 + 1
+            stack_input_count = mnemonic_num + 1
+            if not silent and not invocation_only:
+                instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + 1].hex()
         elif mnemonic_raw.startswith("LOG"):
             mnemonic_num = int(mnemonic_raw[3:])
             mnemonic = mnemonic_raw[:3]
-        elif mnemonic_raw in ["DUPN", "SWAPN", "EXCHANGE", "EOFCREATE", "RETURNCONTRACT"]:
+        elif mnemonic_raw in ["EXCHANGE", "EOFCREATE", "RETURNCONTRACT"]:
             v_1byte = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + 1])
             next_pc = pc + 1 + 1
             if not silent and not invocation_only:
@@ -626,14 +640,18 @@ def disassemble_code(
                         context.gas -= 8 * size
                     case "DATALOAD":
                         offset = input[0]
+                        assert isinstance(context.eof, EOF)
                         stack.push(context.eof.data.load(offset))
                     case "DATALOADN":
                         offset = v_2bytes
+                        assert isinstance(context.eof, EOF)
                         stack.push(context.eof.data.load(offset))
                     case "DATASIZE":
-                        stack.push(len(context.eof.data))
+                        assert isinstance(context.eof, EOF)
+                        stack.push(len(context.eof.data.data))
                     case "DATACOPY":
                         mem_offset, offset, size = input
+                        assert isinstance(context.eof, EOF)
                         memory.store(mem_offset, context.eof.data.get_as_bytes(offset, size))
                     case "RJUMP":
                         offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
@@ -667,6 +685,7 @@ def disassemble_code(
                     case "RETF":
                         break_flag = True
                     case "JUMPF":
+                        assert isinstance(context.eof, EOF)
                         context.bytecode = context.eof.codes[target_section_index].code
                         disassemble_code(
                             context,
@@ -684,16 +703,12 @@ def disassemble_code(
                             return_trace_logs,
                         )
                         break_flag = True
-                    case "DUPN":
-                        assert False, "DUPN is not supported"
-                        n = v_1byte
-                    case "SWAPN":
-                        assert False, "SWAPN is not supported"
                     case "EXCHANGE":
                         assert False, "EXCHANGE is not supported"
                     case "EOFCREATE":
                         initcontainer_index = v_1byte
                         value, salt, input_offset, input_size = input
+                        assert isinstance(context.eof, EOF)
                         initcontainer = context.eof.containers[initcontainer_index]
                         contract_address = compute_contract_address_by_eofcreate(
                             context.address, salt, initcontainer.container
@@ -726,6 +741,7 @@ def disassemble_code(
                     case "RETURNCONTRACT":
                         deploy_container_index = v_1byte
                         aux_data_offset, aux_data_size = input
+                        assert isinstance(context.eof, EOF)
                         return_data = context.eof.containers[
                             deploy_container_index
                         ].container + context.eof.data.get_as_bytes(aux_data_offset, aux_data_size)

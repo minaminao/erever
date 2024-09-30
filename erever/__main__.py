@@ -243,7 +243,7 @@ def main() -> None:
         return group
 
     def add_common_arguments_for_eof(parser: argparse.ArgumentParser) -> argparse._ArgumentGroup:
-        group = parser.add_argument_group("context options")
+        group = parser.add_argument_group("EOF options")
         group.add_argument(
             "--eof",
             action="store_true",
