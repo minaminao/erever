@@ -83,3 +83,7 @@ def is_overlapping(l1: int, r1: int, l2: int, r2: int) -> bool:
 
 def compute_contract_address(address: AddressInt, nonce: int) -> AddressInt:
     return int.from_bytes(Web3.keccak(rlp.encode([address.to_bytes(20, "big"), nonce]))[-20:], "big")
+
+
+def compute_contract_address_by_eofcreate(address: AddressInt, salt: int, init_container: bytes) -> AddressInt:
+    return int.from_bytes(Web3.keccak(rlp.encode([address.to_bytes(20, "big"), salt, init_container]))[12:], "big")

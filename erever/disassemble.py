@@ -20,6 +20,7 @@ from .utils.general import (
     TAB_SIZE,
     UINT256_MAX,
     compute_contract_address,
+    compute_contract_address_by_eofcreate,
     int256,
     is_invocation_mnemonic,
     pad,
@@ -666,7 +667,23 @@ def disassemble_code(
                     case "RETF":
                         break_flag = True
                     case "JUMPF":
-                        assert False, "JUMPF is not supported"
+                        context.bytecode = context.eof.codes[target_section_index].code
+                        disassemble_code(
+                            context,
+                            trace,
+                            0,
+                            max_steps,
+                            decode_stack,
+                            ignore_stack_underflow,
+                            silent,
+                            hide_pc,
+                            show_opcodes,
+                            memory_display,
+                            memory_range,
+                            invocation_only,
+                            return_trace_logs,
+                        )
+                        break_flag = True
                     case "DUPN":
                         assert False, "DUPN is not supported"
                         n = v_1byte
@@ -675,8 +692,37 @@ def disassemble_code(
                     case "EXCHANGE":
                         assert False, "EXCHANGE is not supported"
                     case "EOFCREATE":
-                        assert False, "EOFCREATE is not supported"
+                        initcontainer_index = v_1byte
                         value, salt, input_offset, input_size = input
+                        initcontainer = context.eof.containers[initcontainer_index]
+                        contract_address = compute_contract_address_by_eofcreate(
+                            context.address, salt, initcontainer.container
+                        )
+
+                        child_context = copy.deepcopy(context)
+                        child_context.bytecode = initcontainer.container
+                        child_context.address = contract_address
+                        child_context.caller = context.address
+                        child_context.callvalue = value
+                        child_context.calldata = memory.get_as_bytes(input_offset, input_size)
+                        child_context.return_data = b""
+                        child_context.depth += 1
+
+                        result = disassemble(
+                            context=child_context,
+                            trace=trace,
+                            entrypoint=0,
+                            max_steps=max_steps,
+                            decode_stack=decode_stack,
+                            ignore_stack_underflow=ignore_stack_underflow,
+                            silent=silent,
+                            hide_pc=hide_pc,
+                            show_opcodes=show_opcodes,
+                            memory_display=memory_display,
+                            invocation_only=invocation_only,
+                            return_trace_logs=return_trace_logs,
+                        )
+
                     case "RETURNCONTRACT":
                         deploy_container_index = v_1byte
                         aux_data_offset, aux_data_size = input
