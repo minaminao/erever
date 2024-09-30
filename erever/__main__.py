@@ -357,7 +357,9 @@ def main() -> None:
         elif args.filename:
 
             def parse_bytecode(raw_bytecode: str) -> bytes:
-                return bytes.fromhex(raw_bytecode.replace("0x", "").replace(" ", ""))
+                lines = raw_bytecode.split("\n")
+                bytecode = "".join([line.split("#")[0].strip() + "\n" for line in lines])
+                return bytes.fromhex(bytecode.replace("0x", ""))
 
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))

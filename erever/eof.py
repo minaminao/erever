@@ -144,9 +144,13 @@ class EOFData:
     def load(self, offset: int) -> int:
         size = 0x20
         if len(self.data) < offset + size:
-            print(1)
             return bytes_to_long(self.data[offset:] + b"\x00" * (offset + size - len(self.data)))
         return bytes_to_long(self.data[offset : offset + size])
+
+    def get_as_bytes(self, offset: int, size: int) -> bytes:
+        if len(self.data) < offset + size:
+            return self.data[offset:] + b"\x00" * (offset + size - len(self.data))
+        return self.data[offset : offset + size]
 
 
 class EOF:
@@ -202,6 +206,7 @@ def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int
             containers.append(EOFContainer(container))
 
     data = bytecode[p : p + header.data_size]
+    print(f"  Data: {data.hex()}")
 
     eof = EOF(header, code, containers, EOFData(data))
     print()

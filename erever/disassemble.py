@@ -10,7 +10,7 @@ from .data_structure.context import Context
 from .data_structure.memory import Memory
 from .data_structure.stack import Stack
 from .eof import EOF, parse_eof_body, parse_eof_header
-from .gas import GAS_CODE_WARM_COLD_DIFF, calculate_message_call_gas
+from .gas import GAS_CODE_WARM_COLD_DIFF, GAS_KECCAK256_WORD, calculate_message_call_gas
 from .opcodes.cancun import OPCODES
 from .opcodes.eof import OPCODES_EOF
 from .precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
@@ -466,7 +466,6 @@ def disassemble_code(
                         input_data = memory.get_as_bytes(input[0], input[1])
                         if not silent:
                             instruction_message += f"\n{'input'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{input_data.hex()}"
-                        GAS_KECCAK256_WORD = 6
                         context.gas -= GAS_KECCAK256_WORD * ((len(input_data) + 31) // 32)
                         stack.push(bytes_to_long(keccak.new(digest_bits=256, data=input_data).digest()))
                     case "ADDRESS":
@@ -631,9 +630,10 @@ def disassemble_code(
                         offset = v_2bytes
                         stack.push(context.eof.data.load(offset))
                     case "DATASIZE":
-                        assert False, "DATASIZE is not supported"
+                        stack.push(len(context.eof.data))
                     case "DATACOPY":
-                        assert False, "DATACOPY is not supported"
+                        mem_offset, offset, size = input
+                        memory.store(mem_offset, context.eof.data.get_as_bytes(offset, size))
                     case "RJUMP":
                         offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
                         next_pc = pc + 3 + offset
