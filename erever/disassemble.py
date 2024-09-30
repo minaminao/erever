@@ -15,7 +15,17 @@ from .opcodes.cancun import OPCODES
 from .opcodes.eof import OPCODES_EOF
 from .precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
 from .utils.colors import Colors
-from .utils.general import SIGN_MASK, TAB_SIZE, UINT256_MAX, compute_contract_address, int256, is_invocation_mnemonic, pad, pad_even, uint256
+from .utils.general import (
+    SIGN_MASK,
+    TAB_SIZE,
+    UINT256_MAX,
+    compute_contract_address,
+    int256,
+    is_invocation_mnemonic,
+    pad,
+    pad_even,
+    uint256,
+)
 
 
 @dataclass
@@ -614,6 +624,16 @@ def disassemble_code(
                         size = input[1]
                         context.gas -= memory.extend(offset + size)
                         context.gas -= 8 * size
+                    case "DATALOAD":
+                        offset = input[0]
+                        stack.push(context.eof.data.load(offset))
+                    case "DATALOADN":
+                        offset = v_2bytes
+                        stack.push(context.eof.data.load(offset))
+                    case "DATASIZE":
+                        assert False, "DATASIZE is not supported"
+                    case "DATACOPY":
+                        assert False, "DATACOPY is not supported"
                     case "RJUMP":
                         offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
                         next_pc = pc + 3 + offset
@@ -644,19 +664,27 @@ def disassemble_code(
                         )
                         context.bytecode = context.eof.codes[current_section_index].code
                     case "RETF":
-                        assert False, "RETF is not supported"
+                        break_flag = True
                     case "JUMPF":
                         assert False, "JUMPF is not supported"
                     case "DUPN":
                         assert False, "DUPN is not supported"
+                        n = v_1byte
                     case "SWAPN":
                         assert False, "SWAPN is not supported"
                     case "EXCHANGE":
                         assert False, "EXCHANGE is not supported"
                     case "EOFCREATE":
                         assert False, "EOFCREATE is not supported"
+                        value, salt, input_offset, input_size = input
                     case "RETURNCONTRACT":
                         assert False, "RETURNCONTRACT is not supported"
+                        deploy_container_index = v_1byte
+                        aux_data_offset, aux_data_size = input
+                        if not silent:
+                            instruction_message += f"\n{'return'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(aux_data_offset, aux_data_size)}"
+                        return_data = memory.get_as_bytes(aux_data_offset, aux_data_size)
+                        break_flag = True
                     case "CREATE":
                         value, offset, size = input
                         contract_address = compute_contract_address(context.address, 0)  # TODO: fix

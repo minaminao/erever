@@ -28,7 +28,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     magic = bytecode[p : p + 2]
     assert magic == b"\xef\x00", "Invalid magic"
-    print(f"  Magic: {magic.hex()}")
     p += 2
 
     version = bytes_to_long(bytecode[p : p + 1])
@@ -38,7 +37,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     kind_types = bytecode[p : p + 1]
     assert kind_types == b"\x01", "Invalid kind_types"
-    print(f"  Kind types: {kind_types.hex()}")
     p += 1
 
     types_size = bytes_to_long(bytecode[p : p + 2])
@@ -49,7 +47,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     kind_code = bytecode[p : p + 1]
     assert kind_code == b"\x02", "Invalid kind_code"
-    print(f"  Kind code: {kind_code.hex()}")
     p += 1
 
     num_code_sections = bytes_to_long(bytecode[p : p + 2])
@@ -74,7 +71,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     container_sizes = []
     num_container_sections = None
     if kind_container == b"\x03":
-        print(f"  Kind container: {kind_container.hex()}")
         p += 1
 
         num_container_sections = bytes_to_long(bytecode[p : p + 2])
@@ -91,7 +87,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     kind_data = bytecode[p : p + 1]
     assert kind_data == b"\x04", "Invalid kind_data"
-    print(f"  Kind data: {kind_data.hex()}")
     p += 1
 
     data_size = bytes_to_long(bytecode[p : p + 2])
@@ -101,7 +96,6 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
 
     terminator = bytecode[p : p + 1]
     assert terminator == b"\x00", "Invalid terminator"
-    print(f"  Terminator: {terminator.hex()}")
     p += 1
 
     header = EOFHeader(
@@ -147,6 +141,13 @@ class EOFData:
     ) -> None:
         self.data = data
 
+    def load(self, offset: int) -> int:
+        size = 0x20
+        if len(self.data) < offset + size:
+            print(1)
+            return bytes_to_long(self.data[offset:] + b"\x00" * (offset + size - len(self.data)))
+        return bytes_to_long(self.data[offset : offset + size])
+
 
 class EOF:
     def __init__(
@@ -176,7 +177,7 @@ def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int
         p += 1
         outputs = bytes_to_long(bytecode[p : p + 1])
         assert 0x00 <= outputs <= 0x80, "Invalid outputs"
-        print(f"  Outputs: {outputs}")
+        print("  Outputs: " + "-" if outputs == 0x80 else str(outputs))
         p += 1
         max_stack_height = bytes_to_long(bytecode[p : p + 2])
         assert 0x0000 <= max_stack_height <= 0x03FF, "Invalid max_stack_height"
