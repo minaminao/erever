@@ -977,7 +977,13 @@ def disassemble_code(
                     "REVERT",
                 ]
             ):
-                lines = memory.to_string(memory_range=memory_range)
+                # TODO: clean up
+                if mnemonic == "CREATE":
+                    memory.l_for_colorize = offset
+                    memory.r_for_colorize = offset + size
+                    lines = memory.to_string(memory_range=memory_range, accent_color=Colors.BOLD)
+                else:
+                    lines = memory.to_string(memory_range=memory_range)
                 for i, line in enumerate(lines):
                     if i == 0:
                         instruction_message += f"\n{'memory'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}"

@@ -42,6 +42,7 @@ def decode_printable_with_color(
     hex_string: str,
     l_for_colorize: int | None = None,
     r_for_colorize: int | None = None,
+    accent_color: str = Colors.GREEN,
 ) -> str:
     if hex_string[:2] == "0x":
         hex_string = hex_string[2:]
@@ -53,7 +54,7 @@ def decode_printable_with_color(
         if not printable:
             c = "."
         if l_for_colorize is not None and r_for_colorize is not None and l_for_colorize <= i // 2 < r_for_colorize:
-            c = Colors.GREEN + c + Colors.ENDC
+            c = accent_color + c + Colors.ENDC
         elif not printable:
             c = Colors.GRAY + "." + Colors.ENDC
         decoded += c

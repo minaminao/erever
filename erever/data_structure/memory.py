@@ -7,15 +7,16 @@ from ..utils.general import decode_printable_with_color, is_overlapping
 
 class Memory:
     memory: list[int]
-    mstore_l_for_colorize: int | None
-    mstore_r_for_colorize: int | None
+    l_for_colorize: int | None
+    r_for_colorize: int | None
+    DEFAULT_ACCENT_COLOR = Colors.GREEN
     MAX_MEMORY_INDEX = 1 << 24
 
     def __init__(self) -> None:
         self.memory = []
 
-        self.mstore_l_for_colorize = None
-        self.mstore_r_for_colorize = None
+        self.l_for_colorize = None
+        self.r_for_colorize = None
 
     def extend(self, size: int) -> Gas:
         if size > Memory.MAX_MEMORY_INDEX:
@@ -41,8 +42,8 @@ class Memory:
         self.extend(offset + 1)
         self.memory[offset] = value
 
-        self.mstore_l_for_colorize = offset
-        self.mstore_r_for_colorize = offset + 1
+        self.l_for_colorize = offset
+        self.r_for_colorize = offset + 1
 
     def store256(self, offset: int, value: int) -> Gas:
         value_bytes = value.to_bytes(32, "big")
@@ -51,8 +52,8 @@ class Memory:
         for i, b in enumerate(value_bytes):
             self.memory[offset + i] = b
 
-        self.mstore_l_for_colorize = offset
-        self.mstore_r_for_colorize = r
+        self.l_for_colorize = offset
+        self.r_for_colorize = r
         return allocation_gas
 
     def store(self, offset: int, value: bytes) -> Gas:
@@ -63,15 +64,20 @@ class Memory:
         for i, b in enumerate(value):
             self.memory[offset + i] = b
 
-        self.mstore_l_for_colorize = offset
-        self.mstore_r_for_colorize = r
+        self.l_for_colorize = offset
+        self.r_for_colorize = r
         return allocation_gas
 
     def load(self, offset: int) -> int:
         self.extend(offset + 32)
         return bytes_to_long(bytes(self.memory[offset : offset + 32]))
 
-    def to_string(self, line_length: int = 0x20, memory_range: list[tuple[int, int]] | None = None) -> list[str]:
+    def to_string(
+        self,
+        line_length: int = 0x20,
+        memory_range: list[tuple[int, int]] | None = None,
+        accent_color: str = DEFAULT_ACCENT_COLOR,
+    ) -> list[str]:
         memory_length = len(self.memory)
         memory_hex = bytes(self.memory).hex()
         ret = []
@@ -108,14 +114,14 @@ class Memory:
         decoded_lines = []
 
         if (
-            self.mstore_l_for_colorize is not None
-            and self.mstore_r_for_colorize is not None
-            and self.mstore_l_for_colorize != self.mstore_r_for_colorize
+            self.l_for_colorize is not None
+            and self.r_for_colorize is not None
+            and self.l_for_colorize != self.r_for_colorize
         ):
-            _l_i = self.mstore_l_for_colorize // line_length
-            l_j = 2 * (self.mstore_l_for_colorize % line_length)
-            r_i = self.mstore_r_for_colorize // line_length
-            r_j = 2 * (self.mstore_r_for_colorize % line_length)
+            _l_i = self.l_for_colorize // line_length
+            l_j = 2 * (self.l_for_colorize % line_length)
+            r_i = self.r_for_colorize // line_length
+            r_j = 2 * (self.r_for_colorize % line_length)
 
             if r_j == 0:
                 r_i -= 1
@@ -128,41 +134,39 @@ class Memory:
                 if not is_overlapping(
                     line_left,
                     line_right,
-                    self.mstore_l_for_colorize,
-                    self.mstore_r_for_colorize,
+                    self.l_for_colorize,
+                    self.r_for_colorize,
                 ):
-                    decoded_lines.append(decode_printable_with_color(ret[ret_i]))
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], accent_color=accent_color))
                     ret[ret_i] = zero_to_gray(ret[ret_i])
                     continue
 
-                if self.mstore_l_for_colorize <= line_left and line_right <= self.mstore_r_for_colorize:
-                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, line_length))
-                    ret[ret_i] = Colors.GREEN + ret[ret_i] + Colors.ENDC
-                elif line_left < self.mstore_l_for_colorize and self.mstore_r_for_colorize < line_right:
-                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, r_j // 2))
+                if self.l_for_colorize <= line_left and line_right <= self.r_for_colorize:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, line_length, accent_color))
+                    ret[ret_i] = accent_color + ret[ret_i] + Colors.ENDC
+                elif line_left < self.l_for_colorize and self.r_for_colorize < line_right:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, r_j // 2, accent_color))
                     ret[ret_i] = (
                         zero_to_gray(ret[ret_i][:l_j])
-                        + Colors.GREEN
+                        + accent_color
                         + ret[ret_i][l_j:r_j]
                         + Colors.ENDC
                         + zero_to_gray(ret[ret_i][r_j:])
                     )
 
-                elif line_left < self.mstore_l_for_colorize and line_right <= self.mstore_r_for_colorize:
-                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, line_length))
-                    ret[ret_i] = zero_to_gray(ret[ret_i][:l_j]) + Colors.GREEN + ret[ret_i][l_j:] + Colors.ENDC
-                elif self.mstore_l_for_colorize <= line_left and self.mstore_r_for_colorize < line_right:
-                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, r_j // 2))
-                    ret[ret_i] = Colors.GREEN + ret[ret_i][:r_j] + Colors.ENDC + zero_to_gray(ret[ret_i][r_j:])
+                elif line_left < self.l_for_colorize and line_right <= self.r_for_colorize:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], l_j // 2, line_length, accent_color))
+                    ret[ret_i] = zero_to_gray(ret[ret_i][:l_j]) + accent_color + ret[ret_i][l_j:] + Colors.ENDC
+                elif self.l_for_colorize <= line_left and self.r_for_colorize < line_right:
+                    decoded_lines.append(decode_printable_with_color(ret[ret_i], 0, r_j // 2, accent_color))
+                    ret[ret_i] = accent_color + ret[ret_i][:r_j] + Colors.ENDC + zero_to_gray(ret[ret_i][r_j:])
                 else:
-                    assert (
-                        False
-                    ), f"Unreachable {line_left} {line_right} {self.mstore_l_for_colorize} {self.mstore_r_for_colorize}"
-            self.mstore_l_for_colorize = None
-            self.mstore_r_for_colorize = None
+                    assert False, f"Unreachable {line_left} {line_right} {self.l_for_colorize} {self.r_for_colorize}"
+            self.l_for_colorize = None
+            self.r_for_colorize = None
         else:
             for i in range(len(ret)):
-                decoded_lines.append(decode_printable_with_color(ret[i]))
+                decoded_lines.append(decode_printable_with_color(ret[i], accent_color=accent_color))
                 ret[i] = zero_to_gray(ret[i])
 
         # TODO: cleanup
