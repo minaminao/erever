@@ -252,6 +252,17 @@ def disassemble_code(
     pc = entrypoint
     while pc < len(context.bytecode):
         instruction_message = ""
+
+        def print_instruction_message() -> None:
+            nonlocal instruction_message
+            if not silent:
+                if invocation_only:
+                    if is_invocation_mnemonic(mnemonic):
+                        print(instruction_message)
+                else:
+                    print(instruction_message)
+                instruction_message = ""
+
         next_pc = pc + 1
         value = context.bytecode[pc]
         if value in opcodes:
@@ -674,6 +685,9 @@ def disassemble_code(
                         assert isinstance(context.eof, EOF)
                         current_section_index = context.eof.return_stack[-1][0]
                         context.bytecode = context.eof.codes[target_section_index].code
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         result = disassemble_code(
                             context,
                             trace,
@@ -698,6 +712,9 @@ def disassemble_code(
                     case "JUMPF":
                         assert isinstance(context.eof, EOF)
                         context.bytecode = context.eof.codes[target_section_index].code
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         disassemble_code(
                             context,
                             trace,
@@ -735,6 +752,9 @@ def disassemble_code(
                         child_context.return_data = b""
                         child_context.depth += 1
 
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         result = disassemble(
                             context=child_context,
                             trace=trace,
@@ -780,6 +800,9 @@ def disassemble_code(
                         child_context.return_data = b""
                         child_context.depth += 1
 
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         result = disassemble(
                             context=child_context,
                             trace=trace,
@@ -875,6 +898,9 @@ def disassemble_code(
                         if mnemonic == "STATICCALL":
                             child_context.static = True
 
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         result = disassemble(
                             context=child_context,
                             trace=trace,
@@ -979,6 +1005,9 @@ def disassemble_code(
                         if mnemonic == "EXTSTATICCALL":
                             child_context.static = True
 
+                        if not silent:
+                            print_instruction_message()
+                            print("\n")
                         result = disassemble(
                             context=child_context,
                             trace=trace,
@@ -1090,12 +1119,7 @@ def disassemble_code(
                         instruction_message += f"\n{' ' * (TAB_SIZE * 3)}"
                     instruction_message += f"{line}"
 
-        if not silent:
-            if invocation_only:
-                if is_invocation_mnemonic(mnemonic):
-                    print(instruction_message)
-            else:
-                print(instruction_message)
+        print_instruction_message()
 
         context.steps += 1
         if context.steps >= max_steps:
