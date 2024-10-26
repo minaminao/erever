@@ -910,7 +910,90 @@ def disassemble_code(
                     case "RETURNDATALOAD":
                         assert False, "RETURNDATALOAD is not supported"
                     case "EXTCALL":
-                        assert False, "EXTCALL is not supported"
+                        if mnemonic == "EXTCALL":
+                            (
+                                address,
+                                args_offset,
+                                args_size,
+                                callvalue,
+                            ) = input
+                            if context.static and callvalue > 0:
+                                raise StaticCallError
+                        # elif mnemonic == "STATICCALL":
+                        #     callvalue = 0
+                        #     (
+                        #         gas,
+                        #         address,
+                        #         args_offset,
+                        #         args_size,
+                        #         ret_offset,
+                        #         ret_size,
+                        #     ) = input
+                        # elif mnemonic == "DELEGATECALL":
+                        #     callvalue = context.callvalue
+                        #     (
+                        #         gas,
+                        #         address,
+                        #         args_offset,
+                        #         args_size,
+                        #         ret_offset,
+                        #         ret_size,
+                        #     ) = input
+                        #     if context.static:
+                        #         raise StaticCallError
+
+                        if callvalue > 0:
+                            extra_gas = 2300
+                            context.gas -= 9000 - 2300  # TODO
+                            # TODO: gas for empty account
+                        else:
+                            extra_gas = 0
+                        if address not in context.state.address_access_set:
+                            context.gas -= GAS_CODE_WARM_COLD_DIFF
+                            context.state.address_access_set.add(address)
+                        code = context.state.get_code(address)
+                        call_gas_cost = calculate_message_call_gas(
+                            callvalue, context.gas * 63 // 64, context.gas, 0, extra_gas
+                        ).cost
+                        context.gas -= call_gas_cost
+                        child_context = copy.deepcopy(context)
+                        child_context.bytecode = code
+                        child_context.gas = call_gas_cost
+                        child_context.address = address if mnemonic != "EXTDELEGATECALL" else context.address
+                        child_context.caller = context.address
+                        child_context.callvalue = callvalue
+                        child_context.calldata = memory.get_as_bytes(args_offset, args_size)
+                        child_context.return_data = b""
+                        child_context.depth += 1
+                        if mnemonic == "EXTSTATICCALL":
+                            child_context.static = True
+
+                        result = disassemble(
+                            context=child_context,
+                            trace=trace,
+                            entrypoint=0,
+                            max_steps=max_steps,
+                            decode_stack=decode_stack,
+                            ignore_stack_underflow=ignore_stack_underflow,
+                            silent=silent,
+                            hide_pc=hide_pc,
+                            show_opcodes=show_opcodes,
+                            memory_display=memory_display,
+                            invocation_only=invocation_only,
+                            return_trace_logs=return_trace_logs,
+                        )
+
+                        if result.success:
+                            context.gas += child_context.gas
+                            context.state = child_context.state
+                            context.return_data = result.return_data
+                        else:
+                            context.state.original_storages = child_context.state.original_storages
+                            context.state.codes = child_context.state.codes
+                        context.steps = child_context.steps
+
+                        stack.push(0 if result.success else 1) # TODO: 1 or 2
+                        trace_logs.extend(result.trace_logs)
                     case "EXTDELEGATECALL":
                         assert False, "EXTDELEGATECALL is not supported"
                     case "EXTSTATICCALL":
