@@ -257,7 +257,7 @@ def main() -> None:
     add_common_arguments_for_data(parser_symbolic_trace)
     add_common_arguments_for_data(parser_mermaid)
     add_common_arguments_for_data(parser_gadget)
-    add_common_arguments_for_display(parser_disassemble)
+    disassemble_display_group = add_common_arguments_for_display(parser_disassemble)
     trace_display_group = add_common_arguments_for_display(parser_trace)
     symbolic_trace_display_group = add_common_arguments_for_display(parser_symbolic_trace)
     add_common_arguments_for_display(parser_mermaid)
@@ -272,6 +272,7 @@ def main() -> None:
     add_common_arguments_for_eof(parser_mermaid)
     add_common_arguments_for_eof(parser_gadget)
 
+    disassemble_display_group.add_argument("--output-bytecode", action="store_true", default=False, help="Output bytecode")
     trace_display_group.add_argument("--decode-stack", action="store_true", default=False, help="Decode stack items")
     trace_display_group.add_argument(
         "--invocation-only",
@@ -365,6 +366,9 @@ def main() -> None:
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
                 if "bytecode" in parsed_toml:
                     parsed_toml["bytecode"] = parse_bytecode(parsed_toml["bytecode"])
+                    if args.handler == command_disassemble and args.output_bytecode:
+                        print("Bytecode:", parsed_toml["bytecode"].hex())
+                        print()
                 if "calldata" in parsed_toml:
                     parsed_toml["calldata"] = parse_bytecode(parsed_toml["calldata"])
                 if "state" in parsed_toml:

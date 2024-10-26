@@ -654,11 +654,15 @@ def disassemble_code(
                         assert isinstance(context.eof, EOF)
                         memory.store(mem_offset, context.eof.data.get_as_bytes(offset, size))
                     case "RJUMP":
-                        offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
-                        next_pc = pc + 3 + offset
-                        last_jump_to_address = offset
+                        relative_offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
+                        next_pc = pc + 3 + relative_offset
+                        last_jump_to_address = next_pc
                     case "RJUMPI":
-                        assert False, "RJUMPI is not supported"
+                        relative_offset = v_2bytes if v_2bytes < 0x8000 else v_2bytes - 0x10000
+                        condition = input[0]
+                        if condition != 0:
+                            next_pc = pc + 3 + relative_offset
+                        last_jump_to_address = next_pc
                     case "RJUMPV":
                         assert False, "RJUMPV is not supported"
                     case "CALLF":
