@@ -202,7 +202,9 @@ def parse_eof_body(bytecode: bytes, header: EOFHeader, p: int) -> tuple[EOF, int
     if header.num_container_sections is not None:
         for i, container_size in enumerate(header.container_sizes):
             container = bytecode[p : p + container_size]
-            print(f"  Container {i}: {container.hex()}")
+            print(f"  Container {i}:")
+            container_header, container_p = parse_eof_header(container)
+            container_eof, container_p = parse_eof_body(container, container_header, container_p)
             p += container_size
             containers.append(EOFContainer(container))
 
