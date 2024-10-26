@@ -107,6 +107,7 @@ def disassemble(
     memory_range: list[tuple[int, int]] | None = None,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
+    depth: int = 0,
 ) -> DisassembleResult:
     return_data = b""
 
@@ -232,6 +233,7 @@ def disassemble_code(
     memory_range: list[tuple[int, int]] | None = None,
     invocation_only: bool = False,
     return_trace_logs: bool = False,
+    depth: int = 0,
 ) -> DisassembleResult:
     disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
@@ -273,6 +275,8 @@ def disassemble_code(
 
         if not silent:
             if not hide_pc:
+                if depth != 0:
+                    instruction_message += f"[{depth}] "
                 instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
                 instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
@@ -670,7 +674,7 @@ def disassemble_code(
                         assert isinstance(context.eof, EOF)
                         current_section_index = context.eof.return_stack[-1][0]
                         context.bytecode = context.eof.codes[target_section_index].code
-                        disassemble_code(
+                        result = disassemble_code(
                             context,
                             trace,
                             0,
@@ -684,8 +688,11 @@ def disassemble_code(
                             memory_range,
                             invocation_only,
                             return_trace_logs,
+                            depth+1,
                         )
                         context.bytecode = context.eof.codes[current_section_index].code
+                        for _ in range(context.eof.codes[target_section_index].outputs):
+                            stack.push(result.stack_after_execution.pop()) # TODO: is the order correct?
                     case "RETF":
                         break_flag = True
                     case "JUMPF":
@@ -705,6 +712,7 @@ def disassemble_code(
                             memory_range,
                             invocation_only,
                             return_trace_logs,
+                            depth+1,
                         )
                         break_flag = True
                     case "EXCHANGE":
@@ -740,6 +748,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
+                            depth=depth+1,
                         )
 
                     case "RETURNCONTRACT":
@@ -784,6 +793,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
+                            depth=depth+1,
                         )
 
                         if result.success:
@@ -878,6 +888,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
+                            depth=depth+1,
                         )
 
                         if result.success:
@@ -981,6 +992,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
+                            depth=depth+1,
                         )
 
                         if result.success:
