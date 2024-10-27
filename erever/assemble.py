@@ -1,11 +1,14 @@
 from .opcodes.cancun import OPCODES
+from .opcodes.eof import OPCODES_EOF
 
-
-def assemble(mnemonics_str: str) -> bytes:
-    mnemonics: list[str] = mnemonics_str.split(" ")
+def assemble(mnemonics_str: str, eof: bool = False) -> bytes:
+    mnemonics: list[str] = mnemonics_str.split()
     i = 0
     bytecode = ""
-    mnemonic_to_opcode = {v[0]: opcode for opcode, v in OPCODES.items()}
+    if eof:
+        mnemonic_to_opcode = {v[0]: opcode for opcode, v in OPCODES_EOF.items()}
+    else:
+        mnemonic_to_opcode = {v[0]: opcode for opcode, v in OPCODES.items()}
     while i < len(mnemonics):
         mnemonic = mnemonics[i]
         mnemonic_upper = mnemonic.upper()
