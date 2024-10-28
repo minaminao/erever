@@ -1,8 +1,9 @@
 from .opcodes.cancun import OPCODES
 from .opcodes.eof import OPCODES_EOF
+from .utils.general import remove_comments
 
 def assemble(mnemonics_str: str, eof: bool = False) -> bytes:
-    mnemonics: list[str] = mnemonics_str.split()
+    mnemonics: list[str] = remove_comments(mnemonics_str).split()
     i = 0
     bytecode = ""
     if eof:

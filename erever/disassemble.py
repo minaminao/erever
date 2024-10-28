@@ -291,7 +291,7 @@ def disassemble_code(
                 instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
                 instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
-            if mnemonic_raw in ["JUMP", "JUMPI"]:
+            if mnemonic_raw in ["JUMP", "JUMPI", "RJUMP", "RJUMPI", "RJUMPV"]:
                 instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
             elif mnemonic_raw == "JUMPDEST":
                 instruction_message += f"{Colors.BLUE}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
@@ -710,6 +710,7 @@ def disassemble_code(
                     case "RETF":
                         break_flag = True
                     case "JUMPF":
+                        target_section_index = v_2bytes
                         assert isinstance(context.eof, EOF)
                         context.bytecode = context.eof.codes[target_section_index].code
                         if not silent:

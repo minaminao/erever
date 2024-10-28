@@ -11,7 +11,7 @@ from .disassemble_mermaid import disassemble_mermaid
 from .disassemble_symbolic import disassemble_symbolic
 from .find_gadgets import find_gadgets
 from .utils.colors import Colors
-from .utils.general import UINT256_MAX
+from .utils.general import parse_bytecode, UINT256_MAX
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -356,12 +356,6 @@ def main() -> None:
         if args.bytecode:
             context = Context.from_arg_params_with_bytecode(args, args.bytecode)
         elif args.filename:
-
-            def parse_bytecode(raw_bytecode: str) -> bytes:
-                lines = raw_bytecode.split("\n")
-                bytecode = "".join([line.split("#")[0].strip() + "\n" for line in lines])
-                return bytes.fromhex(bytecode.replace("0x", ""))
-
             if args.filename.split(".")[-1] == "toml":
                 parsed_toml = tomllib.load(open(args.filename, "rb"))
                 if "bytecode" in parsed_toml:
