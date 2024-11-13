@@ -17,7 +17,7 @@ dependencies = [
 requires-python = ">=3.12"
 
 [project.scripts]
-erever = "__main__:main"
+erever = "erever.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
