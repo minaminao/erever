@@ -653,6 +653,10 @@ def disassemble_code(
                         size = input[1]
                         context.gas -= memory.extend(offset + size)
                         context.gas -= 8 * size
+                        if not silent:
+                            instruction_message += (
+                                f"\n{'log'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{memory.get_as_hex(offset, size)}"
+                            )
                     case "DATALOAD":
                         offset = input[0]
                         assert isinstance(context.eof, EOF)
@@ -772,6 +776,22 @@ def disassemble_code(
                             depth=depth+1,
                         )
 
+                        if result.success:
+                            context.gas += child_context.gas
+                            context.state = child_context.state
+                            # result_return_data = result.return_data[
+                            #     :ret_size
+                            # ] + b"\x00" * max(0, ret_size - len(result.return_data))
+                            # memory.store(ret_offset, result_return_data)
+                            # context.return_data = result.return_data
+                            context.state.set_code(contract_address, result.return_data)
+                        else:
+                            context.state.original_storages = child_context.state.original_storages
+                            context.state.codes = child_context.state.codes
+                        context.steps = child_context.steps
+
+                        stack.push(contract_address if result.success else 0)
+                        trace_logs.extend(result.trace_logs)
                     case "RETURNCONTRACT":
                         deploy_container_index = v_1byte
                         aux_data_offset, aux_data_size = input
@@ -1104,6 +1124,7 @@ def disassemble_code(
                     "CREATE2",
                     "RETURN",
                     "REVERT",
+                    "EXTCALL",
                 ]
             ):
                 # TODO: clean up

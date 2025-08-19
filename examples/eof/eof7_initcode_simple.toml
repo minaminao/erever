@@ -1,0 +1,46 @@
+bytecode = """
+# initcontainer
+    # header
+    # magic, version
+    EF00 01 
+    # kind_types, types_size
+    01 0004
+    # kind_code, num_code_sections, code_size+
+    02 0001 0011
+    # [kind_container, num_container_sections, container_size+,]
+    03 0001 007E
+    # kind_data, data_size
+    04 0000
+    # terminator
+    00
+
+    # body
+    ## types_section, code_sections+, container_section*, data_section
+    # types_section: inputs, outputs, max_stack_height
+    00 80 0002
+    # code 0 section
+    608060405234E100055F6080EE005F80FD
+
+    # container 0 section
+        # magic, version
+        EF00 01
+        # kind_types, types_size
+        01 0004
+        # kind_code, num_code_sections, code_size+
+        02 0001 0003
+        ## [kind_container, num_container_sections, container_size+,]
+        # kind_data, data_size
+        04 0068
+        # terminator
+        00
+        
+        # types_section
+        00 80 0002
+        # code 0 section
+        5F80FD
+        # data_section
+        A3646970667358221220CE66BF9AA095A4DDEF38AF31698AF9A99198879A01B86C5A0418579FF86B2E1B6C6578706572696D656E74616CF564736F6C637827302E382E32372D646576656C6F702E323032342E382E352B636F6D6D69742E38386366363036300066
+        
+# calldata
+"""
+eof = true

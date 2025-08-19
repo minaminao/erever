@@ -1,0 +1,27 @@
+bytecode = """
+# initcontainer
+    # magic, version
+    EF00 01
+
+    # kind_types, types_size
+    01 0004
+
+    # kind_code, num_code_sections, code_size+
+    02 0001 0004
+
+    # [kind_container, num_container_sections, container_size+,]
+
+    # kind_data, data_size
+    04 0021
+
+    # terminator
+    00
+
+    # Code Section
+    00 80 0001 D10000 00
+
+    # Data Section
+    454F462068617320736F6D65206772656174206578616D706C6573206865726521
+# calldata
+"""
+eof = true

@@ -87,6 +87,7 @@ def compute_contract_address(address: AddressInt, nonce: int) -> AddressInt:
 
 
 def compute_contract_address_by_eofcreate(address: AddressInt, salt: int, init_container: bytes) -> AddressInt:
+    # TODO
     return int.from_bytes(Web3.keccak(rlp.encode([address.to_bytes(20, "big"), salt, init_container]))[12:], "big")
 
 def remove_comments(text: str) -> str:

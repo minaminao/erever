@@ -26,6 +26,24 @@ def assemble(mnemonics_str: str, eof: bool = False) -> bytes:
                     arg = hex(int(arg))[2:].zfill(mnemonic_num * 2)
                 assert len(arg) == mnemonic_num * 2, "Invalid PUSH argument"
                 bytecode += arg
+        elif mnemonic_upper in ["EXCHANGE", "EOFCREATE", "RETURNCONTRACT"]:
+            i += 1
+            arg = mnemonics[i]
+            if arg.startswith("0x"):
+                arg = arg[2:]
+            else:
+                arg = hex(int(arg))[2:].zfill(2)
+            assert len(arg) == 2, "Invalid EXCHANGE argument"
+            bytecode += arg
+        elif mnemonic_upper in  ["DATALOADN", "RJUMP", "RJUMPI", "CALLF", "JUMPF"]:
+            i += 1
+            arg = mnemonics[i]
+            if arg.startswith("0x"):
+                arg = arg[2:]
+            else:
+                arg = hex(int(arg))[2:].zfill(4)
+            assert len(arg) == 4, "Invalid RJUMPI argument"
+            bytecode += arg
 
         i += 1
 
