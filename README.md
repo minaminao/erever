@@ -43,9 +43,9 @@ Note: Only supports Python >= 3.12.
 ## Usage
 
 erever has the following subcommands:
-- `disassemble`: Disassemble EVM bytecode into a more readable format.
+- `disassemble` (alias: `disas`): Disassemble EVM bytecode into a more readable format.
 - `trace`: Traces an execution for EVM bytecode.
-- `symbolic-trace`: Performs symbolic execution tracing on EVM bytecode.
+- `symbolic-trace` (alias: `symbolic`): Performs symbolic execution tracing on EVM bytecode.
 - `mermaid`: Generates a mermaid diagram to represent EVM bytecode structure visually.
 - `gadget`: Searches for JOP (Jump-Oriented Programming) gadgets within EVM bytecode.
 - `assemble`: Converts assembly instructions to EVM bytecode.
@@ -91,28 +91,6 @@ $ erever disassemble -b "70806011526000526070600e536023600ef38060115260005260706
 
 The `-b` option specifies the byte code.
 At the beginning of each line, the offset of the bytecode is displayed.
-
-<!-- 
-Additionally, as metadata, CBOR decoding is also performed.
-In this bytecode, since CBOR does not exist, `CBOR: Not found` will be displayed.
-For more information about CBOR, refer to [Contract Metadata](https://docs.soliditylang.org/en/v0.8.23/metadata.html) in the Solidity documentation.
-
-If CBOR data exists, it will be decoded as follows.
-The bytecode is from the BlazCTF "Missing" challenge.
-You can also use the abbreviated `disas` command and specify a TOML file using the `-f` option.
-
-```
-$ erever disas -f examples/blazctf_missing.toml
-(snip)
-
-CBOR: length = 51
-CBOR: ipfs = https://ipfs.io/ipfs/QmWZ2kq9CfgKHkXYghaeKM2mcYZxsZP2ibrgXkPK6ivjk5
-CBOR: ipfs content = b'It seems that you have found something interesting:\n0xb416d860b4699c727446b264d19467f4591939192005d81a77c91a3c92341d9e\n0x852b579100b5a5632a61de136bcc067fb6d6d18cda593e6c56abd23e3de949e6\n0x349450f2e567bd69711230624ab9fbe97d949c218029f4e795bc94b780cff2ae\n0xb...'
-CBOR: solc = 0.8.23
-```
-
-In addition to decoding CBOR data, if IPFS data is included in the metadata, its content is automatically fetched and displayed.
-If the content is lengthy, it will be abbreviated with `...`. -->
 
 You can also use RPC to disassemble a bytecode on the blockchain.
 For example, if you want to disassemble the bytecode of [Beacon Deposit Contract](https://etherscan.io/address/0x00000000219ab540356cbb839cbe05303d7705fa) on the Ethereum mainnet, you can use the following command:

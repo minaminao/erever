@@ -333,7 +333,6 @@ def main() -> None:
 
         args.calldata = args.calldata if hasattr(args, "calldata") else ""
         args.address = parse_arg_param_to_int(args.address) if hasattr(args, "address") else None
-        args.balance = parse_arg_param_to_int(args.balance) if hasattr(args, "balance") else None
         args.origin = parse_arg_param_to_int(args.origin) if hasattr(args, "origin") else None
         args.caller = parse_arg_param_to_int(args.caller) if hasattr(args, "caller") else None
         args.callvalue = parse_arg_param_to_int(args.callvalue) if hasattr(args, "callvalue") else None
