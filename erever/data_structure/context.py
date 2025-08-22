@@ -3,6 +3,7 @@ import argparse
 from Crypto.Util.number import bytes_to_long
 from web3 import HTTPProvider, Web3
 from web3.types import BlockData, TxData
+import copy
 
 from ..eof import EOF
 from ..precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
@@ -195,6 +196,20 @@ class State:
         if address not in self.transient_storages:
             self.transient_storages[address] = TransientStorage()
         self.transient_storages[address].store(slot, value)
+
+    def __deepcopy__(self, memo):
+        """
+        a workaround for "Error cannot pickle '_thread.lock' object"
+        """
+        cls = self.__class__
+        new = cls.__new__(cls)
+        memo[id(self)] = new
+        for k, v in self.__dict__.items():
+            if k == "w3":
+                setattr(new, k, v)
+            else:
+                setattr(new, k, copy.deepcopy(v, memo))
+        return new
 
 
 class Context:
