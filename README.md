@@ -105,6 +105,13 @@ If you do not pass `--rpc-url` on the command line, erever will automatically us
 export EREVER_RPC_URL="YOUR_RPC_URL"
 ```
 
+Also, you can look up function signatures using `--analyze` option:
+```
+$ erever disas --file blazctf_missing.toml --analyze | grep PUSH4
+0x044: PUSH4 0x64d98f6e # isSolved()
+0x136: PUSH4 0x43000817 # unknown
+```
+
 ### Trace
 
 The `trace` command is used to trace the execution of EVM bytecode.
