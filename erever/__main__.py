@@ -112,7 +112,7 @@ def main() -> None:
         group = parser.add_argument_group("data options")
 
         group.add_argument("-b", "--bytecode", help="Raw bytecode as hex string")
-        group.add_argument("-f", "--filename", help="TOML or bytecode file")
+        group.add_argument("-f", "--file", help="TOML or bytecode file")
 
         group.add_argument(
             "--rpc-url",
@@ -356,9 +356,9 @@ def main() -> None:
 
         if args.bytecode:
             context = Context.from_arg_params_with_bytecode(args, args.bytecode)
-        elif args.filename:
-            if args.filename.split(".")[-1] == "toml":
-                parsed_toml = tomllib.load(open(args.filename, "rb"))
+        elif getattr(args, "file", None):
+            if args.file.split(".")[-1] == "toml":
+                parsed_toml = tomllib.load(open(args.file, "rb"))
                 if "bytecode" in parsed_toml:
                     parsed_toml["bytecode"] = parse_bytecode(parsed_toml["bytecode"])
                     if args.handler == command_disassemble and args.output_bytecode:
@@ -371,7 +371,7 @@ def main() -> None:
                     del parsed_toml["state"]
                 context = Context(**parsed_toml)
             else:
-                bytecode = open(args.filename).read()
+                bytecode = open(args.file).read()
                 context = Context.from_arg_params_with_bytecode(args, bytecode)
         elif args.tx:
             context = Context.from_tx_hash(args)

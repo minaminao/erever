@@ -38,7 +38,7 @@ To install erever, simply run the following command:
 pip install erever
 ```
 
-Note: Only supports Python >= 3.12.
+Note: Only supports Python >= 3.13.
 
 ## Usage
 
