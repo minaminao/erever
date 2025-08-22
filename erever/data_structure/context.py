@@ -240,6 +240,8 @@ class Context:
 
     eof: bool | EOF
 
+    comments: dict[int, str] | None
+
     def __init__(
         self,
         bytecode: bytes = DEFAULT_BYTECODE,
@@ -261,6 +263,7 @@ class Context:
         rpc_url: str | None = None,
         state_dict: StateDict | None = None,
         eof: bool = False,
+        comments: dict[int, str] | None = None,
     ) -> None:
         self.bytecode = bytecode
         self.address = address
@@ -285,6 +288,7 @@ class Context:
         self.depth = 1
         self.steps = 0
         self.eof = eof
+        self.comments = comments or {}
 
     @classmethod
     def from_arg_params_with_bytecode(cls, args: argparse.Namespace, bytecode: str) -> "Context":

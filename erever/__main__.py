@@ -369,6 +369,11 @@ def main() -> None:
                 if "state" in parsed_toml:
                     parsed_toml["state_dict"] = parsed_toml["state"]
                     del parsed_toml["state"]
+                if "comments" in parsed_toml:
+                    tmp_comments = {}
+                    for key, value in parsed_toml["comments"].items():
+                        tmp_comments[parse_arg_param_to_int(key)] = value
+                    parsed_toml["comments"] = tmp_comments
                 context = Context(**parsed_toml)
             else:
                 bytecode = open(args.file).read()
