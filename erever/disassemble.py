@@ -109,6 +109,7 @@ def disassemble(
     invocation_only: bool = False,
     return_trace_logs: bool = False,
     depth: int = 0,
+    analyze: bool = False,
 ) -> DisassembleResult:
     return_data = b""
 
@@ -171,6 +172,7 @@ def disassemble(
                 invocation_only,
                 return_trace_logs,
                 depth,
+                analyze,
             )
         else:
             for i, code in enumerate(eof.codes):
@@ -191,6 +193,7 @@ def disassemble(
                     invocation_only,
                     return_trace_logs,
                     depth,
+                    analyze,
                 )
 
         disassemble_result = DisassembleResult(
@@ -218,6 +221,7 @@ def disassemble(
             invocation_only=invocation_only,
             return_trace_logs=return_trace_logs,
             depth=depth,
+            analyze=analyze,
         )
 
     return disassemble_result
@@ -238,6 +242,7 @@ def disassemble_code(
     invocation_only: bool = False,
     return_trace_logs: bool = False,
     depth: int = 0,
+    analyze: bool = False,
 ) -> DisassembleResult:
     disassembled_code: DisassembleCode = []  # (pc, mnemonic, push_v)
     stack = Stack(ignore_stack_underflow=ignore_stack_underflow)
@@ -314,7 +319,7 @@ def disassemble_code(
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
             if not silent and mnemonic_num > 0 and not invocation_only:
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
-                if mnemonic_num == 4:
+                if mnemonic_num == 4 and analyze:
                     instruction_message += f" # {get_function_signature(context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()) or 'unknown'}"
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic_raw[:4]
@@ -721,6 +726,7 @@ def disassemble_code(
                             invocation_only,
                             return_trace_logs,
                             depth + 1,
+                            analyze,
                         )
                         context.bytecode = context.eof.codes[current_section_index].code
                         for _ in range(context.eof.codes[target_section_index].outputs):
@@ -749,6 +755,7 @@ def disassemble_code(
                             invocation_only,
                             return_trace_logs,
                             depth + 1,
+                            analyze,
                         )
                         break_flag = True
                     case "EXCHANGE":
@@ -788,6 +795,7 @@ def disassemble_code(
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
                             depth=depth + 1,
+                            analyze=analyze,
                         )
 
                         if result.success:
@@ -852,6 +860,7 @@ def disassemble_code(
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
                             depth=depth + 1,
+                            analyze=analyze,
                         )
 
                         if result.success:
@@ -937,11 +946,12 @@ def disassemble_code(
                             instruction_message += (
                                 f"\n{'args'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{child_context.calldata.hex()}"
                             )
-                            selector = child_context.calldata[:4].hex()
-                            signature = get_function_signature(selector)
-                            instruction_message += (
-                                f"\n{'sig'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{signature or 'unknown'}"
-                            )
+                            if analyze:
+                                selector = child_context.calldata[:4].hex()
+                                signature = get_function_signature(selector)
+                                instruction_message += (
+                                    f"\n{'sig'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{signature or 'unknown'}"
+                                )
                             print_instruction_message()
                             print("\n")
                         result = disassemble(
@@ -958,6 +968,7 @@ def disassemble_code(
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
                             depth=depth + 1,
+                            analyze=analyze,
                         )
 
                         if result.success:
@@ -1065,6 +1076,7 @@ def disassemble_code(
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
                             depth=depth + 1,
+                            analyze=analyze,
                         )
 
                         if result.success:

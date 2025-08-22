@@ -275,6 +275,12 @@ def main() -> None:
     disassemble_display_group.add_argument(
         "--output-bytecode", action="store_true", default=False, help="Output bytecode"
     )
+    disassemble_display_group.add_argument(
+        "--analyze",
+        action="store_true",
+        default=False,
+        help="Enable additional analysis such as function signature lookup",
+    )
     trace_display_group.add_argument("--decode-stack", action="store_true", default=False, help="Decode stack items")
     trace_display_group.add_argument(
         "--invocation-only",
@@ -305,6 +311,12 @@ def main() -> None:
         metavar=("START", "END"),
         help="Specify memory ranges [START, END). Not applicable to subcontexts. Use multiple times for multiple ranges.",
     )
+    trace_display_group.add_argument(
+        "--analyze",
+        action="store_true",
+        default=False,
+        help="Enable additional analysis such as function signature lookup",
+    )
     symbolic_trace_display_group.add_argument(
         "--show-symbolic-stack",
         action="store_true",
@@ -316,6 +328,12 @@ def main() -> None:
         action="store_true",
         default=False,
         help="Hide instructions which do not output to the stack",
+    )
+    symbolic_trace_display_group.add_argument(
+        "--analyze",
+        action="store_true",
+        default=False,
+        help="Enable additional analysis such as function signature lookup",
     )
     parser_assemble.add_argument("mnemonics", metavar="MNEMONICS", type=str, help="Mnemonics to assemble")
 
@@ -400,6 +418,7 @@ def command_disassemble(args: argparse.Namespace, context: Context) -> None:
         max_steps=args.max_steps,
         hide_pc=args.hide_pc,
         show_opcodes=args.show_opcodes,
+        analyze=args.analyze,
     )
 
     # TODO: enable
@@ -430,6 +449,7 @@ def command_trace(args: argparse.Namespace, context: Context) -> None:
         silent=args.silent,
         return_trace_logs=args.return_trace_logs,
         memory_range=args.memory_range,
+        analyze=args.analyze,
     )
     if args.output_json:
         print(json.dumps(result.to_dict()))
@@ -444,6 +464,7 @@ def command_symbolic_trace(args: argparse.Namespace, context: Context) -> None:
         hide_pc=args.hide_pc,
         hide_instructions_with_no_stack_output=args.hide_instructions_with_no_stack_output,
         show_opcodes=args.show_opcodes,
+        analyze=args.analyze,
     )
 
 
