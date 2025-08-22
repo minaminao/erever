@@ -27,6 +27,7 @@ from .utils.general import (
     pad_even,
     uint256,
 )
+from .utils.selectors import get_function_signature
 
 
 @dataclass
@@ -313,6 +314,8 @@ def disassemble_code(
             push_v = bytes_to_long(context.bytecode[pc + 1 : pc + 1 + mnemonic_num])
             if not silent and mnemonic_num > 0 and not invocation_only:
                 instruction_message += " 0x" + context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()
+                if mnemonic_num == 4:
+                    instruction_message += f" # {get_function_signature(context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()) or 'unknown'}"
             next_pc = pc + 1 + mnemonic_num
             mnemonic = mnemonic_raw[:4]
         elif mnemonic_raw.startswith("DUP") and mnemonic_raw != "DUPN":
@@ -933,6 +936,11 @@ def disassemble_code(
                         if not silent:
                             instruction_message += (
                                 f"\n{'args'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{child_context.calldata.hex()}"
+                            )
+                            selector = child_context.calldata[:4].hex()
+                            signature = get_function_signature(selector)
+                            instruction_message += (
+                                f"\n{'sig'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{signature or 'unknown'}"
                             )
                             print_instruction_message()
                             print("\n")
