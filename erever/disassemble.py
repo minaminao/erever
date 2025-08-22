@@ -260,8 +260,10 @@ def disassemble_code(
             nonlocal instruction_message
 
             if not silent:
-                if pc in context.comments:
-                    instruction_message += f"\n{'comment'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{context.comments[pc]}"
+                if context.address in context.comments and pc in context.comments[context.address]:
+                    instruction_message += (
+                        f"\n{'comment'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{context.comments[context.address][pc]}"
+                    )
                 if invocation_only:
                     if is_invocation_mnemonic(mnemonic):
                         print(instruction_message)

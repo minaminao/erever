@@ -372,7 +372,10 @@ def main() -> None:
                 if "comments" in parsed_toml:
                     tmp_comments = {}
                     for key, value in parsed_toml["comments"].items():
-                        tmp_comments[parse_arg_param_to_int(key)] = value
+                        tmp_comments2 = {}
+                        for key2, value2 in value.items():
+                            tmp_comments2[parse_arg_param_to_int(key2)] = value2
+                        tmp_comments[parse_arg_param_to_int(key)] = tmp_comments2
                     parsed_toml["comments"] = tmp_comments
                 context = Context(**parsed_toml)
             else:

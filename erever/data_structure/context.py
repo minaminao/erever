@@ -255,7 +255,7 @@ class Context:
 
     eof: bool | EOF
 
-    comments: dict[int, str] | None
+    comments: dict[int, dict[int, str]]
 
     def __init__(
         self,
@@ -278,7 +278,7 @@ class Context:
         rpc_url: str | None = None,
         state_dict: StateDict | None = None,
         eof: bool = False,
-        comments: dict[int, str] | None = None,
+        comments: dict[int, dict[int, str]] = {},
     ) -> None:
         self.bytecode = bytecode
         self.address = address
