@@ -32,10 +32,10 @@ If you encounter any issues or have suggestions for improvements while using ere
 
 ## Install
 
-To install erever, simply run the following command:
+To install erever, run the following command:
 
 ```
-pip install erever
+uv tool install .
 ```
 
 Note: Only supports Python >= 3.13.
