@@ -169,6 +169,7 @@ def disassemble(
                 memory_range,
                 invocation_only,
                 return_trace_logs,
+                depth,
             )
         else:
             for i, code in enumerate(eof.codes):
@@ -188,6 +189,7 @@ def disassemble(
                     memory_range,
                     invocation_only,
                     return_trace_logs,
+                    depth,
                 )
 
         disassemble_result = DisassembleResult(
@@ -214,6 +216,7 @@ def disassemble(
             memory_range=memory_range,
             invocation_only=invocation_only,
             return_trace_logs=return_trace_logs,
+            depth=depth,
         )
 
     return disassemble_result
