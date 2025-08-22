@@ -9,6 +9,7 @@ from ..precompiled_contracts.shanghai import PRECOMPILED_CONTRACTS
 from ..types import AddressInt, Gas
 from ..utils.general import UINT256_MAX, int_to_check_sum_address
 from .storage import Storage
+from .transient_storage import TransientStorage
 
 StateDict = dict[str, dict[str, str | int | dict[str, str]]]
 
@@ -18,7 +19,8 @@ class State:
     balances: dict[AddressInt, int]
     codes: dict[AddressInt, bytes]
     storages: dict[AddressInt, Storage]
-    original_storages: dict[AddressInt, Storage]
+    transient_storages: dict[AddressInt, TransientStorage]
+    original_network_storages: dict[AddressInt, Storage]
     address_access_set: set[AddressInt]
     block_number: int
 
@@ -31,7 +33,8 @@ class State:
         self.w3 = Web3(HTTPProvider(rpc_url)) if rpc_url else None
         self.block_number = block_number
         self.storages = {}
-        self.original_storages = {}
+        self.original_network_storages = {}
+        self.transient_storages = {}
         self.codes = {address: b"" for address in PRECOMPILED_CONTRACTS}
         self.address_access_set = set(PRECOMPILED_CONTRACTS)
         self.balances = {}
@@ -95,24 +98,24 @@ class State:
 
         if address not in self.storages:
             self.storages[address] = Storage()
-        if address not in self.original_storages:
-            self.original_storages[address] = Storage()
+        if address not in self.original_network_storages:
+            self.original_network_storages[address] = Storage()
 
         storage = self.storages[address]
-        original_storage = self.original_storages[address]
+        original_network_storage = self.original_network_storages[address]
 
-        if not original_storage.has(slot):
+        if not original_network_storage.has(slot):
             if self.w3:
-                original_storage.store(
+                original_network_storage.store(
                     slot,
                     bytes_to_long(
                         self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
                     ),
                 )
             else:
-                original_storage.store(slot, 0)
+                original_network_storage.store(slot, 0)
 
-        original_value = original_storage.load(slot)
+        original_value = original_network_storage.load(slot)
         warm = storage.has(slot)
         if not warm:
             storage.store(slot, original_value)
@@ -123,24 +126,24 @@ class State:
     def set_storage_at(self, address: AddressInt, slot: int, value: int) -> tuple[Gas, Gas]:
         if address not in self.storages:
             self.storages[address] = Storage()
-        if address not in self.original_storages:
-            self.original_storages[address] = Storage()
+        if address not in self.original_network_storages:
+            self.original_network_storages[address] = Storage()
 
         storage = self.storages[address]
-        original_storage = self.original_storages[address]
+        original_network_storage = self.original_network_storages[address]
 
-        if not original_storage.has(slot):
+        if not original_network_storage.has(slot):
             if self.w3:
-                original_storage.store(
+                original_network_storage.store(
                     slot,
                     bytes_to_long(
                         self.w3.eth.get_storage_at(int_to_check_sum_address(address), slot, self.block_number)
                     ),
                 )
             else:
-                original_storage.store(slot, 0)
+                original_network_storage.store(slot, 0)
 
-        original_value = original_storage.load(slot)
+        original_value = original_network_storage.load(slot)
         warm = storage.has(slot)
         if not warm:
             storage.store(slot, original_value)
@@ -182,6 +185,16 @@ class State:
         gas = base_dynamic_gas - 100
         # gas refunds are applied at the end of the transaction
         return (gas, gas_refunds)
+
+    def get_transient_storage_at(self, address: AddressInt, slot: int) -> int:
+        if address not in self.transient_storages:
+            self.transient_storages[address] = TransientStorage()
+        return self.transient_storages[address].load(slot)
+
+    def set_transient_storage_at(self, address: AddressInt, slot: int, value: int) -> None:
+        if address not in self.transient_storages:
+            self.transient_storages[address] = TransientStorage()
+        self.transient_storages[address].store(slot, value)
 
 
 class Context:

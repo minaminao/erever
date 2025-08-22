@@ -633,9 +633,12 @@ def disassemble_code(
                     case "JUMPDEST" | "NOP":
                         pass
                     case "TLOAD":
-                        assert False, "TLOAD is not supported"
+                        # TODO: gas
+                        value = context.state.get_transient_storage_at(context.address, input[0])
+                        stack.push(value)
                     case "TSTORE":
-                        assert False, "TSTORE is not supported"
+                        # TODO: gas
+                        context.state.set_transient_storage_at(context.address, input[0], input[1])
                     case "MCOPY":
                         # TODO: strict
                         memory.store(input[0], memory.get_as_bytes(input[1], input[2]))
@@ -786,7 +789,7 @@ def disassemble_code(
                             # context.return_data = result.return_data
                             context.state.set_code(contract_address, result.return_data)
                         else:
-                            context.state.original_storages = child_context.state.original_storages
+                            context.state.original_network_storages = child_context.state.original_network_storages
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 
@@ -850,7 +853,7 @@ def disassemble_code(
                             # context.return_data = result.return_data
                             context.state.set_code(contract_address, result.return_data)
                         else:
-                            context.state.original_storages = child_context.state.original_storages
+                            context.state.original_network_storages = child_context.state.original_network_storages
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 
@@ -947,7 +950,7 @@ def disassemble_code(
                             memory.store(ret_offset, result_return_data)
                             context.return_data = result.return_data
                         else:
-                            context.state.original_storages = child_context.state.original_storages
+                            context.state.original_network_storages = child_context.state.original_network_storages
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 
@@ -1050,7 +1053,7 @@ def disassemble_code(
                             context.state = child_context.state
                             context.return_data = result.return_data
                         else:
-                            context.state.original_storages = child_context.state.original_storages
+                            context.state.original_network_storages = child_context.state.original_network_storages
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 

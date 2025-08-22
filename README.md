@@ -99,6 +99,12 @@ For example, if you want to disassemble the bytecode of [Beacon Deposit Contract
 erever disas -c 0x00000000219ab540356cBB839Cbe05303d7705Fa --rpc-url $RPC_URL
 ```
 
+If you do not pass `--rpc-url` on the command line, erever will automatically use the `EREVER_RPC_URL` environment variable if it is set. Example:
+
+```bash
+export EREVER_RPC_URL="YOUR_RPC_URL"
+```
+
 ### Trace
 
 The `trace` command is used to trace the execution of EVM bytecode.
