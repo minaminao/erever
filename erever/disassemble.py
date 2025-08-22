@@ -931,6 +931,9 @@ def disassemble_code(
                             child_context.static = True
 
                         if not silent:
+                            instruction_message += (
+                                f"\n{'args'.rjust(TAB_SIZE * 2)}{' ' * TAB_SIZE}{child_context.calldata.hex()}"
+                            )
                             print_instruction_message()
                             print("\n")
                         result = disassemble(
