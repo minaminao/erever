@@ -290,7 +290,7 @@ def disassemble_code(
                     instruction_message += f"[{depth}] "
                 instruction_message += f"{pad(hex(pc), LOCATION_PAD_N)}: "
             if show_opcodes:
-                instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} "
+                instruction_message += f"{Colors.GRAY}(0x{context.bytecode[pc : pc + 1].hex()}){Colors.ENDC} "
             if mnemonic_raw in ["JUMP", "JUMPI", "RJUMP", "RJUMPI", "RJUMPV"]:
                 instruction_message += f"{Colors.CYAN}{Colors.BOLD}{mnemonic_raw}{Colors.ENDC}"
             elif mnemonic_raw == "JUMPDEST":
@@ -706,11 +706,11 @@ def disassemble_code(
                             memory_range,
                             invocation_only,
                             return_trace_logs,
-                            depth+1,
+                            depth + 1,
                         )
                         context.bytecode = context.eof.codes[current_section_index].code
                         for _ in range(context.eof.codes[target_section_index].outputs):
-                            stack.push(result.stack_after_execution.pop()) # TODO: is the order correct?
+                            stack.push(result.stack_after_execution.pop())  # TODO: is the order correct?
                     case "RETF":
                         break_flag = True
                     case "JUMPF":
@@ -734,7 +734,7 @@ def disassemble_code(
                             memory_range,
                             invocation_only,
                             return_trace_logs,
-                            depth+1,
+                            depth + 1,
                         )
                         break_flag = True
                     case "EXCHANGE":
@@ -773,7 +773,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
-                            depth=depth+1,
+                            depth=depth + 1,
                         )
 
                         if result.success:
@@ -837,7 +837,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
-                            depth=depth+1,
+                            depth=depth + 1,
                         )
 
                         if result.success:
@@ -935,7 +935,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
-                            depth=depth+1,
+                            depth=depth + 1,
                         )
 
                         if result.success:
@@ -1042,7 +1042,7 @@ def disassemble_code(
                             memory_display=memory_display,
                             invocation_only=invocation_only,
                             return_trace_logs=return_trace_logs,
-                            depth=depth+1,
+                            depth=depth + 1,
                         )
 
                         if result.success:
@@ -1054,7 +1054,7 @@ def disassemble_code(
                             context.state.codes = child_context.state.codes
                         context.steps = child_context.steps
 
-                        stack.push(0 if result.success else 1) # TODO: 1 or 2
+                        stack.push(0 if result.success else 1)  # TODO: 1 or 2
                         trace_logs.extend(result.trace_logs)
                     case "EXTDELEGATECALL":
                         assert False, "EXTDELEGATECALL is not supported"

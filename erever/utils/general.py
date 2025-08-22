@@ -90,10 +90,12 @@ def compute_contract_address_by_eofcreate(address: AddressInt, salt: int, init_c
     # TODO
     return int.from_bytes(Web3.keccak(rlp.encode([address.to_bytes(20, "big"), salt, init_container]))[12:], "big")
 
+
 def remove_comments(text: str) -> str:
     lines = text.split("\n")
     text = "".join([line.split("#")[0].strip() + "\n" for line in lines])
     return text
+
 
 def parse_bytecode(raw_bytecode: str) -> bytes:
     bytecode = remove_comments(raw_bytecode)

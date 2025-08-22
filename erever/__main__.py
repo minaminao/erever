@@ -272,7 +272,9 @@ def main() -> None:
     add_common_arguments_for_eof(parser_mermaid)
     add_common_arguments_for_eof(parser_gadget)
 
-    disassemble_display_group.add_argument("--output-bytecode", action="store_true", default=False, help="Output bytecode")
+    disassemble_display_group.add_argument(
+        "--output-bytecode", action="store_true", default=False, help="Output bytecode"
+    )
     trace_display_group.add_argument("--decode-stack", action="store_true", default=False, help="Decode stack items")
     trace_display_group.add_argument(
         "--invocation-only",

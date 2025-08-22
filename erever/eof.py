@@ -50,12 +50,12 @@ def parse_eof_header(bytecode: bytes) -> tuple[EOFHeader, int]:
     p += 1
 
     num_code_sections = bytes_to_long(bytecode[p : p + 2])
-    assert (
-        0x0001 <= num_code_sections <= 0x0400
-    ), f"num_code_sections {num_code_sections:#x} is out of valid range (0x0001 - 0x0400)"
-    assert (
-        types_size // 4 == num_code_sections
-    ), f"Mismatch: types_size // 4 ({types_size // 4}) does not equal num_code_sections ({num_code_sections})"
+    assert 0x0001 <= num_code_sections <= 0x0400, (
+        f"num_code_sections {num_code_sections:#x} is out of valid range (0x0001 - 0x0400)"
+    )
+    assert types_size // 4 == num_code_sections, (
+        f"Mismatch: types_size // 4 ({types_size // 4}) does not equal num_code_sections ({num_code_sections})"
+    )
     print(f"  Num code sections: {num_code_sections}")
     p += 2
 

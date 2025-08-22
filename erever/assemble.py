@@ -2,6 +2,7 @@ from .opcodes.cancun import OPCODES
 from .opcodes.eof import OPCODES_EOF
 from .utils.general import remove_comments
 
+
 def assemble(mnemonics_str: str, eof: bool = False) -> bytes:
     mnemonics: list[str] = remove_comments(mnemonics_str).split()
     i = 0
@@ -35,7 +36,7 @@ def assemble(mnemonics_str: str, eof: bool = False) -> bytes:
                 arg = hex(int(arg))[2:].zfill(2)
             assert len(arg) == 2, "Invalid EXCHANGE argument"
             bytecode += arg
-        elif mnemonic_upper in  ["DATALOADN", "RJUMP", "RJUMPI", "CALLF", "JUMPF"]:
+        elif mnemonic_upper in ["DATALOADN", "RJUMP", "RJUMPI", "CALLF", "JUMPF"]:
             i += 1
             arg = mnemonics[i]
             if arg.startswith("0x"):

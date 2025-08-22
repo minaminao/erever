@@ -172,7 +172,7 @@ def disassemble_symbolic(
                     print(f"{pad(hex(pc), LOCATION_PAD_N)}: ", end="")
                 if show_opcodes:
                     print(
-                        f"{Colors.GRAY}(0x{context.bytecode[pc:pc+1].hex()}){Colors.ENDC} ",
+                        f"{Colors.GRAY}(0x{context.bytecode[pc : pc + 1].hex()}){Colors.ENDC} ",
                         end="",
                     )
 

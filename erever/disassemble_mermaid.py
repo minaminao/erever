@@ -84,7 +84,7 @@ def disassemble_mermaid(context: Context, entrypoint: int = 0x00, max_steps: int
 
             if mnemonic.startswith("PUSH"):
                 instructions.append(
-                    f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc+1:pc+1+mnemonic_num].hex()}"
+                    f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}  0x{context.bytecode[pc + 1 : pc + 1 + mnemonic_num].hex()}"
                 )
             else:
                 instructions.append(f"{pad(hex(pc), LOCATION_PAD_N)}: {mnemonic}")
